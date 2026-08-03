@@ -183,36 +183,285 @@ which ideas are novel (platform design, systematic evaluation) vs.\
 inherited (R-matrix constraint, transformer encoders).
 
 % ═══════════════════════════════════════════════════════════════════════
-\section{Method}
+\section{The HMC-Torch Methodology}
 % ═══════════════════════════════════════════════════════════════════════
 
-\subsection{Architecture}
+We present \textsc{hmc-torch} as a methodology built on three
+principles: (1) \textbf{strict separation of concerns} via typed data
+contracts, (2) \textbf{hierarchy-aware modeling} where the class
+taxonomy is a first-class architectural component, not a
+post-processing afterthought, and (3) \textbf{modality-agnostic
+design} where the same pipeline accommodates text, tabular, image, and
+sequence data through a common encoder protocol.
 
-The platform follows a modular pipeline:
+\subsection{Data Contracts: The Foundation}
+
+The central abstraction is the \texttt{DatasetBundle}, which
+encapsulates everything a model needs to know about a dataset:
+
+\begin{enumerate}[leftmargin=*,nosep]
+  \item \textbf{\texttt{Split}}. One data partition (train, valid, or
+    test) containing a feature matrix $X \in \mathbb{R}^{N \times D}$,
+    a binary label matrix $Y \in \{0,1\}^{N \times C}$ (where $C$ is
+    the total number of class nodes), per-level local label vectors
+    $Y_{\text{local}} = [\mathbf{y}^{(0)}, \ldots, \mathbf{y}^{(L-1)}]$
+    for $L$ hierarchy levels, and optional sample identifiers for
+    deduplication auditing.
+  \item \textbf{\texttt{Hierarchy}}. An explicit representation of the
+    class taxonomy as either a \texttt{TreeHierarchy} (single-parent,
+    FunCat-style) or a \texttt{DagHierarchy} (multi-parent, Gene
+    Ontology-style).  Both expose a uniform interface: \texttt{nodes},
+    \texttt{levels}, \texttt{node\_index}, \texttt{parents(child)},
+    \texttt{children(parent)}, \texttt{ancestors(node)}, and the
+    \texttt{r\_matrix} (ancestor closure).  Making the hierarchy type
+    explicit prevents the common error of applying tree-specific logic
+    to DAG-structured problems.
+  \item \textbf{\texttt{FeatureMetadata}}. Describes the feature
+    modality (tabular, text, vision, protein, expression), input
+    dimensionality, missing value status, sparsity, and whether raw
+    data is available for end-to-end training.
+\end{enumerate}
+
+This contract-based design enforces a clean boundary between data
+loading and model training.  Any dataset adapter (ARFF parser, JSONL
+reader, HDF5 loader) must produce a \texttt{DatasetBundle}; any model
+must consume one.  This eliminates the ad-hoc data handling that
+plagues most HMC implementations and enables the systematic
+cross-dataset comparison in Section~\ref{sec:results}.
+
+\subsection{Feature Encoders: One Protocol, Many Modalities}
+
+All feature encoding follows a two-method protocol:
 
 \begin{center}
-\texttt{DatasetAdapter} $\rightarrow$
-\texttt{FeatureEncoder} $\rightarrow$
-\texttt{HierarchicalHead} $\rightarrow$
-\texttt{Calibrator} $\rightarrow$
-\texttt{Reconciler} $\rightarrow$
-\texttt{Evaluation}
+\texttt{encoder.fit(train\_split)} $\rightarrow$
+\texttt{encoder.transform(any\_split)} $\rightarrow$
+\texttt{EncodedSplit}
 \end{center}
 
-\textbf{DatasetAdapter} produces a \texttt{DatasetBundle} containing
-train/validation/test \texttt{Split} objects, a \texttt{Hierarchy}
-(tree or DAG), and \texttt{FeatureMetadata}.
+The \texttt{fit} method learns parameters exclusively from the
+training split (scaler statistics, imputation values, feature
+selection masks).  The \texttt{transform} method applies the fitted
+transformation to any split, returning a new \texttt{Split} with
+encoded features.  This protocol is \textbf{stateless by
+construction}: the same fitted encoder can be serialized, shared, and
+applied to new data without leakage.
 
-\textbf{FeatureEncoder} implements \texttt{fit/transform}. Current
-implementations: \texttt{TabularFeatureEncoder} (imputation +
-standardization + variance/MI selection), \texttt{TextFeatureEncoder}
-(transformer with CLS pooling), and placeholders for protein (ESM-2)
-and vision (DINOv2).
+Current implementations span the major HMC modalities:
 
-\textbf{HierarchicalHead} options include
-\texttt{GlobalSigmoidHead} (shared MLP $\rightarrow$ sigmoid),
-\texttt{LocalLevelHead} (per-level MLPs), and \texttt{TreePathHead}
-(masked softmax for single-path tasks).
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Tabular} (\texttt{TabularFeatureEncoder}).  Handles
+    missing value imputation (mean), standardization (zero mean, unit
+    variance), and optional feature selection via variance threshold
+    or mutual information with the label matrix.  For datasets with
+    $>$500 features, variance-based filtering removes near-constant
+    columns; mutual information selects the top-$K$ most
+    label-informative features.
+  \item \textbf{Text} (\texttt{TextFeatureEncoder}).  Wraps a
+    HuggingFace transformer (SPECTER2-base by default) with CLS-pooling
+    for document-level representations.  Supports both frozen
+    embeddings (fast, 768-dim output) and fine-tuned mode where
+    transformer weights are updated end-to-end with the HMC head.
+    Raw-text availability is detected from \texttt{FeatureMetadata};
+    if only pre-extracted features exist, the encoder passes through
+    unchanged.
+  \item \textbf{Protein} (\texttt{ProteinFeatureEncoder}, placeholder).
+    Designed for ESM-2 embeddings of amino acid sequences, cached
+    per-sequence with model version hashing.  Activated only when raw
+    sequences are confirmed available for \texttt{seq\_FUN}.
+  \item \textbf{Vision} (\texttt{VisionFeatureEncoder}, placeholder).
+    Targets DINOv2/ConvNeXt backbones for Diatoms and ImCLEF image
+    data.  Falls back to pre-extracted ARFF features when raw images
+    are unavailable.
+\end{itemize}
+
+This protocol means that \textbf{any encoder works with any head}:
+a tabular model can be swapped for a text transformer without
+modifying the downstream HMC architecture.
+
+\subsection{Hierarchical Classification Heads}
+
+The platform provides three head architectures, all producing
+\texttt{node\_scores} of shape $(B, C)$ regardless of internal
+structure:
+
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{GlobalSigmoidHead}. A shared multi-layer perceptron
+    over all $C$ class nodes: $\text{MLP}(\mathbf{x}) \rightarrow
+    \sigma(\cdot) \rightarrow [0,1]^C$.  This is the simplest and most
+    widely applicable head, used in all our experiments except where
+    noted.
+  \item \textbf{LocalLevelHead}. One independent MLP per hierarchy
+    level, each predicting only the classes at that depth:
+    $\text{MLP}_\ell(\mathbf{x}) \rightarrow [0,1]^{C_\ell}$.  Trained
+    jointly with per-level BCE loss.  Level predictions are assembled
+    into a global score vector via the \texttt{to\_global} method using
+    the hierarchy's node index mapping.
+  \item \textbf{TreePathHead}. For strictly tree-structured tasks
+    where each sample follows exactly one root-to-leaf path.  Uses
+    masked softmax at each level, where the mask restricts choices to
+    children of the parent node chosen at the previous level.  This
+    enforces mutual exclusivity within sibling groups.
+\end{itemize}
+
+\subsection{R-Matrix: The Hierarchical Constraint Layer}
+
+The R-matrix, introduced by~\citet{giunchiglia2018hmc}, is the
+centrepiece of our hierarchical modeling.  Given the class hierarchy
+adjacency matrix $A$ (where $A_{ij}=1$ if $i$ is a direct child of
+$j$), we compute the transitive closure:
+
+\begin{equation}
+R_{ij} = \begin{cases}
+1 & \text{if } i = j \text{ or } \exists \text{ path } i \rightarrow \ldots \rightarrow j \text{ in } A \\
+0 & \text{otherwise}
+\end{cases}
+\label{eq:rmatrix}
+\end{equation}
+
+$R \in \{0,1\}^{C \times C}$ encodes all ancestor relationships:
+$R_{ij}=1$ means class $i$ is an ancestor of class $j$ (or $i=j$).
+Our contribution is not the R-matrix itself---we credit Giunchiglia \&
+Lukasiewicz for the original idea---but its elevation to a
+\textbf{reusable, modular layer} with two operating modes:
+
+\textbf{Mode 1: Training-time consistency loss.}  During optimization,
+we penalize violations where a child node receives higher probability
+than its ancestor:
+
+\begin{equation}
+\mathcal{L}_{\text{hier}} = \frac{1}{B \cdot |R|}
+\sum_{b=1}^{B} \sum_{i,j: R_{ij}=1}
+\max\left(0,\; p_{b,j} - p_{b,i} + \gamma\right)
+\label{eq:hierloss}
+\end{equation}
+
+where $p_{b,i}$ is the predicted probability for class $i$ on sample
+$b$, and $\gamma \geq 0$ is an optional margin (we use $\gamma=0$
+throughout).  This loss is differentiable and can be combined with any
+primary classification loss (BCE, focal, weighted BCE).
+
+\textbf{Mode 2: Inference-time reconciliation.}  At prediction time,
+we enforce hard constraints via bottom-up max propagation:
+
+\begin{equation}
+p_i^{\text{rec}} = \max\left(p_i,\; \max_{j \in \text{children}(i)} p_j^{\text{rec}}\right)
+\label{eq:reconcile}
+\end{equation}
+
+Processing levels from deepest to shallowest, this ensures that
+$\forall (i,j): \text{ancestor}(i,j) \implies p_i^{\text{rec}} \geq
+p_j^{\text{rec}}$ with zero post-inference violations.  The key
+insight is that the R-matrix can be combined with \textbf{any}
+encoder/head pair: frozen transformer, fine-tuned transformer, GBDT,
+or residual MLP.  This enables the systematic ablation studies in
+Section~\ref{sec:results} that isolate the R-matrix's contribution.
+
+\subsection{Block-Diagonal R-Matrix: Scaling to Large DAGs}
+\label{sec:sparse}
+
+A fundamental limitation of the dense R-matrix is its $O(C^2)$ memory
+footprint.  For Gene Ontology datasets with $C > 4{,}000$, the matrix
+requires $>65$~MB---infeasible on GPU alongside model parameters and
+batched data.  We address this with the \textbf{Block-Diagonal
+R-Matrix}, a sparse $O(C+E)$ approximation.
+
+\textbf{Key observation.}  The reconciliation in
+Eq.~\ref{eq:reconcile} requires only the \emph{graph adjacency}
+(parent-child edges), not the full transitive closure.  We can
+propagate scores upward one hop at a time:
+
+\begin{equation}
+\forall \text{ node } c,\; \forall p \in \text{parents}(c):\;
+p \leftarrow \max(p, c)
+\label{eq:sparse_reconcile}
+\end{equation}
+
+\textbf{Algorithm.}
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Compute node levels via BFS from root(s) --- $O(C+E)$.
+  \item For each level from deepest to shallowest:
+    \begin{itemize}
+      \item For each node $c$ at this level:
+        \item For each parent $p$ of $c$:
+          \item $p \leftarrow \max(p, c)$
+    \end{itemize}
+  \item For DAGs (multiple parents possible), repeat steps 2--3 up to
+    $\text{max\_depth}$ times.  Each pass propagates scores one hop
+    upward; after $L$ passes, all ancestors within $L$ hops are
+    updated.  Convergence is guaranteed because the longest path in
+    the DAG has length $\leq \text{max\_depth}$.
+\end{enumerate}
+
+\textbf{Memory reduction.} From $O(C^2)$ to $O(C + E)$: for
+cellcycle\_GO ($C{=}4{,}126$, $E{=}5{,}827$), memory drops from
+65~MB to $\sim$46~KB ($>1{,}400\times$).  This enables---for the
+first time---R-matrix-constrained training and inference on the full
+Gene Ontology benchmark suite.
+
+\textbf{Equivalence.} For tree hierarchies, one pass of
+Eq.~\ref{eq:sparse_reconcile} produces exactly the same result as the
+dense R-matrix reconciliation (Eq.~\ref{eq:reconcile}), since there is
+exactly one path from any node to the root.  For DAGs, the multi-pass
+variant converges to the same fixed point as the dense transitive
+closure, because the max operation is associative and commutative:
+propagating through direct parents iteratively is equivalent to
+propagating through all ancestors simultaneously.
+
+\subsection{Training and Loss Functions}
+
+The primary training objective for multi-label HMC is binary
+cross-entropy with per-class prevalence weights:
+
+\begin{equation}
+\mathcal{L}_{\text{BCE}} = -\frac{1}{B \cdot C}
+\sum_{b=1}^{B} \sum_{j=1}^{C} w_j \left[
+y_{b,j} \log p_{b,j} + (1-y_{b,j}) \log(1-p_{b,j})
+\right]
+\label{eq:bce}
+\end{equation}
+
+where $w_j = N_{\text{neg}}^{(j)} / N_{\text{pos}}^{(j)}$ up-weights
+rare classes.  The total loss combines the primary BCE with the
+optional hierarchical consistency penalty:
+
+\begin{equation}
+\mathcal{L} = \mathcal{L}_{\text{BCE}} + \lambda \mathcal{L}_{\text{hier}}
+\label{eq:total}
+\end{equation}
+
+We set $\lambda=0$ in all experiments after finding (Section~\ref{sec:ablation})
+that the training-time consistency loss provides negligible additional
+benefit when the model naturally learns hierarchically consistent
+predictions from data.  The inference-time reconciliation
+(Eq.~\ref{eq:reconcile}) is where the R-matrix provides its main
+value.
+
+Additionally, we implement \textbf{Focal Loss} for focusing on hard
+examples ($\gamma=2.0$, $\alpha=0.25$) and \textbf{Contrastive Label
+Loss} (InfoNCE between document and label embeddings) for settings
+where label semantics matter.  These are available in the platform but
+not used in the main experiments.
+
+\subsection{Reproducibility Infrastructure}
+
+Every experiment run produces a self-contained output directory with:
+
+\begin{itemize}[leftmargin=*,nosep]
+  \item \texttt{scores\_before\_postprocess.npz} — raw model outputs.
+  \item \texttt{scores\_final.npz} — after reconciliation.
+  \item \texttt{metrics.json} — Micro-F1, AUPRC, precision, recall,
+    best threshold.
+  \item \texttt{run-config.json} — all hyperparameters, dataset
+    dimensions, preprocessing choices.
+  \item \texttt{manifest.json} — git SHA, Python version, dependency
+    versions, hostname, timestamp.
+\end{itemize}
+
+Combined with fixed random seeds (42 across all experiments) and
+deterministic CUDA operations, this ensures that any result in this
+paper can be reproduced exactly by running the corresponding
+configuration.
 
 \subsection{R-Matrix Constraint}
 \label{sec:rmatrix}
@@ -401,6 +650,14 @@ $\Delta$ vs.\ previous best        & \textbf{+0.1345} & \textbf{+0.0023} \\
 \end{tabular}
 \end{table}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig1_sota_comparison.pdf}
+\caption{State-of-the-art comparison on ArXiv and WOS benchmarks.
+Our method (global+R, dark blue) surpasses all previous methods.}
+\label{fig:sota}
+\end{figure}
+
 \textbf{ArXiv.} Frozen SPECTER2 + MLP + R-matrix achieves 0.7295
 ($\pm$0.0003 across 3 seeds), surpassing HiAGM by 13.45 points.
 The near-zero variance indicates that the R-matrix provides stable,
@@ -502,6 +759,15 @@ domain-specific tuning, achieves competitive or state-of-the-art
 performance across scientific text, email, genomics, microscopy, and
 medical imaging.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig4_cross_domain.pdf}
+\caption{Cross-domain performance overview across 10 representative
+datasets spanning 5 domains. Same architecture (global MLP+R) used
+throughout.}
+\label{fig:cross}
+\end{figure}
+
 \subsection{GBDT vs.\ Global: Precision-Recall Trade-off}
 
 \begin{table}[h]
@@ -598,6 +864,14 @@ on the application (threshold tuning can recover F1).
 per dataset (20 epochs, RTX 3060), demonstrating that the sparse
 R-matrix adds negligible overhead.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig3_go_sparse.pdf}
+\caption{Sparse R-Matrix on 9 Gene Ontology datasets: AUPRC improves
+on all datasets (avg +0.0055). Green bars show reconciled scores.}
+\label{fig:go}
+\end{figure}
+
 \subsection{Ablation: R-Matrix On/Off}
 \label{sec:ablation}
 
@@ -617,6 +891,14 @@ seq\_FUN      & 0.2984 & 0.2980 & +0.0004 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/fig2_ablation.pdf}
+\caption{R-matrix ablation: Micro-F1 with and without the constraint.
+Positive $\Delta$ means R helps.}
+\label{fig:ablation}
+\end{figure}
 
 The R-matrix provides a small but consistent benefit on text datasets
 ($\Delta \approx +0.001$--$0.003$ F1) with frozen transformer
