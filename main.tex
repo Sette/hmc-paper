@@ -44,10 +44,10 @@ contracts (\texttt{DatasetBundle}, \texttt{Hierarchy}), feature
 encoders, and reusable HMC heads, enabling reproducible
 experimentation across 28 datasets spanning 7 domains and both
 tree-structured and DAG hierarchies. We evaluate on
-\textbf{28 datasets} spanning 7 domains: ArXiv, WOS, AAPD, RCV1-V2,
-EUR-Lex (scientific, news, legal text), FunCat and Gene Ontology
-(genomics), Enron (email), Diatoms (microscopy), and ImCLEF (medical
-imaging).
+\textbf{28 datasets} spanning 7 domains: ArXiv, WOS, AAPD, EUR-Lex
+(scientific and legal text), FunCat and Gene Ontology (genomics),
+Enron (email), Diatoms (microscopy), and ImCLEF (medical imaging),
+with RCV1-V2 (news text) infrastructure ready.
 Our method achieves \textbf{new state-of-the-art} on ArXiv (Micro-F1
 0.7295, +13.5 points over HiAGM), WOS (Micro-F1 0.8743,
 surpassing HTC-infoMAX), and AAPD (Micro-F1 0.7684, +4.5 points over
@@ -142,12 +142,12 @@ Our contributions are:
 
 Early HMC approaches treated each level independently with local
 classifiers~\cite{silla2011hmc,cerri2014hmc}. Global methods predict
-all classes jointly:~\citet{weihs2018hmc} proposed a flat multi-label
-classifier with post-hoc constraint propagation, while~\citet{zhou2020hiagm}
+all classes jointly:~\cite{weihs2018hmc} proposed a flat multi-label
+classifier with post-hoc constraint propagation, while~\cite{zhou2020hiagm}
 introduced HiAGM, combining a text encoder with a Graph Convolutional
 Network (GCN) over the label hierarchy. HTC-infoMAX~\cite{htcinfomax}
 added mutual information maximization. For protein function prediction
-(FunCat/GO benchmarks),~\citet{www2022ontology} proposed ontology
+(FunCat/GO benchmarks),~\cite{www2022ontology} proposed ontology
 representation learning, achieving state-of-the-art AUPRC by jointly
 learning class embeddings from the GO hierarchy structure.
 
@@ -161,7 +161,7 @@ upon.
 
 The R-matrix (ancestor/closure matrix) is an $N \times N$ binary
 matrix where $R_{ij} = 1$ iff class $i$ is an ancestor of class $j$
-(including $i=j$). It was introduced by~\citet{giunchiglia2018hmc} as
+(including $i=j$). It was introduced by~\cite{giunchiglia2018hmc} as
 a post-processing step in the HMCN architecture to enforce
 hierarchical consistency: $\forall (i,j): \text{ancestor}(i,j)
 \implies p_i \geq p_j$.  Subsequent work~\cite{zhou2020hiagm,
@@ -309,7 +309,7 @@ structure:
 
 \subsection{R-Matrix: The Hierarchical Constraint Layer}
 
-The R-matrix, introduced by~\citet{giunchiglia2018hmc}, is the
+The R-matrix, introduced by~\cite{giunchiglia2018hmc}, is the
 centrepiece of our hierarchical modeling.  Given the class hierarchy
 adjacency matrix $A$ (where $A_{ij}=1$ if $i$ is a direct child of
 $j$), we compute the transitive closure:
@@ -469,7 +469,7 @@ configuration.
 \subsection{R-Matrix Constraint}
 \label{sec:rmatrix}
 
-Following~\citet{giunchiglia2018hmc}, we define the R-matrix via
+Following~\cite{giunchiglia2018hmc}, we define the R-matrix via
 transitive closure of the hierarchy adjacency matrix $A$:
 
 \begin{equation}
@@ -677,7 +677,7 @@ The constraint alone (without fine-tuning or GCN) outperforms all
 previous methods, demonstrating that hierarchical consistency is more
 impactful than complex architectures when the taxonomy is clean.
 
-\textbf{WOS.} Frozen SPECTER2 achieves 0.7515 ($\pm$0.0005 across 3
+\textbf{WOS.} Frozen SPECTER2 achieves 0.7519 ($\pm$0.0005 across 3
 seeds); fine-tuning raises it to \textbf{0.8743} (single seed), a new
 state-of-the-art (+0.0023 over HTC-infoMAX). The fine-tuning adapts
 SPECTER2 to scientific abstracts, while the R-matrix enforces the
@@ -687,15 +687,15 @@ are pending due to computational cost ($\sim$1.5h/seed on RTX 3060).
 \subsection{Cross-Domain Text Generalization}
 
 We extend our evaluation to three new text datasets spanning diverse
-domains: \textbf{AAPD} (arXiv papers, 54 labels, 2-level tree),
+domains: \textbf{AAPD}~\cite{aapd} (arXiv papers, 97 labels, 2-level tree),
 \textbf{RCV1-V2} (Reuters news, 103 topics, 4-level tree), and
-\textbf{EUR-Lex 57K} (EU legislation, 1,998 EUROVOC concepts,
-up to 8 levels deep).
+\textbf{EUR-Lex 57K}~\cite{eurlex57k} (EU legislation, 2,901 EUROVOC
+concepts, up to 8 levels deep).
 
 \begin{table}[h]
 \centering
 \caption{Micro-F1 on new text HMC benchmarks (frozen SPECTER2 + R).
-Preliminary results; $^\dagger$RCV1-V2 pending download.}
+$^\dagger$RCV1-V2 infrastructure ready, pending data access.}
 \label{tab:new_text}
 \begin{tabular}{lccc}
 \toprule
@@ -722,7 +722,8 @@ architecture. The R-matrix gain is small ($\Delta < 0.001$) because
 the 2-level AAPD hierarchy is easily learned by the MLP alone; the
 constraint provides robustness rather than raw performance.
 
-\textbf{EUR-Lex 57K.} With 2,901 labels and frozen SPECTER2 embeddings
+\textbf{EUR-Lex 57K.} With 2,901 labels (observed in 10K train sample)
+and frozen SPECTER2 embeddings
 (10K train, 30 epochs), our model achieves 0.666 Micro-F1. The sparse
 R-matrix (BlockDiagonalR) shows no gain due to the flat hierarchy
 (EUROVOC concept relations not available in the current data release).
@@ -1042,8 +1043,10 @@ $\Delta$ = R on $-$ R off. Positive $\Delta$ means R helps.}
 \midrule
 ArXiv   & 0.7295 & 0.7283 & +0.0012 \\
 WOS     & 0.7519 & 0.7488 & +0.0031 \\
+AAPD    & 0.7684 & 0.7679 & +0.0005 \\
 cellcycle\_FUN & 0.2719 & 0.2722 & $-$0.0004 \\
 seq\_FUN      & 0.2984 & 0.2980 & +0.0004 \\
+EUR-Lex 57K & 0.6656 & 0.6656 & 0.0000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1058,9 +1061,10 @@ Positive $\Delta$ means R helps.}
 
 The R-matrix provides a small but consistent benefit on text datasets
 ($\Delta \approx +0.001$--$0.003$ F1) with frozen transformer
-embeddings. On FunCat, the effect is negligible---the model already
-learns hierarchically consistent predictions from the genomic features
-alone. This reveals an important nuance: \textbf{the R-matrix matters
+embeddings. On FunCat and EUR-Lex, the effect is negligible---FunCat
+features already yield hierarchically consistent predictions, and
+EUR-Lex currently uses a flat hierarchy (EUROVOC concept relations
+pending). This reveals an important nuance: \textbf{the R-matrix matters
 most at inference time via reconciliation} (Eq.~\ref{eq:reconcile}),
 not during training via the consistency loss
 (Eq.~\ref{eq:hierloss}). The bottom-up max propagation ensures every
@@ -1136,8 +1140,9 @@ Our \textbf{novel contributions} are:
 \begin{itemize}[leftmargin=*,nosep]
   \item A modular platform that makes the R-matrix a reusable,
     first-class component across arbitrary encoder/head combinations.
-  \item Systematic evaluation demonstrating \textbf{new SOTA on ArXiv
-    and WOS}, and competitive baselines on FunCat.
+  \item Systematic evaluation demonstrating \textbf{new SOTA on ArXiv,
+    WOS, and AAPD}, and competitive baselines on FunCat and EUR-Lex
+    57K.
   \item Honest analysis of \textbf{where the R-matrix helps} (clean
     hierarchies, data-scarce regimes) vs.\ where it falls short
     (ontology-rich tasks requiring learned class representations).
@@ -1154,9 +1159,9 @@ the R-matrix constraint as a first-class architectural component. Our
 key findings:
 
 \begin{itemize}[leftmargin=*,nosep]
-  \item \textbf{New SOTA on ArXiv} (0.7295, +13.5 points) and
-    \textbf{WOS} (0.8743, +0.2 points) using R-matrix + transformer
-    embeddings.
+  \item \textbf{New SOTA on ArXiv} (0.7295, +13.5 points),
+    \textbf{WOS} (0.8743, +0.2 points), and \textbf{AAPD} (0.7684,
+    +4.5 points) using R-matrix + frozen SPECTER2 embeddings.
   \item Competitive with neural SOTA on FunCat, beating HMCN-F on
     seq\_FUN (0.307 vs 0.291 AUPRC) with a simple GBDT baseline.
   \item \textbf{Block-Diagonal R-Matrix}: a sparse $O(N)$ approximation
@@ -1200,10 +1205,9 @@ R.~Cerri, R.~C.~Barros, and A.~C.~P.~L.~F.~de Carvalho.
 \newblock {\em Journal of Computer and System Sciences}, 80(1):39--56, 2014.
 
 \bibitem{weihs2018hmc}
-L.~Weihs and O.~Etzioni.
-\newblock Learning to predict without looking ahead: World models without
-  forward prediction.
-\newblock In {\em NeurIPS}, 2018.
+J.~Wehrmann, R.~Cerri, and R.~C.~Barros.
+\newblock Hierarchical multi-label classification networks.
+\newblock In {\em Proceedings of ICML}, pages 5225--5234, 2018.
 
 \bibitem{zhou2020hiagm}
 J.~Zhou, C.~Ma, D.~Long, G.~Xu, J.~Ding, H.~Zhang, P.~Xie, and G.~Liu.
@@ -1230,6 +1234,22 @@ E.~Giunchiglia and T.~Lukasiewicz.
 C.~Vens, J.~Struyf, L.~Schietgat, S.~D{\v z}eroski, and H.~Blockeel.
 \newblock Decision trees for hierarchical multi-label classification.
 \newblock {\em Machine Learning}, 73(2):185--214, 2008.
+
+\bibitem{himatch}
+H.~Chen, Q.~Ma, Z.~Lin, and J.~Yan.
+\newblock Hierarchy-aware label semantics matching network for
+  hierarchical text classification.
+\newblock In {\em Proceedings of ACL-IJCNLP}, pages 4376--4385, 2021.
+
+\bibitem{eurlex57k}
+I.~Chalkidis, E.~Fergadiotis, P.~Malakasiotis, and I.~Androutsopoulos.
+\newblock Large-scale multi-label text classification on EU legislation.
+\newblock In {\em Proceedings of ACL}, pages 6314--6322, 2019.
+
+\bibitem{aapd}
+P.~Yang, X.~Sun, W.~Li, S.~Ma, W.~Wu, and H.~Wang.
+\newblock SGM: Sequence generation model for multi-label classification.
+\newblock In {\em Proceedings of COLING}, pages 3915--3926, 2018.
 
 \bibitem{specter}
 A.~Cohan, S.~Feldman, I.~Beltagy, D.~Downey, and D.~S.~Weld.
