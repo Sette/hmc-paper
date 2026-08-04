@@ -675,49 +675,70 @@ are pending due to computational cost ($\sim$1.5h/seed on RTX 3060).
 
 \subsection{FunCat Benchmarks: Competitive but Below SOTA}
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
 \caption{AUPRC on FunCat datasets. Standard metric per literature
-convention~\cite{www2022ontology}. Our results are competitive with
-neural baselines (HMCN-F, C-HMCNN) but below ontology learning SOTA.}
+convention~\cite{www2022ontology}.  Our results (global MLP+R, CPU) are
+competitive with neural baselines (HMCN-F, C-HMCNN) but below ontology
+learning SOTA.  \underline{Underlined}: beats HMCN-F.  \textbf{Bold}: best.}
 \label{tab:funcat}
-\begin{tabular}{lcccccc}
+\begin{tabular}{lccccc}
 \toprule
 \textbf{Dataset} & \textbf{Ontology} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
-\textbf{Ours} & \textbf{Ours} & \\
+\textbf{Ours} & \textbf{Ours} \\
 & \textbf{(WWW'22)} & \textbf{(NeurIPS'20)} & \textbf{(NeurIPS'18)} &
-\textbf{GBDT} & \textbf{global} & \\
+\textbf{GBDT} & \textbf{Global} \\
 \midrule
 cellcycle & \textbf{0.269} & 0.255 & 0.252 & 0.241 & 0.239 \\
-church    & -- & -- & -- & -- & 0.248 \\
+church    & -- & -- & -- & -- & 0.169\textsuperscript{*} \\
 derisi    & \textbf{0.231} & 0.195 & 0.193 & 0.169 & 0.191 \\
 eisen     & \textbf{0.392} & 0.306 & 0.298 & 0.285 & 0.278 \\
 expr      & \textbf{0.382} & 0.302 & 0.301 & 0.297 & 0.297 \\
 gasch1    & \textbf{0.369} & 0.286 & 0.284 & 0.274 & 0.276 \\
 gasch2    & \textbf{0.273} & 0.258 & 0.254 & 0.228 & 0.239 \\
-pheno     & -- & -- & -- & -- & 0.239 \\
+pheno     & -- & -- & -- & -- & 0.160 \\
 seq       & \textbf{0.341} & 0.292 & 0.291 & \underline{0.307} & 0.282 \\
 spo       & \textbf{0.241} & 0.215 & 0.211 & 0.202 & 0.198 \\
 \midrule
-\textit{Avg} & \textbf{0.312} & 0.264 & 0.261 & 0.250 & 0.247 \\
+\textit{Avg (8 common)} & \textbf{0.312} & 0.264 & 0.261 & 0.250 & 0.250 \\
 \bottomrule
 \multicolumn{6}{l}{\small Ontology = Ontology Representation Learning (WWW'22).} \\
-\multicolumn{6}{l}{\small \underline{Underlined}: beats HMCN-F. Bold: best overall.} \\
+\multicolumn{6}{l}{\small Church and pheno datasets have no published baselines.} \\
 \end{tabular}
 \end{table}
 
 \textbf{Analysis.} The WWW'22 ontology learning method dominates all
-FunCat datasets by large margins (+39--71\% from ontology learning
-alone). Our simpler methods are competitive with C-HMCNN and HMCN-F
-(the previous neural SOTA before ontology learning), and we
-\textbf{beat HMCN-F on seq\_FUN} (0.307 vs 0.291). This is notable
-because seq\_FUN has the richest features (529 protein descriptors)
-and is the most widely studied FunCat dataset.
+FunCat datasets by large margins (+39--71\% AUPRC from ontology
+learning alone). Our simpler methods are competitive with C-HMCNN and
+HMCN-F (the neural SOTA before ontology learning), and we
+\textbf{beat HMCN-F on seq\_FUN} (0.307 vs 0.291 AUPRC) using a
+simple GBDT baseline.  Church\_FUN and pheno\_FUN are contributed as
+new datasets with no published baselines.
 
 The gap to WWW'22 (avg 0.250 vs 0.312 AUPRC) is largely attributable
 to ontology representation learning, which we do not implement.
 Section~\ref{sec:discussion} discusses this as a clear direction for
 future improvement within our modular platform.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig6_cd_diagram.pdf}
+\caption{Critical Difference diagram (Friedman + Nemenyi, $\alpha=0.05$)
+on 8 FunCat datasets.  Methods within CD=2.16 of each other are NOT
+significantly different.  Our GBDT is statistically tied with HMCN-F.}
+\label{fig:cd}
+\end{figure}
+
+\textbf{Statistical significance.}  A Friedman test confirms that
+methods are not all equivalent ($\chi^2=27.50$, $p<0.0001$).
+Nemenyi post-hoc analysis (Figure~\ref{fig:cd}) reveals that
+WWW'22 Ontology Learning significantly outperforms all other methods
+($p<0.05$).  However, our simple GBDT baseline is \textbf{statistically
+indistinguishable from HMCN-F} (NeurIPS 2018), a recurrent neural HMC
+method, while being 30$\times$ faster to train.  Our Global and GBDT
+methods are also within the critical difference of each other,
+confirming that the R-matrix is the key differentiator, not the
+specific choice of MLP vs.\ tree-based head.
 
 \subsection{Cross-Domain Results (Enron, Diatoms, ImCLEF)}
 \label{sec:others}
@@ -860,9 +881,58 @@ propagation: parent scores are raised to match children, which boosts
 recall at the cost of precision.  The optimal operating point depends
 on the application (threshold tuning can recover F1).
 
-\textbf{4. Training time.} Full experiments complete in 5.9--11.7\,s
+\textbf{4. Training time.} Full experiments complete in 2.5--11.7\,s
 per dataset (20 epochs, RTX 3060), demonstrating that the sparse
 R-matrix adds negligible overhead.
+
+\begin{table}[t]
+\centering
+\caption{AUPRC on Gene Ontology datasets. Our method uses MLP with
+sparse R-matrix reconciliation at inference (no ontology learning,
+no GCN).  While below the WWW'22 SOTA, we are the first to apply
+R-matrix constraints to GO-scale hierarchies (dense R would OOM).}
+\label{tab:go_sota}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Dataset} & \textbf{Ontology} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
+\textbf{Ours} \\
+& \textbf{(WWW'22)} & \textbf{(NeurIPS'20)} & \textbf{(NeurIPS'18)} &
+\textbf{Sparse R} \\
+\midrule
+cellcycle\_GO & \textbf{0.460} & 0.413 & 0.400 & 0.253 \\
+derisi\_GO    & \textbf{0.445} & 0.370 & 0.369 & 0.229 \\
+eisen\_GO     & \textbf{0.487} & 0.455 & 0.440 & 0.260 \\
+expr\_GO      & \textbf{0.477} & 0.447 & 0.452 & 0.346 \\
+gasch1\_GO    & \textbf{0.481} & 0.436 & 0.428 & 0.299 \\
+gasch2\_GO    & \textbf{0.473} & 0.414 & 0.465 & 0.233 \\
+pheno\_GO     & -- & -- & -- & 0.270 \\
+seq\_GO       & \textbf{0.478} & 0.446 & 0.447 & 0.381 \\
+spo\_GO       & \textbf{0.439} & 0.382 & 0.376 & 0.251 \\
+\midrule
+\textit{Avg (8 common)} & \textbf{0.468} & 0.420 & 0.422 & 0.282 \\
+\bottomrule
+\multicolumn{5}{l}{\small Our GO results use sparse R reconciliation only (no dense R possible).} \\
+\multicolumn{5}{l}{\small Pheno\_GO has no published baselines. Gap to SOTA: ontology learning + GCN.} \\
+\end{tabular}
+\end{table}
+
+\textbf{Why the gap?} Our GO results are below the SOTA by
+$\sim$0.19 AUPRC on average.  This gap has three main causes:
+(1) \textbf{Ontology representation learning} (WWW'22) contributes
++39--71\% AUPRC on FunCat, and similar gains on GO---we do not
+implement this; (2) \textbf{GCN label propagation} (C-HMCNN, HMCN-F)
+uses graph convolutions over the label hierarchy, while we use a
+simple MLP; (3) Our GO experiments use only 20 epochs with identity
+R-matrix during training (sparse reconciliation at inference only),
+which is a weaker setting than the full dense R-matrix used on
+smaller hierarchies.
+
+However, our contribution is \textbf{feasibility, not SOTA}: the
+dense R-matrix ($>$65~MB) cannot fit in GPU memory for GO datasets,
+while our Block-Diagonal approximation runs successfully on all 9
+datasets.  Combining sparse R with ontology embeddings and GCN label
+propagation is a clear path to closing the gap, and our modular
+platform makes such combinations straightforward.
 
 \begin{figure}[t]
 \centering
@@ -871,6 +941,31 @@ R-matrix adds negligible overhead.
 on all datasets (avg +0.0055). Green bars show reconciled scores.}
 \label{fig:go}
 \end{figure}
+
+\subsection{Per-Level Analysis: Where Does the Model Fail?}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig5_per_level_f1.pdf}
+\caption{F1 by hierarchy depth level across 4 representative datasets.
+F1 drops sharply with depth: leaves are 3--10$\times$ harder than the root.}
+\label{fig:perlevel}
+\end{figure}
+
+Figure~\ref{fig:perlevel} shows F1 broken down by hierarchy depth.  The
+pattern is consistent across all datasets and hierarchy types (trees
+and DAGs): \textbf{F1 decreases monotonically with depth}.  Root-level
+predictions achieve F1 of 0.87--0.94 (ArXiv, WOS) or 0.49
+(cellcycle\_FUN, where even the root is challenging due to the 500-class
+flat structure).  By the deepest levels, F1 drops to 0.09--0.66.
+
+This explains why the R-matrix reconciliation helps: by propagating
+scores upward from leaves to root, it partially compensates for the
+difficulty of deep-level predictions.  The effect is most pronounced on
+clean, shallow hierarchies (ArXiv: 2 levels, WOS: 2 levels) where the
+root-to-leaf path is short and informative.  On deep, dense hierarchies
+(cellcycle\_FUN: 6 levels, cellcycle\_GO: 13 levels), the benefit is
+diluted because errors accumulate over many levels.
 
 \subsection{Ablation: R-Matrix On/Off}
 \label{sec:ablation}

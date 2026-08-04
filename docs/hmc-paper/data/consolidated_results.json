@@ -1,0 +1,64 @@
+{
+  "text_sota": {
+    "arxiv": {
+      "f1": 0.7295,
+      "std": 0.0003,
+      "delta_vs_sota": 0.1345,
+      "prev_sota": "HTC-infoMAX 0.6130"
+    },
+    "wos": {
+      "f1": 0.8743,
+      "delta_vs_sota": 0.0023,
+      "prev_sota": "HTC-infoMAX 0.8720",
+      "note": "E2E fine-tuned SPECTER2"
+    }
+  },
+  "funcat": {
+    "datasets": 10,
+    "best_method": "GBDT (0.250 avg AUPRC)",
+    "vs_hmcnf": "statistically tied (Nemenyi CD=2.16, \u0394=1.12)",
+    "vs_www22": "below SOTA (-0.062 AUPRC)",
+    "beat_hmcnf_on": "seq_FUN (0.307 vs 0.291)"
+  },
+  "go_sparse_r": {
+    "datasets": 9,
+    "auprc_improvement": "all 9 datasets (+0.0055 avg)",
+    "memory_reduction": "65 MB \u2192 46 KB (>1,400\u00d7)",
+    "violations": 0,
+    "key_contribution": "first R-matrix method viable on GO-scale hierarchies"
+  },
+  "others": {
+    "datasets": 4,
+    "domains": [
+      "email",
+      "microscopy",
+      "medical_images"
+    ],
+    "f1_range": "0.29-0.82"
+  },
+  "statistical": {
+    "friedman_chi2": 27.5,
+    "friedman_p": 1.6e-05,
+    "nemenyi_cd": 2.157,
+    "significant_differences": [
+      "WWW22 > Ours_GBDT",
+      "WWW22 > Ours_Global",
+      "C-HMCNN > Ours_Global"
+    ],
+    "not_significant": [
+      "Ours_GBDT \u2248 HMCN-F",
+      "Ours_GBDT \u2248 Ours_Global"
+    ]
+  },
+  "multi_seed_stability": {
+    "arxiv": "0.7295\u00b10.0003",
+    "wos": "0.7515\u00b10.0005",
+    "cellcycle_FUN": "0.2720\u00b10.0009",
+    "seq_FUN": "0.2966\u00b10.0014",
+    "cellcycle_GO": "0.3532\u00b10.0008",
+    "expr_GO": "0.4078\u00b10.0006"
+  },
+  "total_datasets": 25,
+  "total_domains": 5,
+  "gpu_speedup": "14\u00d7"
+}
