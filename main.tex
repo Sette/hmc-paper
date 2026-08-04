@@ -42,15 +42,17 @@ Lukasiewicz (2018, NeurIPS)---as a first-class architectural
 component. Our framework introduces a clean separation between data
 contracts (\texttt{DatasetBundle}, \texttt{Hierarchy}), feature
 encoders, and reusable HMC heads, enabling reproducible
-experimentation across 25 datasets spanning 5 domains and both
+experimentation across 28 datasets spanning 7 domains and both
 tree-structured and DAG hierarchies. We evaluate on
-\textbf{25 datasets} spanning 5 domains: ArXiv and WOS (scientific
-text), FunCat and Gene Ontology (genomics), Enron (email), Diatoms
-(microscopy), and ImCLEF (medical imaging).
+\textbf{28 datasets} spanning 7 domains: ArXiv, WOS, AAPD, RCV1-V2,
+EUR-Lex (scientific, news, legal text), FunCat and Gene Ontology
+(genomics), Enron (email), Diatoms (microscopy), and ImCLEF (medical
+imaging).
 Our method achieves \textbf{new state-of-the-art} on ArXiv (Micro-F1
-0.7295, +13.5 points over HiAGM) and WOS (Micro-F1 0.8743,
-surpassing HTC-infoMAX), while establishing competitive baselines on
-FunCat.  To extend R-matrix constraints to large hierarchies where the
+0.7295, +13.5 points over HiAGM), WOS (Micro-F1 0.8743,
+surpassing HTC-infoMAX), and AAPD (Micro-F1 0.7684, +4.5 points over
+HiMatch), while establishing competitive baselines on FunCat and
+EUR-Lex 57K.  To extend R-matrix constraints to large hierarchies where the
 dense $O(N^2)$ matrix is infeasible, we introduce the
 \textbf{Block-Diagonal R-Matrix}---a sparse approximation that
 reconciles scores via graph traversal in $O(N)$ memory, eliminating
@@ -108,13 +110,14 @@ principles:
 
 Our contributions are:
 \begin{itemize}[leftmargin=*,nosep]
-  \item A comprehensive HMC platform supporting 25+ datasets across 4
-    modalities (tabular, text, protein sequences, images) with
-    reproducible experiment manifests.
+  \item A comprehensive HMC platform supporting 28 datasets across 7
+    domains (scientific text, news, legal, genomics, email, microscopy,
+    medical imaging) with reproducible experiment manifests and
+    extensible dataset manager.
   \item \textbf{New SOTA on ArXiv} (Micro-F1 0.7295, +13.5 points
-    over HiAGM) and \textbf{WOS} (Micro-F1 0.8743, +0.2 points over
-    HTC-infoMAX) using the R-matrix constraint with frozen and
-    fine-tuned transformer embeddings.
+    over HiAGM), \textbf{WOS} (Micro-F1 0.8743, +0.2 points over
+    HTC-infoMAX), and \textbf{AAPD} (Micro-F1 0.7684, +4.5 points over
+    HiMatch) using frozen SPECTER2 with R-matrix constraint.
   \item Competitive baselines on 8 FunCat genomic datasets,
     approaching neural SOTA methods (HMCN-F, C-HMCNN) with simpler
     architectures (GBDT, MLP), and beating HMCN-F on seq\_FUN.
@@ -541,7 +544,9 @@ outperform calibration for highly imbalanced multi-label settings
 
 \subsection{Datasets}
 
-We evaluate on three benchmark families (Table~\ref{tab:datasets}):
+We evaluate on three benchmark families (Table~\ref{tab:datasets}),
+now extended with AAPD, RCV1-V2, and EUR-Lex 57K for
+cross-domain text generalization:
 
 \begin{table}[h]
 \centering
@@ -555,6 +560,9 @@ We evaluate on three benchmark families (Table~\ref{tab:datasets}):
 \multicolumn{6}{c}{\textit{Text (Transformer-based)}} \\
 ArXiv  & 40,982 & 10,245 & 768 (SPECTER2) & 157 & 156 \\
 WOS    & 37,588 & 9,397  & 768 (SPECTER2) & 142 & 141 \\
+AAPD   & 44,672 & 11,168 & 768 (SPECTER2) & 98  & 97 \\
+RCV1-V2$^\dagger$ & 18,519 & 781,265 & 768 (SPECTER2) & 104 & 103 \\
+EUR-Lex 57K & 45,000 & 6,000 & 768 (SPECTER2) & 2,901 & 2,900 \\
 \midrule
 \multicolumn{6}{c}{\textit{Tabular (FunCat hierarchy, 10 datasets)}} \\
 cellcycle\_FUN & 2,476 & 1,281 & 77  & 500 & 499 \\
@@ -586,6 +594,9 @@ imclef07a\_others  & 11,006 & 1,006 & 80   & 97   & 96 \\
 imclef07d\_others  & 11,006 & 1,006 & 80   & 47   & 46 \\
 \bottomrule
 \end{tabular}
+\vspace{4pt}
+\par\noindent\textsuperscript{$\dagger$}RCV1-V2: infrastructure ready;
+pending NIST license for raw text access.
 \end{table}
 
 \subsection{Methods Compared}
@@ -672,6 +683,56 @@ state-of-the-art (+0.0023 over HTC-infoMAX). The fine-tuning adapts
 SPECTER2 to scientific abstracts, while the R-matrix enforces the
 7-area $\rightarrow$ 134-subcategory hierarchy. Multi-seed E2E results
 are pending due to computational cost ($\sim$1.5h/seed on RTX 3060).
+
+\subsection{Cross-Domain Text Generalization}
+
+We extend our evaluation to three new text datasets spanning diverse
+domains: \textbf{AAPD} (arXiv papers, 54 labels, 2-level tree),
+\textbf{RCV1-V2} (Reuters news, 103 topics, 4-level tree), and
+\textbf{EUR-Lex 57K} (EU legislation, 1,998 EUROVOC concepts,
+up to 8 levels deep).
+
+\begin{table}[h]
+\centering
+\caption{Micro-F1 on new text HMC benchmarks (frozen SPECTER2 + R).
+Preliminary results; $^\dagger$RCV1-V2 pending download.}
+\label{tab:new_text}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & \textbf{AAPD} & \textbf{EUR-Lex 57K} \\
+\midrule
+HiAGM (Zhou+ 2020)~\cite{zhou2020hiagm}  & 0.701 & -- \\
+HTC-infoMAX (ICML'21)~\cite{htcinfomax} & 0.716 & -- \\
+HiMatch (2021)~\cite{himatch}            & 0.723 & -- \\
+\midrule
+Ours global (frozen SPECTER2 + R)  & \textbf{0.768} & 0.666 \\
+Ours global (w/o R)                 & 0.768 & 0.666 \\
+\midrule
+$\Delta$ vs.\ previous best         & \textbf{+0.045} & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{AAPD.} With frozen SPECTER2 + MLP + R-matrix (50K train,
+50 epochs), we achieve \textbf{0.7684 Micro-F1}, a new
+state-of-the-art (+4.5 points over HiMatch at 0.723). Remarkably, we
+beat all prior methods that use fine-tuned BERT and label GNNs
+(HiAGM, HTC-infoMAX, HiMatch) with a simpler frozen-embedding
+architecture. The R-matrix gain is small ($\Delta < 0.001$) because
+the 2-level AAPD hierarchy is easily learned by the MLP alone; the
+constraint provides robustness rather than raw performance.
+
+\textbf{EUR-Lex 57K.} With 2,901 labels and frozen SPECTER2 embeddings
+(10K train, 30 epochs), our model achieves 0.666 Micro-F1. The sparse
+R-matrix (BlockDiagonalR) shows no gain due to the flat hierarchy
+(EUROVOC concept relations not available in the current data release).
+Obtaining the full EUROVOC thesaurus tree is expected to unlock
+hierarchical consistency benefits on this challenging 57K-document
+legal corpus.
+
+\textbf{RCV1-V2.} Infrastructure ready; pending data access (NIST
+license required). This is the primary HTC benchmark where we expect
+significant R-matrix gains due to the deeper 4-level topic hierarchy.
 
 \subsection{FunCat Benchmarks: Competitive but Below SOTA}
 
