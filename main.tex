@@ -673,13 +673,13 @@ pending NIST license for raw text access.
 \subsection{Methods Compared}
 
 \begin{itemize}[leftmargin=*,nosep]
-  \item \textbf{global} (Ours): MLP + R-matrix constraint.
+  \item \textbf{Global} (Ours): MLP + R-matrix constraint.
     SPECTER2-base~\cite{specter} embeddings for text (frozen or
     fine-tuned). Hidden dim per dataset from the registry.
-  \item \textbf{local}: Per-level MLPs, trained jointly, no R-matrix.
-  \item \textbf{tabular\_gbdt}: HistGradientBoosting One-vs-Rest
+  \item \textbf{Local}: Per-level MLPs, trained jointly, no R-matrix.
+  \item \textbf{Tabular GBDT}: HistGradientBoosting One-vs-Rest
     (scikit-learn), one classifier per node with $\geq 5$ positives.
-  \item \textbf{tabular\_mlp}: Residual MLP + GlobalSigmoidHead,
+  \item \textbf{Tabular MLP}: Residual MLP + GlobalSigmoidHead,
     prevalence-weighted BCE.
   \item \textbf{HiAGM}~\cite{zhou2020hiagm}: Text encoder + label GCN.
   \item \textbf{HTC-infoMAX}~\cite{htcinfomax}: HiAGM + mutual
