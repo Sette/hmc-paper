@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.8.3)  7 AUG 2026 18:57
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.8.3)  7 AUG 2026 19:37
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -560,69 +560,45 @@ mc.models.hierarchical.sparse_r
  []
 
 [7]
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
 <figures/fig1_sota_comparison.pdf, id=272, 715.40468pt x 338.57317pt>
 File: figures/fig1_sota_comparison.pdf Graphic file (type pdf)
 <use figures/fig1_sota_comparison.pdf>
 Package pdftex.def Info: figures/fig1_sota_comparison.pdf  used on input line 7
 37.
 (pdftex.def)             Requested size: 452.9679pt x 214.37679pt.
-[8]
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-<figures/fig6_cd_diagram.pdf, id=288, 705.15355pt x 209.34908pt>
+ [8] [9] [10 <./figures/fig1_sota_comparison.pdf>]
+<figures/fig6_cd_diagram.pdf, id=401, 705.15355pt x 209.34908pt>
 File: figures/fig6_cd_diagram.pdf Graphic file (type pdf)
 <use figures/fig6_cd_diagram.pdf>
 Package pdftex.def Info: figures/fig6_cd_diagram.pdf  used on input line 858.
 (pdftex.def)             Requested size: 407.66833pt x 121.03282pt.
-[9 <./figures/fig1_sota_comparison.pdf>]
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-<figures/fig4_cross_domain.pdf, id=395, 712.87895pt x 351.50739pt>
+ [11 <./figures/fig6_cd_diagram.pdf>]
+<figures/fig4_cross_domain.pdf, id=496, 712.87895pt x 351.50739pt>
 File: figures/fig4_cross_domain.pdf Graphic file (type pdf)
 <use figures/fig4_cross_domain.pdf>
 Package pdftex.def Info: figures/fig4_cross_domain.pdf  used on input line 918.
 
 (pdftex.def)             Requested size: 452.9679pt x 223.34952pt.
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-[10 <./figures/fig6_cd_diagram.pdf>]
-<figures/fig3_go_sparse.pdf, id=490, 640.08856pt x 314.97371pt>
+ [12 <./figures/fig4_cross_domain.pdf>] [13]
+<figures/fig3_go_sparse.pdf, id=604, 640.08856pt x 314.97371pt>
 File: figures/fig3_go_sparse.pdf Graphic file (type pdf)
 <use figures/fig3_go_sparse.pdf>
 Package pdftex.def Info: figures/fig3_go_sparse.pdf  used on input line 1072.
 (pdftex.def)             Requested size: 407.66833pt x 200.61165pt.
-<figures/fig5_per_level_f1.pdf, id=491, 859.74023pt x 570.21031pt>
+<figures/fig5_per_level_f1.pdf, id=605, 859.74023pt x 570.21031pt>
 File: figures/fig5_per_level_f1.pdf Graphic file (type pdf)
 <use figures/fig5_per_level_f1.pdf>
 Package pdftex.def Info: figures/fig5_per_level_f1.pdf  used on input line 1082
 .
 (pdftex.def)             Requested size: 452.9679pt x 300.42638pt.
- [11 <./figures/fig4_cross_domain.pdf>]
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-<figures/fig2_ablation.pdf, id=592, 640.28934pt x 279.48305pt>
+ [14]
+<figures/fig2_ablation.pdf, id=613, 640.28934pt x 279.48305pt>
 File: figures/fig2_ablation.pdf Graphic file (type pdf)
 <use figures/fig2_ablation.pdf>
 Package pdftex.def Info: figures/fig2_ablation.pdf  used on input line 1127.
 (pdftex.def)             Requested size: 385.02547pt x 168.06212pt.
-[12 <./figures/fig3_go_sparse.pdf>] [13 <./figures/fig5_per_level_f1.pdf>]
-[14 <./figures/fig2_ablation.pdf>] [15] [16] [17] [18] [19] (./main.aux)
+ [15 <./figures/fig3_go_sparse.pdf>] [16 <./figures/fig5_per_level_f1.pdf>] [17
+ <./figures/fig2_ablation.pdf>] [18] (./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-03-20>
@@ -631,9 +607,9 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 244940765FAB5AA68E132647E04BB3B0;6968.
  ) 
 Here is how much of TeX's memory you used:
- 15261 strings out of 468489
- 240847 string characters out of 5440515
- 729608 words of memory out of 6000000
+ 15260 strings out of 468489
+ 240838 string characters out of 5440515
+ 707607 words of memory out of 6000000
  43582 multiletter control sequences out of 15000+600000
  659655 words of font info for 245 fonts, out of 8000000 for 9000
  430 hyphenation exceptions out of 8191
@@ -662,10 +638,10 @@ m-super/sfrm1095.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/cm-super
 95.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb>
 </usr/share/texlive/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb></usr/s
 hare/texlive/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb>
-Output written on main.pdf (19 pages, 657987 bytes).
+Output written on main.pdf (18 pages, 658000 bytes).
 PDF statistics:
- 1021 PDF objects out of 1200 (max. 8388607)
- 495 compressed objects within 5 object streams
- 110 named destinations out of 1000 (max. 500000)
+ 1016 PDF objects out of 1200 (max. 8388607)
+ 491 compressed objects within 5 object streams
+ 109 named destinations out of 1000 (max. 500000)
  61239 words of extra memory for PDF output out of 61914 (max. 10000000)
 
