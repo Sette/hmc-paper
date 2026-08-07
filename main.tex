@@ -367,49 +367,121 @@ A fundamental limitation of the dense R-matrix is its $O(C^2)$ memory
 footprint.  For Gene Ontology datasets with $C > 4{,}000$, the matrix
 requires $>65$~MB---infeasible on GPU alongside model parameters and
 batched data.  We address this with the \textbf{Block-Diagonal
-R-Matrix}, a sparse $O(C+E)$ approximation.
+R-Matrix}, a sparse $O(C+E)$ method that achieves \textbf{zero
+hierarchy violations without ever materializing the dense ancestor
+matrix}.
 
-\textbf{Key observation.}  The reconciliation in
-Eq.~\ref{eq:reconcile} requires only the \emph{graph adjacency}
-(parent-child edges), not the full transitive closure.  We can
-propagate scores upward one hop at a time:
+\medskip
+\noindent
+\textbf{Why the dense R-matrix can be avoided.}
+The reconciliation step (Eq.~\ref{eq:reconcile}) asks: for each node,
+what is the maximum score among itself and all its descendants? The
+dense R-matrix answers this in one shot by encoding all ancestor
+relationships explicitly.  But the same answer can be obtained
+\emph{incrementally}:
 
-\begin{equation}
-\forall \text{ node } c,\; \forall p \in \text{parents}(c):\;
-p \leftarrow \max(p, c)
-\label{eq:sparse_reconcile}
-\end{equation}
-
-\textbf{Algorithm.}
 \begin{enumerate}[leftmargin=*,nosep]
-  \item Compute node levels via BFS from root(s) --- $O(C+E)$.
-  \item For each level from deepest to shallowest:
-    \begin{itemize}
-      \item For each node $c$ at this level:
-        \item For each parent $p$ of $c$:
-          \item $p \leftarrow \max(p, c)$
-    \end{itemize}
-  \item For DAGs (multiple parents possible), repeat steps 2--3 up to
-    $\text{max\_depth}$ times.  Each pass propagates scores one hop
-    upward; after $L$ passes, all ancestors within $L$ hops are
-    updated.  Convergence is guaranteed because the longest path in
-    the DAG has length $\leq \text{max\_depth}$.
+  \item Start from the deepest nodes (leaves). A leaf has no children,
+    so its reconciled score is its raw score.
+  \item Move up one level. For each node at this level, take the
+    maximum of its own raw score and the (already reconciled) scores of
+    its direct children.
+  \item Repeat until the root. At each step, each node absorbs the
+    maximum from the level below it.  By the time we reach the root,
+    every node has absorbed the maximum from \emph{all} its descendants.
 \end{enumerate}
 
+This works because the $\max$ operation is \textbf{transitive}: if
+A~$\rightarrow$~B~$\rightarrow$~C (C is deepest), then after step 2,
+$\text{B} = \max(\text{B}_\text{raw}, \text{C})$, and after step 3,
+$\text{A} = \max(\text{A}_\text{raw}, \text{B}) = \max(\text{A}_\text{raw},
+\text{B}_\text{raw}, \text{C})$.  The score of C propagates all the way
+to A through \textbf{direct parent edges only}---we never need the full
+A$\rightarrow$C ancestor relation.
+
+\medskip
+\noindent
+\textbf{Worked example.}
+Consider a 3-level hierarchy with raw classifier scores:
+
+\begin{center}
+\begin{tabular}{c}
+\texttt{Physics} (0.15) \\
+$\downarrow$ \hspace{8mm} $\searrow$ \\
+\texttt{CS} (0.10) \hspace{5mm} \texttt{Math} (0.12) \\
+$\downarrow$ \hspace{4mm} $\searrow$ \hspace{10mm} $\downarrow$ \hspace{4mm} $\searrow$ \\
+\texttt{AI} (0.92) \hspace{2mm} \texttt{DB} (0.30) \hspace{2mm} \texttt{Stat} (0.85) \hspace{2mm} \texttt{Geom} (0.20)
+\end{tabular}
+\end{center}
+
+\noindent
+The raw scores contain a violation: \texttt{AI} (0.92) $>$ \texttt{CS}
+(0.10), and \texttt{CS} is an ancestor of \texttt{AI}.  Applying one
+bottom-up pass:
+
+\begin{enumerate}[leftmargin=*,nosep]
+  \item \textbf{Level 2 (leaves):} No children---AI stays 0.92, DB
+    stays 0.30, Stat stays 0.85, Geom stays 0.20.
+  \item \textbf{Level 1 (mid):}
+    $\text{CS} = \max(0.10, \text{AI}{=}0.92, \text{DB}{=}0.30) = \mathbf{0.92}$,
+    $\text{Math} = \max(0.12, \text{Stat}{=}0.85, \text{Geom}{=}0.20) = \mathbf{0.85}$.
+  \item \textbf{Level 0 (root):}
+    $\text{Physics} = \max(0.15, \text{CS}{=}0.92, \text{Math}{=}0.85) = \mathbf{0.92}$.
+\end{enumerate}
+
+\noindent
+After one pass, the reconciled scores are: Physics~=~0.92, CS~=~0.92,
+Math~=~0.85, and leaves unchanged.  Now $\forall$ parent-child pairs,
+parent $\geq$ child: Physics (0.92) $\geq$ CS (0.92), CS (0.92) $\geq$
+AI (0.92), etc.  \textbf{Zero violations remain.}
+
+\medskip
+\noindent
+\textbf{Why zero violations are guaranteed.}
+For any parent-child edge $(p, c)$, the algorithm explicitly sets
+$p \leftarrow \max(p, c)$ at the moment level $c$ is processed.  After
+this update, $p \geq c$ holds.  The key question is: could a
+\emph{subsequent} update to $c$ (from its own children) break this
+invariant?  No, because we process levels \textbf{bottom-up}: by the
+time we update $p$ from $c$, the node $c$ has already absorbed the
+maximum from all \emph{its} children (the level below was already
+processed).  The update to $p$ therefore accounts for the entire
+subtree rooted at $c$.  The invariant holds inductively from leaves to
+root.
+
+For \textbf{tree hierarchies} (each node has exactly one parent), one
+bottom-up pass suffices: there is exactly one path from any node to the
+root, so each node's score propagates along that unique path, reaching
+the root after the final level is processed.
+
+For \textbf{DAGs} (nodes with multiple parents, e.g., Gene Ontology), a
+node may appear as a child of multiple parents at different levels.
+After a single bottom-up pass, a node's score has reached all its
+\emph{direct} parents, but not necessarily all ancestors reachable
+through chains of multiple parents.  We therefore iterate the
+bottom-up pass up to $\text{max\_depth}$ times.  Each full pass
+propagates scores one additional hop; after $L$ passes, every node's
+score has reached all ancestors within $L$ hops.  Since no path in the
+DAG exceeds $\text{max\_depth}$ hops, convergence is guaranteed.  In
+practice, the algorithm tracks whether any score changed during a pass
+and terminates early when a pass produces no changes (convergence is
+typically reached in 2--3 passes even for deep GO DAGs).
+
+\textbf{Correctness.} The multi-pass procedure is equivalent to the dense
+R-matrix (Eq.~\ref{eq:reconcile}) because $\max$ is associative and
+commutative: propagating through direct parents iteratively and taking
+the maximum yields the same result as computing the maximum over all
+ancestors simultaneously.  The sparse method produces \textbf{exactly
+the same reconciled scores} as the dense method, with zero violations
+by construction.
+
+\medskip
+\noindent
 \textbf{Memory reduction.} From $O(C^2)$ to $O(C + E)$: for
 cellcycle\_GO ($C{=}4{,}126$, $E{=}5{,}827$), memory drops from
 65~MB to $\sim$46~KB ($>1{,}400\times$).  This enables---for the
-first time---R-matrix-constrained training and inference on the full
-Gene Ontology benchmark suite.
-
-\textbf{Equivalence.} For tree hierarchies, one pass of
-Eq.~\ref{eq:sparse_reconcile} produces exactly the same result as the
-dense R-matrix reconciliation (Eq.~\ref{eq:reconcile}), since there is
-exactly one path from any node to the root.  For DAGs, the multi-pass
-variant converges to the same fixed point as the dense transitive
-closure, because the max operation is associative and commutative:
-propagating through direct parents iteratively is equivalent to
-propagating through all ancestors simultaneously.
+first time---R-matrix-constrained inference on the full Gene Ontology
+benchmark suite.
 
 \subsection{Training and Loss Functions}
 
@@ -488,14 +560,14 @@ within a modular platform:
 \mathcal{L}_{\text{hier}} = \frac{1}{B \cdot |R|}
 \sum_{b=1}^{B} \sum_{i,j: R_{ij}=1}
 \max(0,\; p_{b,j} - p_{b,i} + \gamma)
-\label{eq:hierloss}
+\label{eq:hierloss-impl}
 \end{equation}
 
 \textbf{2. Inference-time reconciliation} (bottom-up max propagation):
 
 \begin{equation}
 p_i^{\text{rec}} = \max\left(p_i,\; \max_{j: \text{child}(i,j)} p_j^{\text{rec}}\right)
-\label{eq:reconcile}
+\label{eq:reconcile-impl}
 \end{equation}
 
 Unlike the original HMCN~\cite{giunchiglia2018hmc} where the
@@ -506,26 +578,25 @@ GBDT, MLP) and any head (global, local, tree-path). This enables the
 ablation studies in Section~\ref{sec:results}.
 
 \subsection{Sparse R-Matrix for Large Hierarchies}
-\label{sec:sparse}
+\label{sec:sparse-impl}
 
-A practical limitation of the R-matrix is its $O(N^2)$ memory:
-for Gene Ontology datasets with $N > 4{,}000$, the dense matrix
-requires $>65$~MB, making batched GPU training infeasible.  We
-introduce the \textbf{Block-Diagonal R-Matrix}, a sparse $O(N)$
-approximation that achieves zero hierarchy violations without
-materializing the dense ancestor matrix.
+The Block-Diagonal R-Matrix (Section~\ref{sec:sparse}) is implemented
+entirely from the graph adjacency list, without constructing any dense
+matrix.  The \texttt{BlockDiagonalR} class in
+\texttt{hmc.models.hierarchical.sparse\_r} stores only the set of
+parent-child edges and a BFS-derived level ordering.  The
+\texttt{reconcile} method iterates levels bottom-up, applying
+$p \leftarrow \max(p, c)$ for each edge.  Both the reconciliation
+(Eq.~\ref{eq:reconcile}) and the training-time consistency loss
+(Eq.~\ref{eq:hierloss}) operate directly on graph edges, using
+$O(N + E)$ memory.  For cellcycle\_GO
+($N{=}4{,}126$, $E{=}5{,}827$), this reduces memory from 65~MB to
+$\sim$46~KB ($>1{,}400\times$ reduction).
 
-\textbf{Key insight.} Bottom-up max propagation
-(Eq.~\ref{eq:reconcile}) needs only the \emph{graph adjacency}, not
-the full transitive closure.  For each node, we update its direct
-parents: $p \leftarrow \max(p, c)$.  For trees, one bottom-up pass
-suffices.  For DAGs with multiple parents, we iterate until
-convergence (at most $\text{max\_depth}$ passes), which is guaranteed
-because each pass propagates scores one hop upward.
-
-\textbf{Memory.} $O(N + E)$ for graph edges vs.\ $O(N^2)$ for dense
-R.  For cellcycle\_GO ($N{=}4{,}126$, $E{=}5{,}827$), this reduces
-memory from 65~MB to $\sim$46~KB ($>1{,}400\times$ reduction).
+The implementation provides an early-exit mechanism: after each full
+bottom-up pass, it checks whether any score changed; if not,
+convergence has been reached early (typically 2--3 passes even for deep
+DAGs).  For tree hierarchies, one pass always suffices.
 
 \subsection{Additional Components}
 
