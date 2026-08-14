@@ -53,9 +53,9 @@ Our method achieves \textbf{new state-of-the-art} on ArXiv (Micro-F1
 surpassing HTC-infoMAX), and AAPD (Micro-F1 0.7684, +4.5 points over
 HiMatch), while establishing competitive baselines on FunCat and
 EUR-Lex 57K.  To extend R-matrix constraints to large hierarchies where the
-dense $O(N^2)$ matrix is infeasible, we introduce the
+dense $O(C^2)$ matrix is infeasible, we introduce the
 \textbf{Block-Diagonal R-Matrix}---a sparse approximation that
-reconciles scores via graph traversal in $O(N)$ memory, eliminating
+reconciles scores via graph traversal in $O(C{+}E)$ memory, eliminating
 all hierarchy violations without materializing the dense ancestor
 matrix.  We validate this on 9 Gene Ontology datasets (up to 4,504 classes,
 13 levels, DAG structure), where AUPRC improves on all datasets
@@ -126,9 +126,9 @@ Our contributions are:
   \item Competitive baselines on 8 FunCat genomic datasets,
     approaching neural SOTA methods (HMCN-F, C-HMCNN) with simpler
     architectures (GBDT, MLP), and beating HMCN-F on seq\_FUN.
-  \item \textbf{Block-Diagonal R-Matrix}: a sparse $O(N)$ approximation
+  \item \textbf{Block-Diagonal R-Matrix}: a sparse $O(C{+}E)$ approximation
     that extends R-matrix constraints to large DAGs (4,000+ classes)
-    where the dense $O(N^2)$ matrix is infeasible.  Validated on
+    where the dense $O(C^2)$ matrix is infeasible.  Validated on
     Gene Ontology benchmarks with zero hierarchy violations.
   \item An \textbf{honest failure analysis}: the R-matrix alone is
     insufficient for protein function prediction tasks where ontology
@@ -370,7 +370,9 @@ Section~\ref{sec:results} that isolate the R-matrix's contribution.
 \label{sec:sparse}
 
 A fundamental limitation of the dense R-matrix is its $O(C^2)$ memory
-footprint.  For Gene Ontology datasets with $C > 4{,}000$, storing the
+footprint, where $C$ is the number of class nodes and $E$ the number
+of parent-child edges in the hierarchy graph.  For Gene Ontology
+datasets with $C > 4{,}000$, storing the
 matrix alone costs $>65$~MB ($C^2 \times 4$ bytes), and applying it to
 a batch of logits materializes a batch$\times C\times C$ tensor in
 double precision ($\approx$8.7\,GB at batch 64)---infeasible on GPU
@@ -597,9 +599,9 @@ parent-child edges and a BFS-derived level ordering.  The
 $p \leftarrow \max(p, c)$ for each edge.  Both the reconciliation
 (Eq.~\ref{eq:reconcile}) and the training-time consistency loss
 (Eq.~\ref{eq:hierloss}) operate directly on graph edges, using
-$O(N + E)$ memory.  For cellcycle\_GO
-($N{=}4{,}126$, $E{=}5{,}827$), this reduces memory from 65~MB to
-$\sim$46~KB ($>1{,}400\times$ reduction).
+$O(C + E)$ memory.  For cellcycle\_GO
+($C{=}4{,}126$, $E{=}5{,}827$), this reduces memory from 65~MB to
+$\sim$46~KB ($E \times 8$~B index pairs, $>1{,}400\times$ reduction).
 
 The implementation provides an early-exit mechanism: after each full
 bottom-up pass, it checks whether any score changed; if not,
@@ -1003,13 +1005,13 @@ spo\_GO       & 4120 & 0.3687 & 0.3632 & $-$0.0055 & +0.0039 \\
 \end{table}
 
 The Block-Diagonal R-Matrix achieves \textbf{zero hierarchy violations}
-on all GO datasets while using $O(N)$ memory.  Key findings:
+on all GO datasets while using $O(C{+}E)$ memory.  Key findings:
 
 \textbf{1. Feasibility.} The sparse R enables---for the first
 time---R-matrix-constrained inference on the full Gene Ontology
-benchmark suite.  The dense R-matrix costs $N^2 \times 4$ bytes
-($\approx$65~MB for $N{=}4{,}126$) to store, and applying it to a
-batch materializes a batch$\times N\times N$ float64 tensor
+benchmark suite.  The dense R-matrix costs $C^2 \times 4$ bytes
+($\approx$65~MB for $C{=}4{,}126$) to store, and applying it to a
+batch materializes a batch$\times C\times C$ float64 tensor
 ($\approx$8.7\,GB at batch 64), which cannot fit in GPU memory
 alongside model parameters and activations; the sparse approximation
 uses only graph edges ($\sim$46~KB, $>1{,}400\times$ reduction).
@@ -1195,9 +1197,9 @@ However, the R-matrix is \textbf{not a silver bullet}:
     the Gene Ontology structure---information that the R-matrix (a
     binary ancestor mask) cannot capture. Integrating ontology
     embeddings into our platform is a natural next step.
-  \item \textbf{Scalability (addressed).} The dense R-matrix is $O(N^2)$,
+  \item \textbf{Scalability (addressed).} The dense R-matrix is $O(C^2)$,
     but our Block-Diagonal approximation (Section~\ref{sec:sparse})
-    reduces this to $O(N)$ with zero violation penalty.  On all 9 GO
+    reduces this to $O(C{+}E)$ with zero violation penalty.  On all 9 GO
     datasets (up to 4,504 nodes), sparse reconciliation improves
     AUPRC on every dataset (avg +0.0055) while the dense R-matrix
     cannot even fit in GPU memory.  Training completes in 2--12\,s per
@@ -1248,7 +1250,7 @@ key findings:
     +4.5 points) using R-matrix + frozen SPECTER2 embeddings.
   \item Competitive with neural SOTA on FunCat, beating HMCN-F on
     seq\_FUN (0.307 vs 0.291 AUPRC) with a simple GBDT baseline.
-  \item \textbf{Block-Diagonal R-Matrix}: a sparse $O(N)$ approximation
+  \item \textbf{Block-Diagonal R-Matrix}: a sparse $O(C{+}E)$ approximation
     that extends R-matrix constraints to Gene Ontology (4,126 nodes,
     0 violations, $>1{,}400\times$ memory reduction).
   \item Honest assessment: the binary R-matrix cannot match ontology

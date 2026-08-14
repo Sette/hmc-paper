@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1786718804.72642 "main.tex" "main.pdf" "main" 1786718805.32454 0
+["pdflatex"] 1786721231.12879 "main.tex" "main.pdf" "main" 1786721231.77647 0
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1136849721 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -147,9 +147,9 @@
   "figures/fig4_cross_domain.pdf" 1785773475.95146 30626 88a72668e49e186e8e863a9ce3005c9b ""
   "figures/fig5_per_level_f1.pdf" 1785796906.69047 20559 5242dc544aa5f0def7805e4c4faaab45 ""
   "figures/fig6_cd_diagram.pdf" 1785797415.02598 27843 e48c319446c0c228f4fd249dd39b3ba0 ""
-  "main.aux" 1786718805.20719 14771 c9f5ce6871cbd6959733aecf1fd39129 "pdflatex"
-  "main.out" 1786718805.20819 6968 244940765fab5aa68e132647e04bb3b0 "pdflatex"
-  "main.tex" 1786718800.68098 63063 0e5dc002c0d2b3e420c8bec8ffd5eece ""
+  "main.aux" 1786721231.65143 14771 367b12143075deb76f1daf0a085f92c4 "pdflatex"
+  "main.out" 1786721231.65243 6968 244940765fab5aa68e132647e04bb3b0 "pdflatex"
+  "main.tex" 1786721226.69205 63215 97a3b53e5fc7b80adc9bb10c569f3ad4 ""
   (generated)
   "main.aux"
   "main.log"

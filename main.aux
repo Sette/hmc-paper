@@ -81,39 +81,37 @@
 \newlabel{tab:new_text}{{3}{10}{Micro-F1 on new text HMC benchmarks (frozen SPECTER2 + R). $^\dagger $RCV1-V2 infrastructure ready, pending data access}{table.caption.4}{}}
 \citation{www2022ontology}
 \citation{www2022ontology}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Critical Difference diagram (Friedman + Nemenyi, $\alpha =0.05$) on 8 FunCat datasets. Methods within CD=2.16 of each other are NOT significantly different. Our GBDT is statistically tied with HMCN-F.}}{11}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:cd}{{2}{11}{Critical Difference diagram (Friedman + Nemenyi, $\alpha =0.05$) on 8 FunCat datasets. Methods within CD=2.16 of each other are NOT significantly different. Our GBDT is statistically tied with HMCN-F}{figure.caption.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.3}FunCat Benchmarks: Competitive but Below SOTA}{11}{subsection.5.3}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces AUPRC on FunCat datasets. Standard metric per literature convention~\cite  {www2022ontology}. Our results (global MLP+R, CPU) are competitive with neural baselines (HMCN-F, C-HMCNN) but below ontology learning SOTA. \underline  {Underlined}: beats HMCN-F. \textbf  {Bold}: best.}}{11}{table.caption.5}\protected@file@percent }
 \newlabel{tab:funcat}{{4}{11}{AUPRC on FunCat datasets. Standard metric per literature convention~\cite {www2022ontology}. Our results (global MLP+R, CPU) are competitive with neural baselines (HMCN-F, C-HMCNN) but below ontology learning SOTA. \underline {Underlined}: beats HMCN-F. \textbf {Bold}: best}{table.caption.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Cross-domain performance overview across 10 representative datasets spanning 5 domains. Same architecture (global MLP+R) used throughout.}}{12}{figure.caption.8}\protected@file@percent }
-\newlabel{fig:cross}{{3}{12}{Cross-domain performance overview across 10 representative datasets spanning 5 domains. Same architecture (global MLP+R) used throughout}{figure.caption.8}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Cross-Domain Results (Enron, Diatoms, ImCLEF)}{12}{subsection.5.4}\protected@file@percent }
-\newlabel{sec:others}{{5.4}{12}{Cross-Domain Results (Enron, Diatoms, ImCLEF)}{subsection.5.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Cross-Domain Results (Enron, Diatoms, ImCLEF)}{11}{subsection.5.4}\protected@file@percent }
+\newlabel{sec:others}{{5.4}{11}{Cross-Domain Results (Enron, Diatoms, ImCLEF)}{subsection.5.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Critical Difference diagram (Friedman + Nemenyi, $\alpha =0.05$) on 8 FunCat datasets. Methods within CD=2.16 of each other are NOT significantly different. Our GBDT is statistically tied with HMCN-F.}}{12}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:cd}{{2}{12}{Critical Difference diagram (Friedman + Nemenyi, $\alpha =0.05$) on 8 FunCat datasets. Methods within CD=2.16 of each other are NOT significantly different. Our GBDT is statistically tied with HMCN-F}{figure.caption.6}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Global (MLP+R) on cross-domain datasets spanning email classification (Enron), microscopy (Diatoms), and medical imaging (ImCLEF). All use pre-extracted features from ARFF files.}}{12}{table.caption.7}\protected@file@percent }
 \newlabel{tab:others}{{5}{12}{Global (MLP+R) on cross-domain datasets spanning email classification (Enron), microscopy (Diatoms), and medical imaging (ImCLEF). All use pre-extracted features from ARFF files}{table.caption.7}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}GBDT vs.\ Global: Precision-Recall Trade-off}{13}{subsection.5.5}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Precision/recall comparison on FunCat (CPU, avg across 8 datasets).}}{13}{table.caption.9}\protected@file@percent }
-\newlabel{tab:pr}{{6}{13}{Precision/recall comparison on FunCat (CPU, avg across 8 datasets)}{table.caption.9}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}GPU Acceleration}{13}{subsection.5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}GBDT vs.\ Global: Precision-Recall Trade-off}{12}{subsection.5.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Precision/recall comparison on FunCat (CPU, avg across 8 datasets).}}{12}{table.caption.9}\protected@file@percent }
+\newlabel{tab:pr}{{6}{12}{Precision/recall comparison on FunCat (CPU, avg across 8 datasets)}{table.caption.9}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Training time comparison (RTX 3060 vs CPU).}}{13}{table.caption.10}\protected@file@percent }
 \newlabel{tab:gpu}{{7}{13}{Training time comparison (RTX 3060 vs CPU)}{table.caption.10}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.7}Sparse R-Matrix Validation on Gene Ontology}{13}{subsection.5.7}\protected@file@percent }
-\newlabel{sec:go_results}{{5.7}{13}{Sparse R-Matrix Validation on Gene Ontology}{subsection.5.7}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Block-Diagonal R-Matrix on Gene Ontology datasets (9 datasets, 3,500--4,504 classes). Dense R is infeasible on GPU: the batched $C\times C$ float64 constraint step exceeds memory at batch 64. Sparse R reconciliation is applied at inference time only; training uses identity matrix to avoid OOM. AUPRC improves on all datasets.}}{13}{table.caption.11}\protected@file@percent }
 \newlabel{tab:sparse}{{8}{13}{Block-Diagonal R-Matrix on Gene Ontology datasets (9 datasets, 3,500--4,504 classes). Dense R is infeasible on GPU: the batched $C\times C$ float64 constraint step exceeds memory at batch 64. Sparse R reconciliation is applied at inference time only; training uses identity matrix to avoid OOM. AUPRC improves on all datasets}{table.caption.11}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces AUPRC on Gene Ontology datasets. Our method uses MLP with sparse R-matrix reconciliation at inference (no ontology learning, no GCN). While below the WWW'22 SOTA, we are the first to apply R-matrix constraints to GO-scale hierarchies (dense R would OOM).}}{14}{table.caption.12}\protected@file@percent }
-\newlabel{tab:go_sota}{{9}{14}{AUPRC on Gene Ontology datasets. Our method uses MLP with sparse R-matrix reconciliation at inference (no ontology learning, no GCN). While below the WWW'22 SOTA, we are the first to apply R-matrix constraints to GO-scale hierarchies (dense R would OOM)}{table.caption.12}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Sparse R-Matrix on 9 Gene Ontology datasets: AUPRC improves on all datasets (avg +0.0055). Green bars show reconciled scores.}}{15}{figure.caption.13}\protected@file@percent }
-\newlabel{fig:go}{{4}{15}{Sparse R-Matrix on 9 Gene Ontology datasets: AUPRC improves on all datasets (avg +0.0055). Green bars show reconciled scores}{figure.caption.13}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Cross-domain performance overview across 10 representative datasets spanning 5 domains. Same architecture (global MLP+R) used throughout.}}{14}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:cross}{{3}{14}{Cross-domain performance overview across 10 representative datasets spanning 5 domains. Same architecture (global MLP+R) used throughout}{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}GPU Acceleration}{14}{subsection.5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.7}Sparse R-Matrix Validation on Gene Ontology}{14}{subsection.5.7}\protected@file@percent }
+\newlabel{sec:go_results}{{5.7}{14}{Sparse R-Matrix Validation on Gene Ontology}{subsection.5.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces AUPRC on Gene Ontology datasets. Our method uses MLP with sparse R-matrix reconciliation at inference (no ontology learning, no GCN). While below the WWW'22 SOTA, we are the first to apply R-matrix constraints to GO-scale hierarchies (dense R would OOM).}}{15}{table.caption.12}\protected@file@percent }
+\newlabel{tab:go_sota}{{9}{15}{AUPRC on Gene Ontology datasets. Our method uses MLP with sparse R-matrix reconciliation at inference (no ontology learning, no GCN). While below the WWW'22 SOTA, we are the first to apply R-matrix constraints to GO-scale hierarchies (dense R would OOM)}{table.caption.12}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.8}Per-Level Analysis: Where Does the Model Fail?}{15}{subsection.5.8}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.9}Ablation: R-Matrix On/Off}{15}{subsection.5.9}\protected@file@percent }
 \newlabel{sec:ablation}{{5.9}{15}{Ablation: R-Matrix On/Off}{subsection.5.9}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces R-matrix ablation: Micro-F1 with and without the constraint. $\Delta $ = R on $-$ R off. Positive $\Delta $ means R helps.}}{15}{table.caption.15}\protected@file@percent }
 \newlabel{tab:ablation}{{10}{15}{R-matrix ablation: Micro-F1 with and without the constraint. $\Delta $ = R on $-$ R off. Positive $\Delta $ means R helps}{table.caption.15}{}}
 \citation{giunchiglia2018hmc}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces F1 by hierarchy depth level across 4 representative datasets. F1 drops sharply with depth: leaves are 3--10$\times $ harder than the root.}}{16}{figure.caption.14}\protected@file@percent }
-\newlabel{fig:perlevel}{{5}{16}{F1 by hierarchy depth level across 4 representative datasets. F1 drops sharply with depth: leaves are 3--10$\times $ harder than the root}{figure.caption.14}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Sparse R-Matrix on 9 Gene Ontology datasets: AUPRC improves on all datasets (avg +0.0055). Green bars show reconciled scores.}}{16}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:go}{{4}{16}{Sparse R-Matrix on 9 Gene Ontology datasets: AUPRC improves on all datasets (avg +0.0055). Green bars show reconciled scores}{figure.caption.13}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.10}Ablation: Platt Calibration on FunCat}{16}{subsection.5.10}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{16}{section.6}\protected@file@percent }
 \newlabel{sec:discussion}{{6}{16}{Discussion}{section.6}{}}
@@ -122,8 +120,8 @@
 \citation{specter}
 \citation{clus}
 \citation{cerri2014hmc}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps.}}{17}{figure.caption.16}\protected@file@percent }
-\newlabel{fig:ablation}{{6}{17}{R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps}{figure.caption.16}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces F1 by hierarchy depth level across 4 representative datasets. F1 drops sharply with depth: leaves are 3--10$\times $ harder than the root.}}{17}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:perlevel}{{5}{17}{F1 by hierarchy depth level across 4 representative datasets. F1 drops sharply with depth: leaves are 3--10$\times $ harder than the root}{figure.caption.14}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Attribution of Contributions}{17}{subsection.6.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{17}{section.7}\protected@file@percent }
 \bibcite{giunchiglia2018hmc}{1}
@@ -133,10 +131,12 @@
 \bibcite{zhou2020hiagm}{5}
 \bibcite{htcinfomax}{6}
 \bibcite{www2022ontology}{7}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps.}}{18}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:ablation}{{6}{18}{R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps}{figure.caption.16}{}}
 \bibcite{chmcnn}{8}
 \bibcite{clus}{9}
 \bibcite{himatch}{10}
 \bibcite{eurlex57k}{11}
 \bibcite{aapd}{12}
 \bibcite{specter}{13}
-\gdef \@abspage@last{18}
+\gdef \@abspage@last{19}
