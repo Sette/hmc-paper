@@ -59,9 +59,14 @@ reconciles scores via graph traversal in $O(N)$ memory, eliminating
 all hierarchy violations without materializing the dense ancestor
 matrix.  We validate this on 9 Gene Ontology datasets (up to 4,504 classes,
 13 levels, DAG structure), where AUPRC improves on all datasets
-(avg +0.0055) while the dense R-matrix would require $>$65~MB
-(infeasible on GPU).  Our sparse approximation achieves zero
+(avg +0.0055) while the dense R-matrix would require $>$65~MB to
+store and a batched $C\times C$ constraint step that exceeds GPU
+memory.  Our sparse approximation achieves zero
 hierarchy violations with negligible overhead (0.024\,s build time).
+
+\smallskip
+\noindent\textbf{Availability:} \url{https://github.com/sette/hmc-torch} \textbar{}
+\url{https://pypi.org/project/hmc-torch/}
 \end{abstract}
 
 % ═══════════════════════════════════════════════════════════════════════
@@ -131,7 +136,8 @@ Our contributions are:
     substantial gains (+39--71\% AUPRC), identifying clear directions
     for future improvement.
   \item Open-source release with GPU acceleration (14$\times$
-    training speedup).
+    training speedup).  Code: \url{https://github.com/sette/hmc-torch},
+    package: \texttt{pip install hmc-torch} (\url{https://pypi.org/project/hmc-torch/}).
 \end{itemize}
 
 % ═══════════════════════════════════════════════════════════════════════
@@ -364,12 +370,14 @@ Section~\ref{sec:results} that isolate the R-matrix's contribution.
 \label{sec:sparse}
 
 A fundamental limitation of the dense R-matrix is its $O(C^2)$ memory
-footprint.  For Gene Ontology datasets with $C > 4{,}000$, the matrix
-requires $>65$~MB---infeasible on GPU alongside model parameters and
-batched data.  We address this with the \textbf{Block-Diagonal
-R-Matrix}, a sparse $O(C+E)$ method that achieves \textbf{zero
-hierarchy violations without ever materializing the dense ancestor
-matrix}.
+footprint.  For Gene Ontology datasets with $C > 4{,}000$, storing the
+matrix alone costs $>65$~MB ($C^2 \times 4$ bytes), and applying it to
+a batch of logits materializes a batch$\times C\times C$ tensor in
+double precision ($\approx$8.7\,GB at batch 64)---infeasible on GPU
+alongside model parameters and activations.  We address this with the
+\textbf{Block-Diagonal R-Matrix}, a sparse $O(C+E)$ method that
+achieves \textbf{zero hierarchy violations without ever materializing
+the dense ancestor matrix}.
 
 \medskip
 \noindent
@@ -965,8 +973,9 @@ WOS globalE2E (3 ep) & -- & 5,791s & -- \\
 
 \begin{table}[htbp]
 \centering
-\caption{Block-Diagonal R-Matrix on Gene Ontology datasets (4 datasets,
-3,500--4,200 classes).  Dense R is infeasible on GPU ($>$65~MB matrix).
+\caption{Block-Diagonal R-Matrix on Gene Ontology datasets (9 datasets,
+3,500--4,504 classes).  Dense R is infeasible on GPU: the batched
+$C\times C$ float64 constraint step exceeds memory at batch 64.
 Sparse R reconciliation is applied at inference time only; training
 uses identity matrix to avoid OOM.  AUPRC improves on all datasets.}
 \label{tab:sparse}
@@ -988,7 +997,7 @@ spo\_GO       & 4120 & 0.3687 & 0.3632 & $-$0.0055 & +0.0039 \\
 \textit{Avg}  & --   & 0.3718 & 0.3667 & $-$0.0051 & +0.0055 \\
 \bottomrule
 \multicolumn{6}{l}{\small Training: 20 epochs, batch 64, identity R-matrix + sparse reconciliation at inference.} \\
-\multicolumn{6}{l}{\small Dense R-matrix ($>$65~MB) would OOM on GPU with batch $>$ 1.} \\
+\multicolumn{6}{l}{\small Dense R would OOM at batch 64: the batched $C\times C$ float64 step peaks at $\approx$10.4\,GB.} \\
 \multicolumn{6}{l}{\small AUPRC improves on \textbf{all 9 datasets} (avg +0.0055).} \\
 \end{tabular}
 \end{table}
@@ -998,10 +1007,12 @@ on all GO datasets while using $O(N)$ memory.  Key findings:
 
 \textbf{1. Feasibility.} The sparse R enables---for the first
 time---R-matrix-constrained inference on the full Gene Ontology
-benchmark suite.  The dense R-matrix ($N^2 \times 4$ bytes = 65~MB
-for $N{=}4{,}126$) cannot fit in GPU memory alongside model
-parameters and batched data; the sparse approximation uses only graph
-edges ($\sim$46~KB, $>1{,}400\times$ reduction).
+benchmark suite.  The dense R-matrix costs $N^2 \times 4$ bytes
+($\approx$65~MB for $N{=}4{,}126$) to store, and applying it to a
+batch materializes a batch$\times N\times N$ float64 tensor
+($\approx$8.7\,GB at batch 64), which cannot fit in GPU memory
+alongside model parameters and activations; the sparse approximation
+uses only graph edges ($\sim$46~KB, $>1{,}400\times$ reduction).
 
 \textbf{2. AUPRC improvement.} Sparse reconciliation improves AUPRC on
 all four datasets (avg +0.0065), consistent with the recall-boosting
@@ -1061,9 +1072,11 @@ which is a weaker setting than the full dense R-matrix used on
 smaller hierarchies.
 
 However, our contribution is \textbf{feasibility, not SOTA}: the
-dense R-matrix ($>$65~MB) cannot fit in GPU memory for GO datasets,
-while our Block-Diagonal approximation runs successfully on all 9
-datasets.  Combining sparse R with ontology embeddings and GCN label
+dense R-matrix cannot fit in GPU memory for GO datasets---storing it
+costs $>65$~MB and the batched constraint step materializes a
+batch$\times C\times C$ float64 tensor ($\approx$10.4\,GB at batch 64
+on the largest dataset)---while our Block-Diagonal approximation runs
+successfully on all 9 datasets.  Combining sparse R with ontology embeddings and GCN label
 propagation is a clear path to closing the gap, and our modular
 platform makes such combinations straightforward.
 
@@ -1251,6 +1264,12 @@ architecture. We hope \textsc{hmc-torch} becomes a useful testbed for
 HMC research, where ideas can be compared fairly through shared
 infrastructure and explicit attribution of which components drive
 performance.
+
+\smallskip
+\noindent
+\textsc{hmc-torch} is available at \url{https://github.com/sette/hmc-torch}
+and installable via \texttt{pip install hmc-torch}
+(\url{https://pypi.org/project/hmc-torch/}).
 
 % ═══════════════════════════════════════════════════════════════════════
 % Bibliography

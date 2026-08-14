@@ -100,21 +100,21 @@
 \newlabel{tab:gpu}{{7}{13}{Training time comparison (RTX 3060 vs CPU)}{table.caption.10}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.7}Sparse R-Matrix Validation on Gene Ontology}{13}{subsection.5.7}\protected@file@percent }
 \newlabel{sec:go_results}{{5.7}{13}{Sparse R-Matrix Validation on Gene Ontology}{subsection.5.7}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Block-Diagonal R-Matrix on Gene Ontology datasets (4 datasets, 3,500--4,200 classes). Dense R is infeasible on GPU ($>$65~MB matrix). Sparse R reconciliation is applied at inference time only; training uses identity matrix to avoid OOM. AUPRC improves on all datasets.}}{13}{table.caption.11}\protected@file@percent }
-\newlabel{tab:sparse}{{8}{13}{Block-Diagonal R-Matrix on Gene Ontology datasets (4 datasets, 3,500--4,200 classes). Dense R is infeasible on GPU ($>$65~MB matrix). Sparse R reconciliation is applied at inference time only; training uses identity matrix to avoid OOM. AUPRC improves on all datasets}{table.caption.11}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Block-Diagonal R-Matrix on Gene Ontology datasets (9 datasets, 3,500--4,504 classes). Dense R is infeasible on GPU: the batched $C\times C$ float64 constraint step exceeds memory at batch 64. Sparse R reconciliation is applied at inference time only; training uses identity matrix to avoid OOM. AUPRC improves on all datasets.}}{13}{table.caption.11}\protected@file@percent }
+\newlabel{tab:sparse}{{8}{13}{Block-Diagonal R-Matrix on Gene Ontology datasets (9 datasets, 3,500--4,504 classes). Dense R is infeasible on GPU: the batched $C\times C$ float64 constraint step exceeds memory at batch 64. Sparse R reconciliation is applied at inference time only; training uses identity matrix to avoid OOM. AUPRC improves on all datasets}{table.caption.11}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces AUPRC on Gene Ontology datasets. Our method uses MLP with sparse R-matrix reconciliation at inference (no ontology learning, no GCN). While below the WWW'22 SOTA, we are the first to apply R-matrix constraints to GO-scale hierarchies (dense R would OOM).}}{14}{table.caption.12}\protected@file@percent }
 \newlabel{tab:go_sota}{{9}{14}{AUPRC on Gene Ontology datasets. Our method uses MLP with sparse R-matrix reconciliation at inference (no ontology learning, no GCN). While below the WWW'22 SOTA, we are the first to apply R-matrix constraints to GO-scale hierarchies (dense R would OOM)}{table.caption.12}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.8}Per-Level Analysis: Where Does the Model Fail?}{14}{subsection.5.8}\protected@file@percent }
-\citation{giunchiglia2018hmc}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Sparse R-Matrix on 9 Gene Ontology datasets: AUPRC improves on all datasets (avg +0.0055). Green bars show reconciled scores.}}{15}{figure.caption.13}\protected@file@percent }
 \newlabel{fig:go}{{4}{15}{Sparse R-Matrix on 9 Gene Ontology datasets: AUPRC improves on all datasets (avg +0.0055). Green bars show reconciled scores}{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.8}Per-Level Analysis: Where Does the Model Fail?}{15}{subsection.5.8}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.9}Ablation: R-Matrix On/Off}{15}{subsection.5.9}\protected@file@percent }
 \newlabel{sec:ablation}{{5.9}{15}{Ablation: R-Matrix On/Off}{subsection.5.9}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces R-matrix ablation: Micro-F1 with and without the constraint. $\Delta $ = R on $-$ R off. Positive $\Delta $ means R helps.}}{15}{table.caption.15}\protected@file@percent }
 \newlabel{tab:ablation}{{10}{15}{R-matrix ablation: Micro-F1 with and without the constraint. $\Delta $ = R on $-$ R off. Positive $\Delta $ means R helps}{table.caption.15}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.10}Ablation: Platt Calibration on FunCat}{15}{subsection.5.10}\protected@file@percent }
+\citation{giunchiglia2018hmc}
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces F1 by hierarchy depth level across 4 representative datasets. F1 drops sharply with depth: leaves are 3--10$\times $ harder than the root.}}{16}{figure.caption.14}\protected@file@percent }
 \newlabel{fig:perlevel}{{5}{16}{F1 by hierarchy depth level across 4 representative datasets. F1 drops sharply with depth: leaves are 3--10$\times $ harder than the root}{figure.caption.14}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.10}Ablation: Platt Calibration on FunCat}{16}{subsection.5.10}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{16}{section.6}\protected@file@percent }
 \newlabel{sec:discussion}{{6}{16}{Discussion}{section.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Where the R-Matrix Excels---and Where It Doesn't}{16}{subsection.6.1}\protected@file@percent }
@@ -122,11 +122,11 @@
 \citation{specter}
 \citation{clus}
 \citation{cerri2014hmc}
-\bibcite{giunchiglia2018hmc}{1}
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps.}}{17}{figure.caption.16}\protected@file@percent }
 \newlabel{fig:ablation}{{6}{17}{R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps}{figure.caption.16}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Attribution of Contributions}{17}{subsection.6.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{17}{section.7}\protected@file@percent }
+\bibcite{giunchiglia2018hmc}{1}
 \bibcite{silla2011hmc}{2}
 \bibcite{cerri2014hmc}{3}
 \bibcite{weihs2018hmc}{4}
