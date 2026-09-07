@@ -14,6 +14,8 @@
 \usepackage{multirow}
 \usepackage{array}
 \usepackage{caption}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit}
 
 \definecolor{darkblue}{RGB}{0,70,140}
 \hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue}
@@ -54,7 +56,7 @@ surpassing HTC-infoMAX), and AAPD (Micro-F1 0.7684, +4.5 points over
 HiMatch), while establishing competitive baselines on FunCat and
 EUR-Lex 57K.  To extend R-matrix constraints to large hierarchies where the
 dense $O(C^2)$ matrix is infeasible, we introduce the
-\textbf{Block-Diagonal R-Matrix}---a sparse approximation that
+\textbf{Sparse R-Matrix}---a sparse approximation that
 reconciles scores via graph traversal in $O(C{+}E)$ memory, eliminating
 all hierarchy violations without materializing the dense ancestor
 matrix.  We validate this on 9 Gene Ontology datasets (up to 4,504 classes,
@@ -113,6 +115,12 @@ principles:
     contribution.
 \end{enumerate}
 
+Throughout the paper, we use \textbf{dense R-matrix} for the explicit
+$C \times C$ ancestor-closure matrix, \textbf{R-matrix constraint} for
+the hierarchical consistency property itself, and \textbf{sparse
+R-matrix implementation} for the graph-based version that preserves
+the same semantics without materializing the dense matrix.
+
 Our contributions are:
 \begin{itemize}[leftmargin=*,nosep]
   \item A comprehensive HMC platform supporting 28 datasets across 7
@@ -126,10 +134,13 @@ Our contributions are:
   \item Competitive baselines on 8 FunCat genomic datasets,
     approaching neural SOTA methods (HMCN-F, C-HMCNN) with simpler
     architectures (GBDT, MLP), and beating HMCN-F on seq\_FUN.
-  \item \textbf{Block-Diagonal R-Matrix}: a sparse $O(C{+}E)$ approximation
-    that extends R-matrix constraints to large DAGs (4,000+ classes)
-    where the dense $O(C^2)$ matrix is infeasible.  Validated on
-    Gene Ontology benchmarks with zero hierarchy violations.
+  \item \textbf{Sparse R-matrix implementation}: a graph-based
+    $O(C{+}E)$ approximation that extends the R-matrix constraint to
+    large DAGs (4,000+ classes) where the dense $O(C^2)$ matrix is
+    infeasible.  Implemented directly on graph structure, it preserves
+    the semantics of the R-matrix constraint while avoiding dense
+    ancestor-matrix materialization.  Validated
+    on Gene Ontology benchmarks with zero hierarchy violations.
   \item An \textbf{honest failure analysis}: the R-matrix alone is
     insufficient for protein function prediction tasks where ontology
     representation learning~\cite{www2022ontology} provides
@@ -366,20 +377,90 @@ encoder/head pair: frozen transformer, fine-tuned transformer, GBDT,
 or residual MLP.  This enables the systematic ablation studies in
 Section~\ref{sec:results} that isolate the R-matrix's contribution.
 
-\subsection{Block-Diagonal R-Matrix: Scaling to Large DAGs}
+Figure~\ref{fig:sparse_graph} visualizes the hierarchy graph used by
+the sparse R-matrix implementation for large label spaces. The graph is
+represented directly as a \texttt{NetworkX} DAG, so label structure
+stays explicit instead of being collapsed into the dense R-matrix.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=11mm and 12mm,
+  every node/.style={font=\small},
+  nodebox/.style={draw, rounded corners=3pt, thick, align=center, minimum height=8mm, minimum width=20mm, fill=blue!4},
+  root/.style={draw, rounded corners=3pt, thick, align=center, minimum height=8mm, minimum width=18mm, fill=gray!10},
+  arrow/.style={-{Latex[length=2mm]}, thick}
+]
+\node[root] (r) {root};
+\node[nodebox, below left=of r] (arxivcs) {\texttt{cs}\\{\scriptsize ArXiv}};
+\node[nodebox, below right=of r] (woscs) {\texttt{CS}\\{\scriptsize WOS}};
+\node[nodebox, below=of arxivcs] (math) {\texttt{math}\\{\scriptsize ArXiv}};
+\node[nodebox, below left=of arxivcs] (csai) {\texttt{cs.AI}\\{\scriptsize ArXiv}};
+\node[nodebox, below right=of arxivcs] (cslg) {\texttt{cs.LG}\\{\scriptsize ArXiv}};
+\node[nodebox, below=of math] (mathoc) {\texttt{math.OC}\\{\scriptsize ArXiv}};
+\node[nodebox, below=of woscs] (medical) {\texttt{Medical}\\{\scriptsize WOS}};
+\node[nodebox, below right=of woscs] (wosml) {\texttt{ML}\\{\scriptsize WOS}};
+\node[nodebox, below=of medical] (cancer) {\texttt{Cancer}\\{\scriptsize WOS}};
+
+\draw[arrow] (arxivcs) -- (r);
+\draw[arrow] (woscs) -- (r);
+\draw[arrow] (math) -- (r);
+\draw[arrow] (csai) -- (arxivcs);
+\draw[arrow] (cslg) -- (arxivcs);
+\draw[arrow] (mathoc) -- (math);
+\draw[arrow] (medical) -- (r);
+\draw[arrow] (wosml) -- (woscs);
+\draw[arrow] (cancer) -- (medical);
+
+\node[draw, dashed, rounded corners, fit=(r) (arxivcs) (woscs) (math) (csai) (cslg) (mathoc) (medical) (wosml) (cancer), inner sep=5mm,
+      label=above:\textbf{ArXiv/WOS label fragments (child $\rightarrow$ parent)}] {};
+\end{tikzpicture}
+\caption{Hierarchy graph used by the sparse R-matrix implementation. The example uses ArXiv and WOS label fragments to mirror the datasets evaluated in the paper.}
+\label{fig:sparse_graph}
+\end{figure}
+
+Figure~\ref{fig:sparse_flow} summarizes the algorithmic flow: build the
+graph once, recover levels with BFS, and reconcile scores bottom-up
+along the real parent-child edges only. This is the \textit{sparse}
+\texttt{NetworkX}-based implementation of the R-matrix constraint
+itself, not the dense baseline: the $O(C^2)$ cost belongs only to
+materializing and applying the full dense R-matrix, while our
+implementation stays at $O(C+E)$ memory and avoids dense
+materialization.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[node distance=7mm, every node/.style={font=\small},
+  box/.style={draw, rounded corners=3pt, thick, align=left, minimum width=33mm, minimum height=8mm, fill=orange!8},
+  note/.style={draw, rounded corners=3pt, thick, align=center, minimum width=33mm, minimum height=9mm, fill=green!8},
+  arrow/.style={-{Latex[length=2mm]}, thick}
+]
+\node[box] (build) {1. Build graph\\\texttt{NetworkX}};
+\node[box, below=of build] (bfs) {2. BFS levels\\+ node index};
+\node[box, below=of bfs] (prop) {3. Bottom-up\\max propagation};
+\node[note, below=of prop] (cost) {\textbf{Dense baseline:} $O(C^2)$\\\textbf{Sparse impl.:} $O(C+E)$};
+\draw[arrow] (build) -- (bfs);
+\draw[arrow] (bfs) -- (prop);
+\draw[arrow] (prop) -- (cost);
+\end{tikzpicture}
+\caption{Sparse R-matrix flow. The graph is built once with \texttt{NetworkX}, levels are derived by BFS, and reconciliation traverses only the actual parent-child edges. This figure describes the sparse implementation of the R-matrix constraint; the $O(C^2)$ term refers only to the dense baseline, while the sparse implementation uses $O(C+E)$ memory.}
+\label{fig:sparse_flow}
+\end{figure}
+
+\subsection{Sparse R-Matrix: Scaling to Large DAGs}
 \label{sec:sparse}
 
 A fundamental limitation of the dense R-matrix is its $O(C^2)$ memory
 footprint, where $C$ is the number of class nodes and $E$ the number
 of parent-child edges in the hierarchy graph.  For Gene Ontology
-datasets with $C > 4{,}000$, storing the
-matrix alone costs $>65$~MB ($C^2 \times 4$ bytes), and applying it to
-a batch of logits materializes a batch$\times C\times C$ tensor in
-double precision ($\approx$8.7\,GB at batch 64)---infeasible on GPU
-alongside model parameters and activations.  We address this with the
-\textbf{Block-Diagonal R-Matrix}, a sparse $O(C+E)$ method that
-achieves \textbf{zero hierarchy violations without ever materializing
-the dense ancestor matrix}.
+datasets with $C > 4{,}000$, storing the dense matrix alone costs
+>$65$~MB ($C^2 \times 4$ bytes), and applying it to a batch of logits
+materializes a batch$\times C\times C$ tensor in double precision
+($\approx$8.7\,GB at batch 64)---infeasible on GPU alongside model
+parameters and activations.  We address this with the \textbf{sparse
+R-matrix implementation}, an $O(C+E)$ method that achieves
+\textbf{zero hierarchy violations without ever materializing the dense
+ancestor matrix}.
 
 \medskip
 \noindent
@@ -590,9 +671,9 @@ ablation studies in Section~\ref{sec:results}.
 \subsection{Sparse R-Matrix for Large Hierarchies}
 \label{sec:sparse-impl}
 
-The Block-Diagonal R-Matrix (Section~\ref{sec:sparse}) is implemented
-entirely from the graph adjacency list, without constructing any dense
-matrix.  The \texttt{BlockDiagonalR} class in
+The sparse R-matrix implementation (Section~\ref{sec:sparse}) is
+implemented entirely from the graph adjacency list, without
+constructing any dense matrix.  The \texttt{BlockDiagonalR} class in
 \texttt{hmc.models.hierarchical.sparse\_r} stores only the set of
 parent-child edges and a BFS-derived level ordering.  The
 \texttt{reconcile} method iterates levels bottom-up, applying
@@ -607,6 +688,31 @@ The implementation provides an early-exit mechanism: after each full
 bottom-up pass, it checks whether any score changed; if not,
 convergence has been reached early (typically 2--3 passes even for deep
 DAGs).  For tree hierarchies, one pass always suffices.
+
+\subsection{Terminology}
+
+To avoid ambiguity, we use the following terms consistently throughout
+the paper:
+
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Dense R-matrix.} The explicit $C \times C$ ancestor
+    closure matrix. It is exact, but has quadratic memory cost.
+  \item \textbf{R-matrix constraint.} The hierarchical consistency
+    property that requires ancestors to score at least as high as their
+    descendants.
+  \item \textbf{Sparse R-matrix implementation.} The graph-based
+    version of the same constraint, implemented directly on the
+    hierarchy edges without materializing the dense matrix.
+  \item \textbf{BFS levels.} The depth ordering recovered from the root
+    using Breadth-First Search. We use it to process the hierarchy from
+    leaves to root during reconciliation.
+  \item \textbf{Bottom-up max propagation.} The reconciliation rule
+    that updates each parent with the maximum score observed among its
+    children and itself.
+  \item \textbf{Dense baseline.} The classical matrix-based
+    implementation used only as the reference point for complexity
+    comparisons.
+\end{itemize}
 
 \subsection{Additional Components}
 
@@ -975,7 +1081,7 @@ WOS globalE2E (3 ep) & -- & 5,791s & -- \\
 
 \begin{table}[htbp]
 \centering
-\caption{Block-Diagonal R-Matrix on Gene Ontology datasets (9 datasets,
+\caption{Sparse R-Matrix on Gene Ontology datasets (9 datasets,
 3,500--4,504 classes).  Dense R is infeasible on GPU: the batched
 $C\times C$ float64 constraint step exceeds memory at batch 64.
 Sparse R reconciliation is applied at inference time only; training
@@ -1004,7 +1110,7 @@ spo\_GO       & 4120 & 0.3687 & 0.3632 & $-$0.0055 & +0.0039 \\
 \end{tabular}
 \end{table}
 
-The Block-Diagonal R-Matrix achieves \textbf{zero hierarchy violations}
+The Sparse R-Matrix achieves \textbf{zero hierarchy violations}
 on all GO datasets while using $O(C{+}E)$ memory.  Key findings:
 
 \textbf{1. Feasibility.} The sparse R enables---for the first
@@ -1250,7 +1356,7 @@ key findings:
     +4.5 points) using R-matrix + frozen SPECTER2 embeddings.
   \item Competitive with neural SOTA on FunCat, beating HMCN-F on
     seq\_FUN (0.307 vs 0.291 AUPRC) with a simple GBDT baseline.
-  \item \textbf{Block-Diagonal R-Matrix}: a sparse $O(C{+}E)$ approximation
+  \item \textbf{Sparse R-Matrix}: a sparse $O(C{+}E)$ approximation
     that extends R-matrix constraints to Gene Ontology (4,126 nodes,
     0 violations, $>1{,}400\times$ memory reduction).
   \item Honest assessment: the binary R-matrix cannot match ontology
