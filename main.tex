@@ -41,30 +41,16 @@ We present \textsc{hmc-torch}, a modular and extensible platform for
 Hierarchical Multi-Label Classification (HMC) that integrates the
 R-matrix constraint---originally proposed by Giunchiglia \&
 Lukasiewicz (2018, NeurIPS)---as a first-class architectural
-component. Our framework introduces a clean separation between data
-contracts (\texttt{DatasetBundle}, \texttt{Hierarchy}), feature
-encoders, and reusable HMC heads, enabling reproducible
-experimentation across 28 datasets spanning 7 domains and both
-tree-structured and DAG hierarchies. We evaluate on
-\textbf{28 datasets} spanning 7 domains: ArXiv, WOS, AAPD, EUR-Lex
-(scientific and legal text), FunCat and Gene Ontology (genomics),
-Enron (email), Diatoms (microscopy), and ImCLEF (medical imaging),
-with RCV1-V2 (news text) infrastructure ready.
-Our method achieves \textbf{new state-of-the-art} on ArXiv (Micro-F1
-0.7295, +13.5 points over HiAGM), WOS (Micro-F1 0.8743,
-surpassing HTC-infoMAX), and AAPD (Micro-F1 0.7684, +4.5 points over
-HiMatch), while establishing competitive baselines on FunCat and
-EUR-Lex 57K.  To extend R-matrix constraints to large hierarchies where the
-dense $O(C^2)$ matrix is infeasible, we introduce the
-\textbf{Sparse R-Matrix}---a sparse approximation that
-reconciles scores via graph traversal in $O(C{+}E)$ memory, eliminating
-all hierarchy violations without materializing the dense ancestor
-matrix.  We validate this on 9 Gene Ontology datasets (up to 4,504 classes,
-13 levels, DAG structure), where AUPRC improves on all datasets
-(avg +0.0055) while the dense R-matrix would require $>$65~MB to
-store and a batched $C\times C$ constraint step that exceeds GPU
-memory.  Our sparse approximation achieves zero
-hierarchy violations with negligible overhead (0.024\,s build time).
+component. The framework separates data contracts
+(\texttt{DatasetBundle}, \texttt{Hierarchy}), feature encoders, and
+reusable HMC heads, enabling reproducible experimentation across 28
+datasets spanning tree and DAG hierarchies. We report
+\textbf{new state-of-the-art} on ArXiv, WOS, and AAPD, competitive
+baselines on FunCat and EUR-Lex 57K, and a sparse R-matrix formulation
+that preserves hierarchical consistency in $O(C{+}E)$ memory. On 9 Gene
+Ontology datasets, sparse reconciliation improves AUPRC on every
+dataset while avoiding the dense $O(C^2)$ matrix, which exceeds GPU
+memory at this scale.
 
 \smallskip
 \noindent\textbf{Availability:} \url{https://github.com/sette/hmc-torch} \textbar{}
@@ -118,37 +104,24 @@ principles:
 Throughout the paper, we use \textbf{dense R-matrix} for the explicit
 $C \times C$ ancestor-closure matrix, \textbf{R-matrix constraint} for
 the hierarchical consistency property itself, and \textbf{sparse
-R-matrix implementation} for the graph-based version that preserves
-the same semantics without materializing the dense matrix.
+R-matrix formulation} for the graph-based version that preserves the
+same semantics without materializing the dense matrix.
 
 Our contributions are:
 \begin{itemize}[leftmargin=*,nosep]
-  \item A comprehensive HMC platform supporting 28 datasets across 7
-    domains (scientific text, news, legal, genomics, email, microscopy,
-    medical imaging) with reproducible experiment manifests and
-    extensible dataset manager.
-  \item \textbf{New SOTA on ArXiv} (Micro-F1 0.7295, +13.5 points
-    over HiAGM), \textbf{WOS} (Micro-F1 0.8743, +0.2 points over
-    HTC-infoMAX), and \textbf{AAPD} (Micro-F1 0.7684, +4.5 points over
-    HiMatch) using frozen SPECTER2 with R-matrix constraint.
-  \item Competitive baselines on 8 FunCat genomic datasets,
-    approaching neural SOTA methods (HMCN-F, C-HMCNN) with simpler
-    architectures (GBDT, MLP), and beating HMCN-F on seq\_FUN.
-  \item \textbf{Sparse R-matrix implementation}: a graph-based
-    $O(C{+}E)$ approximation that extends the R-matrix constraint to
-    large DAGs (4,000+ classes) where the dense $O(C^2)$ matrix is
-    infeasible.  Implemented directly on graph structure, it preserves
-    the semantics of the R-matrix constraint while avoiding dense
-    ancestor-matrix materialization.  Validated
-    on Gene Ontology benchmarks with zero hierarchy violations.
-  \item An \textbf{honest failure analysis}: the R-matrix alone is
-    insufficient for protein function prediction tasks where ontology
-    representation learning~\cite{www2022ontology} provides
-    substantial gains (+39--71\% AUPRC), identifying clear directions
-    for future improvement.
-  \item Open-source release with GPU acceleration (14$\times$
-    training speedup).  Code: \url{https://github.com/sette/hmc-torch},
-    package: \texttt{pip install hmc-torch} (\url{https://pypi.org/project/hmc-torch/}).
+  \item A modular HMC platform supporting 28 datasets across 7
+    domains, with reproducible experiment manifests and a shared
+    encoder/head interface.
+  \item \textbf{New SOTA on ArXiv, WOS, and AAPD} using frozen or
+    fine-tuned SPECTER2 with the R-matrix constraint.
+  \item \textbf{Sparse R-matrix formulation}: a graph-based
+    $O(C{+}E)$ approximation that preserves the constraint on large
+    DAGs without materializing the dense matrix.
+  \item Competitive FunCat performance with simpler models, plus an
+    explicit analysis of where the R-matrix is insufficient relative
+    to ontology-based methods.
+  \item Open-source release with GPU acceleration and reproducible
+    experiment artifacts.
 \end{itemize}
 
 % ═══════════════════════════════════════════════════════════════════════
@@ -378,9 +351,9 @@ or residual MLP.  This enables the systematic ablation studies in
 Section~\ref{sec:results} that isolate the R-matrix's contribution.
 
 Figure~\ref{fig:sparse_graph} visualizes the hierarchy graph used by
-the sparse R-matrix implementation for large label spaces. The graph is
-represented directly as a \texttt{NetworkX} DAG, so label structure
-stays explicit instead of being collapsed into the dense R-matrix.
+the sparse R-matrix formulation for large label spaces. The key point
+is that label structure stays explicit instead of being collapsed into
+the dense R-matrix.
 
 \begin{figure}[t]
 \centering
@@ -415,18 +388,15 @@ stays explicit instead of being collapsed into the dense R-matrix.
 \node[draw, dashed, rounded corners, fit=(r) (arxivcs) (woscs) (math) (csai) (cslg) (mathoc) (medical) (wosml) (cancer), inner sep=5mm,
       label=above:\textbf{ArXiv/WOS label fragments (child $\rightarrow$ parent)}] {};
 \end{tikzpicture}
-\caption{Hierarchy graph used by the sparse R-matrix implementation. The example uses ArXiv and WOS label fragments to mirror the datasets evaluated in the paper.}
+\caption{Hierarchy graph used by the sparse R-matrix formulation. The example uses ArXiv and WOS label fragments to mirror the datasets evaluated in the paper.}
 \label{fig:sparse_graph}
 \end{figure}
 
-Figure~\ref{fig:sparse_flow} summarizes the algorithmic flow: build the
-graph once, recover levels with BFS, and reconcile scores bottom-up
-along the real parent-child edges only. This is the \textit{sparse}
-\texttt{NetworkX}-based implementation of the R-matrix constraint
-itself, not the dense baseline: the $O(C^2)$ cost belongs only to
-materializing and applying the full dense R-matrix, while our
-implementation stays at $O(C+E)$ memory and avoids dense
-materialization.
+Figure~\ref{fig:sparse_flow} summarizes the sparse formulation: the
+hierarchy is processed bottom-up along the actual parent-child edges,
+with nodes grouped by breadth-first levels. The $O(C^2)$ term belongs
+only to the dense baseline; the sparse formulation itself operates in
+$O(C+E)$ memory.
 
 \begin{figure}[t]
 \centering
@@ -435,15 +405,15 @@ materialization.
   note/.style={draw, rounded corners=3pt, thick, align=center, minimum width=33mm, minimum height=9mm, fill=green!8},
   arrow/.style={-{Latex[length=2mm]}, thick}
 ]
-\node[box] (build) {1. Build graph\\\texttt{NetworkX}};
-\node[box, below=of build] (bfs) {2. BFS levels\\+ node index};
+\node[box] (build) {1. Construct hierarchy};
+\node[box, below=of build] (bfs) {2. BFS ordering};
 \node[box, below=of bfs] (prop) {3. Bottom-up\\max propagation};
-\node[note, below=of prop] (cost) {\textbf{Dense baseline:} $O(C^2)$\\\textbf{Sparse impl.:} $O(C+E)$};
+\node[note, below=of prop] (cost) {\textbf{Dense baseline:} $O(C^2)$\\\textbf{Sparse formulation:} $O(C+E)$};
 \draw[arrow] (build) -- (bfs);
 \draw[arrow] (bfs) -- (prop);
 \draw[arrow] (prop) -- (cost);
 \end{tikzpicture}
-\caption{Sparse R-matrix flow. The graph is built once with \texttt{NetworkX}, levels are derived by BFS, and reconciliation traverses only the actual parent-child edges. This figure describes the sparse implementation of the R-matrix constraint; the $O(C^2)$ term refers only to the dense baseline, while the sparse implementation uses $O(C+E)$ memory.}
+\caption{Sparse R-matrix flow. The sparse formulation processes the hierarchy bottom-up along the actual parent-child edges. The $O(C^2)$ term refers only to the dense baseline; the sparse formulation uses $O(C+E)$ memory.}
 \label{fig:sparse_flow}
 \end{figure}
 
@@ -453,126 +423,15 @@ materialization.
 A fundamental limitation of the dense R-matrix is its $O(C^2)$ memory
 footprint, where $C$ is the number of class nodes and $E$ the number
 of parent-child edges in the hierarchy graph.  For Gene Ontology
-datasets with $C > 4{,}000$, storing the dense matrix alone costs
->$65$~MB ($C^2 \times 4$ bytes), and applying it to a batch of logits
-materializes a batch$\times C\times C$ tensor in double precision
-($\approx$8.7\,GB at batch 64)---infeasible on GPU alongside model
-parameters and activations.  We address this with the \textbf{sparse
-R-matrix implementation}, an $O(C+E)$ method that achieves
-\textbf{zero hierarchy violations without ever materializing the dense
-ancestor matrix}.
-
-\medskip
-\noindent
-\textbf{Why the dense R-matrix can be avoided.}
-The reconciliation step (Eq.~\ref{eq:reconcile}) asks: for each node,
-what is the maximum score among itself and all its descendants? The
-dense R-matrix answers this in one shot by encoding all ancestor
-relationships explicitly.  But the same answer can be obtained
-\emph{incrementally}:
-
-\begin{enumerate}[leftmargin=*,nosep]
-  \item Start from the deepest nodes (leaves). A leaf has no children,
-    so its reconciled score is its raw score.
-  \item Move up one level. For each node at this level, take the
-    maximum of its own raw score and the (already reconciled) scores of
-    its direct children.
-  \item Repeat until the root. At each step, each node absorbs the
-    maximum from the level below it.  By the time we reach the root,
-    every node has absorbed the maximum from \emph{all} its descendants.
-\end{enumerate}
-
-This works because the $\max$ operation is \textbf{transitive}: if
-A~$\rightarrow$~B~$\rightarrow$~C (C is deepest), then after step 2,
-$\text{B} = \max(\text{B}_\text{raw}, \text{C})$, and after step 3,
-$\text{A} = \max(\text{A}_\text{raw}, \text{B}) = \max(\text{A}_\text{raw},
-\text{B}_\text{raw}, \text{C})$.  The score of C propagates all the way
-to A through \textbf{direct parent edges only}---we never need the full
-A$\rightarrow$C ancestor relation.
-
-\medskip
-\noindent
-\textbf{Worked example.}
-Consider a 3-level hierarchy with raw classifier scores:
-
-\begin{center}
-\begin{tabular}{c}
-\texttt{Physics} (0.15) \\
-$\downarrow$ \hspace{8mm} $\searrow$ \\
-\texttt{CS} (0.10) \hspace{5mm} \texttt{Math} (0.12) \\
-$\downarrow$ \hspace{4mm} $\searrow$ \hspace{10mm} $\downarrow$ \hspace{4mm} $\searrow$ \\
-\texttt{AI} (0.92) \hspace{2mm} \texttt{DB} (0.30) \hspace{2mm} \texttt{Stat} (0.85) \hspace{2mm} \texttt{Geom} (0.20)
-\end{tabular}
-\end{center}
-
-\noindent
-The raw scores contain a violation: \texttt{AI} (0.92) $>$ \texttt{CS}
-(0.10), and \texttt{CS} is an ancestor of \texttt{AI}.  Applying one
-bottom-up pass:
-
-\begin{enumerate}[leftmargin=*,nosep]
-  \item \textbf{Level 2 (leaves):} No children---AI stays 0.92, DB
-    stays 0.30, Stat stays 0.85, Geom stays 0.20.
-  \item \textbf{Level 1 (mid):}
-    $\text{CS} = \max(0.10, \text{AI}{=}0.92, \text{DB}{=}0.30) = \mathbf{0.92}$,
-    $\text{Math} = \max(0.12, \text{Stat}{=}0.85, \text{Geom}{=}0.20) = \mathbf{0.85}$.
-  \item \textbf{Level 0 (root):}
-    $\text{Physics} = \max(0.15, \text{CS}{=}0.92, \text{Math}{=}0.85) = \mathbf{0.92}$.
-\end{enumerate}
-
-\noindent
-After one pass, the reconciled scores are: Physics~=~0.92, CS~=~0.92,
-Math~=~0.85, and leaves unchanged.  Now $\forall$ parent-child pairs,
-parent $\geq$ child: Physics (0.92) $\geq$ CS (0.92), CS (0.92) $\geq$
-AI (0.92), etc.  \textbf{Zero violations remain.}
-
-\medskip
-\noindent
-\textbf{Why zero violations are guaranteed.}
-For any parent-child edge $(p, c)$, the algorithm explicitly sets
-$p \leftarrow \max(p, c)$ at the moment level $c$ is processed.  After
-this update, $p \geq c$ holds.  The key question is: could a
-\emph{subsequent} update to $c$ (from its own children) break this
-invariant?  No, because we process levels \textbf{bottom-up}: by the
-time we update $p$ from $c$, the node $c$ has already absorbed the
-maximum from all \emph{its} children (the level below was already
-processed).  The update to $p$ therefore accounts for the entire
-subtree rooted at $c$.  The invariant holds inductively from leaves to
-root.
-
-For \textbf{tree hierarchies} (each node has exactly one parent), one
-bottom-up pass suffices: there is exactly one path from any node to the
-root, so each node's score propagates along that unique path, reaching
-the root after the final level is processed.
-
-For \textbf{DAGs} (nodes with multiple parents, e.g., Gene Ontology), a
-node may appear as a child of multiple parents at different levels.
-After a single bottom-up pass, a node's score has reached all its
-\emph{direct} parents, but not necessarily all ancestors reachable
-through chains of multiple parents.  We therefore iterate the
-bottom-up pass up to $\text{max\_depth}$ times.  Each full pass
-propagates scores one additional hop; after $L$ passes, every node's
-score has reached all ancestors within $L$ hops.  Since no path in the
-DAG exceeds $\text{max\_depth}$ hops, convergence is guaranteed.  In
-practice, the algorithm tracks whether any score changed during a pass
-and terminates early when a pass produces no changes (convergence is
-typically reached in 2--3 passes even for deep GO DAGs).
-
-\textbf{Correctness.} The multi-pass procedure is equivalent to the dense
-R-matrix (Eq.~\ref{eq:reconcile}) because $\max$ is associative and
-commutative: propagating through direct parents iteratively and taking
-the maximum yields the same result as computing the maximum over all
-ancestors simultaneously.  The sparse method produces \textbf{exactly
-the same reconciled scores} as the dense method, with zero violations
-by construction.
-
-\medskip
-\noindent
-\textbf{Memory reduction.} From $O(C^2)$ to $O(C + E)$: for
-cellcycle\_GO ($C{=}4{,}126$, $E{=}5{,}827$), memory drops from
-65~MB to $\sim$46~KB ($>1{,}400\times$).  This enables---for the
-first time---R-matrix-constrained inference on the full Gene Ontology
-benchmark suite.
+datasets with $C > 4{,}000$, storing the dense matrix alone becomes
+impractical.  We address this with the \textbf{sparse R-matrix
+formulation}, an $O(C+E)$ method that achieves \textbf{zero hierarchy
+violations} without constructing the dense ancestor matrix.  The same
+reconciled scores are recovered by propagating maxima bottom-up along
+the hierarchy, which is equivalent to the dense formulation but scales
+with graph size rather than class count squared.  For cellcycle\_GO
+($C{=}4{,}126$, $E{=}5{,}827$), this reduces memory from 65~MB to
+$\sim$46~KB ($>1{,}400\times$ reduction).
 
 \subsection{Training and Loss Functions}
 
@@ -661,33 +520,26 @@ p_i^{\text{rec}} = \max\left(p_i,\; \max_{j: \text{child}(i,j)} p_j^{\text{rec}}
 \label{eq:reconcile-impl}
 \end{equation}
 
-Unlike the original HMCN~\cite{giunchiglia2018hmc} where the
-constraint is embedded in a recurrent architecture, our implementation
-treats the R-matrix as a \textbf{standalone layer} that can be
-combined with any encoder (frozen transformer, fine-tuned transformer,
-GBDT, MLP) and any head (global, local, tree-path). This enables the
-ablation studies in Section~\ref{sec:results}.
+Unlike the original HMCN~\cite{giunchiglia2018hmc}, where the
+constraint is embedded in a recurrent architecture, we treat the
+R-matrix as a \textbf{standalone component} that can be combined with
+any encoder (frozen transformer, fine-tuned transformer, GBDT, MLP)
+and any head (global, local, tree-path). This enables the ablation
+studies in Section~\ref{sec:results}.
 
 \subsection{Sparse R-Matrix for Large Hierarchies}
 \label{sec:sparse-impl}
 
-The sparse R-matrix implementation (Section~\ref{sec:sparse}) is
-implemented entirely from the graph adjacency list, without
-constructing any dense matrix.  The \texttt{BlockDiagonalR} class in
-\texttt{hmc.models.hierarchical.sparse\_r} stores only the set of
-parent-child edges and a BFS-derived level ordering.  The
-\texttt{reconcile} method iterates levels bottom-up, applying
-$p \leftarrow \max(p, c)$ for each edge.  Both the reconciliation
+The sparse R-matrix formulation (Section~\ref{sec:sparse}) operates
+directly on the hierarchy graph, without constructing any dense
+matrix.  It stores only the parent-child structure and a
+breadth-first ordering of the nodes, then propagates scores bottom-up
+across the hierarchy.  Both the reconciliation step
 (Eq.~\ref{eq:reconcile}) and the training-time consistency loss
-(Eq.~\ref{eq:hierloss}) operate directly on graph edges, using
-$O(C + E)$ memory.  For cellcycle\_GO
-($C{=}4{,}126$, $E{=}5{,}827$), this reduces memory from 65~MB to
-$\sim$46~KB ($E \times 8$~B index pairs, $>1{,}400\times$ reduction).
-
-The implementation provides an early-exit mechanism: after each full
-bottom-up pass, it checks whether any score changed; if not,
-convergence has been reached early (typically 2--3 passes even for deep
-DAGs).  For tree hierarchies, one pass always suffices.
+(Eq.~\ref{eq:hierloss}) therefore scale with the size of the graph
+rather than with the square of the number of classes.  For
+cellcycle\_GO ($C{=}4{,}126$, $E{=}5{,}827$), this reduces memory from
+65~MB to $\sim$46~KB ($>1{,}400\times$ reduction).
 
 \subsection{Terminology}
 
@@ -700,19 +552,14 @@ the paper:
   \item \textbf{R-matrix constraint.} The hierarchical consistency
     property that requires ancestors to score at least as high as their
     descendants.
-  \item \textbf{Sparse R-matrix implementation.} The graph-based
-    version of the same constraint, implemented directly on the
-    hierarchy edges without materializing the dense matrix.
-  \item \textbf{BFS levels.} The depth ordering recovered from the root
-    using Breadth-First Search. We use it to process the hierarchy from
-    leaves to root during reconciliation.
-  \item \textbf{Bottom-up max propagation.} The reconciliation rule
-    that updates each parent with the maximum score observed among its
-    children and itself.
-  \item \textbf{Dense baseline.} The classical matrix-based
-    implementation used only as the reference point for complexity
-    comparisons.
+  \item \textbf{Sparse R-matrix formulation.} The graph-based version
+    of the same constraint, expressed directly on the hierarchy edges
+    without materializing the dense matrix.
 \end{itemize}
+
+When we refer to \textbf{BFS levels}, we mean the breadth-first depth
+ordering of nodes from the root. This ordering provides a natural way
+to process the hierarchy bottom-up during reconciliation.
 
 \subsection{Additional Components}
 
@@ -1082,10 +929,9 @@ WOS globalE2E (3 ep) & -- & 5,791s & -- \\
 \begin{table}[htbp]
 \centering
 \caption{Sparse R-Matrix on Gene Ontology datasets (9 datasets,
-3,500--4,504 classes).  Dense R is infeasible on GPU: the batched
-$C\times C$ float64 constraint step exceeds memory at batch 64.
-Sparse R reconciliation is applied at inference time only; training
-uses identity matrix to avoid OOM.  AUPRC improves on all datasets.}
+3,500--4,504 classes).  The dense baseline is infeasible at this
+scale, whereas the sparse formulation remains tractable and improves
+AUPRC on all datasets.}
 \label{tab:sparse}
 \begin{tabular}{lccccc}
 \toprule
@@ -1163,7 +1009,7 @@ spo\_GO       & \textbf{0.439} & 0.382 & 0.376 & 0.251 \\
 \midrule
 \textit{Avg (8 common)} & \textbf{0.468} & 0.420 & 0.422 & 0.282 \\
 \bottomrule
-\multicolumn{5}{l}{\small Our GO results use sparse R reconciliation only (no dense R possible).} \\
+\multicolumn{5}{l}{\small Our GO results use the sparse R formulation only; the dense baseline is infeasible.} \\
 \multicolumn{5}{l}{\small Pheno\_GO has no published baselines. Gap to SOTA: ontology learning + GCN.} \\
 \end{tabular}
 \end{table}
@@ -1179,20 +1025,17 @@ R-matrix during training (sparse reconciliation at inference only),
 which is a weaker setting than the full dense R-matrix used on
 smaller hierarchies.
 
-However, our contribution is \textbf{feasibility, not SOTA}: the
-dense R-matrix cannot fit in GPU memory for GO datasets---storing it
-costs $>65$~MB and the batched constraint step materializes a
-batch$\times C\times C$ float64 tensor ($\approx$10.4\,GB at batch 64
-on the largest dataset)---while our Block-Diagonal approximation runs
-successfully on all 9 datasets.  Combining sparse R with ontology embeddings and GCN label
-propagation is a clear path to closing the gap, and our modular
-platform makes such combinations straightforward.
+However, our contribution is \textbf{feasibility, not SOTA}: the dense
+R-matrix cannot fit in GPU memory for GO datasets, whereas the sparse
+R formulation runs successfully on all 9 datasets. Combining sparse R
+with ontology embeddings and GCN label propagation is a clear path to
+closing the gap.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/fig3_go_sparse.pdf}
-\caption{Sparse R-Matrix on 9 Gene Ontology datasets: AUPRC improves
-on all datasets (avg +0.0055). Green bars show reconciled scores.}
+\caption{Sparse R-Matrix on 9 Gene Ontology datasets. AUPRC improves
+on all datasets (avg +0.0055).}
 \label{fig:go}
 \end{figure}
 
@@ -1206,20 +1049,11 @@ F1 drops sharply with depth: leaves are 3--10$\times$ harder than the root.}
 \label{fig:perlevel}
 \end{figure}
 
-Figure~\ref{fig:perlevel} shows F1 broken down by hierarchy depth.  The
-pattern is consistent across all datasets and hierarchy types (trees
-and DAGs): \textbf{F1 decreases monotonically with depth}.  Root-level
-predictions achieve F1 of 0.87--0.94 (ArXiv, WOS) or 0.49
-(cellcycle\_FUN, where even the root is challenging due to the 500-class
-flat structure).  By the deepest levels, F1 drops to 0.09--0.66.
-
-This explains why the R-matrix reconciliation helps: by propagating
-scores upward from leaves to root, it partially compensates for the
-difficulty of deep-level predictions.  The effect is most pronounced on
-clean, shallow hierarchies (ArXiv: 2 levels, WOS: 2 levels) where the
-root-to-leaf path is short and informative.  On deep, dense hierarchies
-(cellcycle\_FUN: 6 levels, cellcycle\_GO: 13 levels), the benefit is
-diluted because errors accumulate over many levels.
+Figure~\ref{fig:perlevel} shows F1 broken down by hierarchy depth. The
+pattern is consistent across datasets and hierarchy types:
+\textbf{F1 decreases monotonically with depth}. Root-level predictions
+are substantially easier than deep-level predictions, which explains
+why bottom-up reconciliation helps most on shallow hierarchies.
 
 \subsection{Ablation: R-Matrix On/Off}
 \label{sec:ablation}
@@ -1304,7 +1138,7 @@ However, the R-matrix is \textbf{not a silver bullet}:
     binary ancestor mask) cannot capture. Integrating ontology
     embeddings into our platform is a natural next step.
   \item \textbf{Scalability (addressed).} The dense R-matrix is $O(C^2)$,
-    but our Block-Diagonal approximation (Section~\ref{sec:sparse})
+    but our sparse R formulation (Section~\ref{sec:sparse})
     reduces this to $O(C{+}E)$ with zero violation penalty.  On all 9 GO
     datasets (up to 4,504 nodes), sparse reconciliation improves
     AUPRC on every dataset (avg +0.0055) while the dense R-matrix
@@ -1348,30 +1182,22 @@ Our \textbf{novel contributions} are:
 
 We presented \textsc{hmc-torch}, a modular HMC platform that integrates
 the R-matrix constraint as a first-class architectural component. Our
-key findings:
+key findings are:
 
 \begin{itemize}[leftmargin=*,nosep]
-  \item \textbf{New SOTA on ArXiv} (0.7295, +13.5 points),
-    \textbf{WOS} (0.8743, +0.2 points), and \textbf{AAPD} (0.7684,
-    +4.5 points) using R-matrix + frozen SPECTER2 embeddings.
-  \item Competitive with neural SOTA on FunCat, beating HMCN-F on
-    seq\_FUN (0.307 vs 0.291 AUPRC) with a simple GBDT baseline.
-  \item \textbf{Sparse R-Matrix}: a sparse $O(C{+}E)$ approximation
-    that extends R-matrix constraints to Gene Ontology (4,126 nodes,
-    0 violations, $>1{,}400\times$ memory reduction).
-  \item Honest assessment: the binary R-matrix cannot match ontology
-    learning for protein function prediction, but provides strong
-    structural regularization for clean taxonomies.
+  \item \textbf{New SOTA on ArXiv, WOS, and AAPD} using R-matrix plus
+    frozen or fine-tuned SPECTER2.
+  \item Competitive FunCat performance with simpler models, including
+    a GBDT baseline.
+  \item \textbf{Sparse R-Matrix}: an $O(C{+}E)$ approximation that
+    extends hierarchical consistency to Gene Ontology while avoiding
+    dense materialization.
   \item GPU acceleration provides 14$\times$ speedup.
 \end{itemize}
 
 The platform is designed to grow with the field. Integrating ontology
 embeddings, sparse R-matrix approximations for large DAGs, and protein
-sequence encoders (ESM-2) are immediate next steps within our modular
-architecture. We hope \textsc{hmc-torch} becomes a useful testbed for
-HMC research, where ideas can be compared fairly through shared
-infrastructure and explicit attribution of which components drive
-performance.
+sequence encoders (ESM-2) are natural next steps.
 
 \smallskip
 \noindent

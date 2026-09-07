@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.6)  7 SEP 2026 10:10
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.6)  7 SEP 2026 10:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -815,7 +815,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
-Overfull \hbox (33.06047pt too wide) in paragraph at lines 70--72
+Overfull \hbox (33.06047pt too wide) in paragraph at lines 56--58
 \T1/cmr/bx/n/10 (-20) Availability: [][]$\T1/cmtt/m/n/10 https : / / github . c
 om / sette / hmc-[]torch$[][] \T1/cmr/m/n/10 (-20) | [][]$\T1/cmtt/m/n/10 https
  : / / pypi . org / project / hmc-[]torch/$[][] 
@@ -824,79 +824,51 @@ om / sette / hmc-[]torch$[][] \T1/cmr/m/n/10 (-20) | [][]$\T1/cmtt/m/n/10 https
 [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texlive/texmf-di
-st/fonts/enc/dvips/cm-super/cm-super-t1.enc}]
-Overfull \hbox (43.86563pt too wide) in paragraph at lines 149--152
-\T1/cmtt/m/n/10.95 com / sette / hmc-[]torch$[][]\T1/cmr/m/n/10.95 (-20) , pack
--age: \T1/cmtt/m/n/10.95 pip install hmc-torch \T1/cmr/m/n/10.95 (-20) ([][]$\T
-1/cmtt/m/n/10.95 https : / / pypi . org / project / hmc-[]torch/$[][]\T1/cmr/m/
-n/10.95 (-20) ). 
- []
-
-[2{/usr/share/texlive/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
+st/fonts/enc/dvips/cm-super/cm-super-t1.enc}] [2{/usr/share/texlive/texmf-dist/
+fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <10.95> not available
-(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 223.
-
-[3] [4] [5] [6]
-Overfull \hbox (62.01236pt too wide) in paragraph at lines 516--519
-[]\T1/cmr/bx/n/10.95 (-20) Level 1 (mid): $[] \OT1/cmr/m/n/10.95 (-20) = [](0\O
-ML/cmm/m/it/10.95 :\OT1/cmr/m/n/10.95 (-20) 10\OML/cmm/m/it/10.95 ; [][]\OT1/cm
-r/m/n/10.95 (-20) 0\OML/cmm/m/it/10.95 :\OT1/cmr/m/n/10.95 (-20) 92\OML/cmm/m/i
-t/10.95 ; [][]\OT1/cmr/m/n/10.95 (-20) 0\OML/cmm/m/it/10.95 :\OT1/cmr/m/n/10.95
- (-20) 30) = []$\T1/cmr/m/n/10.95 (-20) , $[] \OT1/cmr/m/n/10.95 (-20) = [](0\O
-ML/cmm/m/it/10.95 :\OT1/cmr/m/n/10.95 (-20) 12\OML/cmm/m/it/10.95 ; [][]\OT1/cm
-r/m/n/10.95 (-20) 0\OML/cmm/m/it/10.95 :\OT1/cmr/m/n/10.95 (-20) 85\OML/cmm/m/i
-t/10.95 ; [][]\OT1/cmr/m/n/10.95 (-20) 0\OML/cmm/m/it/10.95 :\OT1/cmr/m/n/10.95
- (-20) 20) =
- []
-
-[7]
-Overfull \hbox (97.65392pt too wide) in paragraph at lines 674--686
-\T1/cmr/m/n/10.95 (-20) cency list, with-out con-struct-ing any dense ma-trix. 
-The \T1/cmtt/m/n/10.95 BlockDiagonalR \T1/cmr/m/n/10.95 (-20) class in \T1/cmtt
-/m/n/10.95 hmc.models.hierarchical.sparse_r
- []
-
-[8] [9] [10]
-<figures/fig1_sota_comparison.pdf, id=303, 715.40468pt x 338.57317pt>
+(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 196.
+ [3] [4] [5] [6] [7] [8]
+<figures/fig1_sota_comparison.pdf, id=281, 715.40468pt x 338.57317pt>
 File: figures/fig1_sota_comparison.pdf Graphic file (type pdf)
 <use figures/fig1_sota_comparison.pdf>
-Package pdftex.def Info: figures/fig1_sota_comparison.pdf  used on input line 8
-53.
+Package pdftex.def Info: figures/fig1_sota_comparison.pdf  used on input line 7
+00.
 (pdftex.def)             Requested size: 452.9679pt x 214.37679pt.
- [11 <./figures/fig1_sota_comparison.pdf>]
-<figures/fig6_cd_diagram.pdf, id=417, 705.15355pt x 209.34908pt>
+ [9]
+[10 <./figures/fig1_sota_comparison.pdf>]
+<figures/fig6_cd_diagram.pdf, id=405, 705.15355pt x 209.34908pt>
 File: figures/fig6_cd_diagram.pdf Graphic file (type pdf)
 <use figures/fig6_cd_diagram.pdf>
-Package pdftex.def Info: figures/fig6_cd_diagram.pdf  used on input line 974.
+Package pdftex.def Info: figures/fig6_cd_diagram.pdf  used on input line 821.
 (pdftex.def)             Requested size: 407.66833pt x 121.03282pt.
- [12]
-<figures/fig4_cross_domain.pdf, id=428, 712.87895pt x 351.50739pt>
+ [11 <./figures/fig6_cd_diagram.pdf>]
+<figures/fig4_cross_domain.pdf, id=500, 712.87895pt x 351.50739pt>
 File: figures/fig4_cross_domain.pdf Graphic file (type pdf)
 <use figures/fig4_cross_domain.pdf>
-Package pdftex.def Info: figures/fig4_cross_domain.pdf  used on input line 1034
-.
+Package pdftex.def Info: figures/fig4_cross_domain.pdf  used on input line 881.
+
 (pdftex.def)             Requested size: 452.9679pt x 223.34952pt.
- [13 <./figures/fig6_cd_diagram.pdf>] [14 <./figures/fig4_cross_domain.pdf>] [1
-5]
-<figures/fig3_go_sparse.pdf, id=628, 640.08856pt x 314.97371pt>
+
+[12 <./figures/fig4_cross_domain.pdf>] [13]
+<figures/fig3_go_sparse.pdf, id=608, 640.08856pt x 314.97371pt>
 File: figures/fig3_go_sparse.pdf Graphic file (type pdf)
 <use figures/fig3_go_sparse.pdf>
-Package pdftex.def Info: figures/fig3_go_sparse.pdf  used on input line 1193.
+Package pdftex.def Info: figures/fig3_go_sparse.pdf  used on input line 1036.
 (pdftex.def)             Requested size: 407.66833pt x 200.61165pt.
-<figures/fig5_per_level_f1.pdf, id=629, 859.74023pt x 570.21031pt>
+<figures/fig5_per_level_f1.pdf, id=609, 859.74023pt x 570.21031pt>
 File: figures/fig5_per_level_f1.pdf Graphic file (type pdf)
 <use figures/fig5_per_level_f1.pdf>
-Package pdftex.def Info: figures/fig5_per_level_f1.pdf  used on input line 1203
+Package pdftex.def Info: figures/fig5_per_level_f1.pdf  used on input line 1046
 .
 (pdftex.def)             Requested size: 452.9679pt x 300.42638pt.
- [16]
-<figures/fig2_ablation.pdf, id=636, 640.28934pt x 279.48305pt>
+<figures/fig2_ablation.pdf, id=611, 640.28934pt x 279.48305pt>
 File: figures/fig2_ablation.pdf Graphic file (type pdf)
 <use figures/fig2_ablation.pdf>
-Package pdftex.def Info: figures/fig2_ablation.pdf  used on input line 1248.
+Package pdftex.def Info: figures/fig2_ablation.pdf  used on input line 1082.
 (pdftex.def)             Requested size: 385.02547pt x 168.06212pt.
- [17 <./figures/fig3_go_sparse.pdf>] [18 <./figures/fig5_per_level_f1.pdf>] [19
- <./figures/fig2_ablation.pdf>] [20] (./main.aux)
+ [14] [15 <./figures/fig3_go_sparse.pdf>] [16 <./figures/fig5_per_level_f1.pdf>
+] [17 <./figures/fig2_ablation.pdf>] [18] (./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-03-20>
@@ -905,11 +877,11 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 0264640FB66368886A9508E2D9DA7413;7042.
  ) 
 Here is how much of TeX's memory you used:
- 25797 strings out of 467363
- 473197 string characters out of 5419002
- 909351 words of memory out of 6000000
+ 25769 strings out of 467363
+ 472953 string characters out of 5419002
+ 906083 words of memory out of 6000000
  54064 multiletter control sequences out of 15000+600000
- 660114 words of font info for 251 fonts, out of 8000000 for 9000
+ 659473 words of font info for 241 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  84i,12n,94p,1001b,813s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
@@ -936,10 +908,10 @@ m-super/sfrm1095.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/cm-super
 95.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb>
 </usr/share/texlive/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb></usr/s
 hare/texlive/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb>
-Output written on main.pdf (20 pages, 683762 bytes).
+Output written on main.pdf (18 pages, 664788 bytes).
 PDF statistics:
- 1044 PDF objects out of 1200 (max. 8388607)
- 516 compressed objects within 6 object streams
- 114 named destinations out of 1000 (max. 500000)
+ 1020 PDF objects out of 1200 (max. 8388607)
+ 495 compressed objects within 5 object streams
+ 106 named destinations out of 1000 (max. 500000)
  61259 words of extra memory for PDF output out of 61914 (max. 10000000)
 
