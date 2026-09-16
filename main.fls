@@ -356,6 +356,11 @@ INPUT ./figures/fig2_ablation.pdf
 INPUT ./figures/fig2_ablation.pdf
 INPUT ./figures/fig2_ablation.pdf
 INPUT ./figures/fig2_ablation.pdf
+INPUT ./figures/fig_ablation.pdf
+INPUT ./figures/fig_ablation.pdf
+INPUT ./figures/fig_ablation.pdf
+INPUT ./figures/fig_ablation.pdf
+INPUT ./figures/fig_ablation.pdf
 INPUT main.aux
 INPUT ./main.out
 INPUT ./main.out

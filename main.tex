@@ -455,12 +455,20 @@ optional hierarchical consistency penalty:
 \label{eq:total}
 \end{equation}
 
-We set $\lambda=0$ in all experiments after finding (Section~\ref{sec:ablation})
-that the training-time consistency loss provides negligible additional
-benefit when the model naturally learns hierarchically consistent
-predictions from data.  The inference-time reconciliation
-(Eq.~\ref{eq:reconcile}) is where the R-matrix provides its main
-value.
+We set $\lambda=0$ in all experiments: a decomposition of the two
+mechanisms (plain BCE / training-time consistency loss / inference-time
+reconciliation / both; Figure~\ref{fig:decomp}) showed the consistency loss alone to be no
+better than plain BCE on ArXiv and cellcycle\_FUN, while the
+inference-time reconciliation (Eq.~\ref{eq:reconcile}) is where the
+R-matrix provides its main value.  Section~\ref{sec:ablation}
+accordingly isolates the inference-time constraint.  The platform's
+\texttt{global} and \texttt{globalE2E} trainers apply the MC-style
+consistency penalty of~\cite{giunchiglia2018hmc} to the constrained
+outputs during training by default; the runs reported here instead train
+with plain BCE and restrict the constraint to prediction time
+(\texttt{-{}-consistency\_loss none}), while
+\texttt{-{}-consistency\_loss hinge} adds Eq.~\ref{eq:hierloss} as an
+explicit term weighted by $\lambda$.
 
 Additionally, we implement \textbf{Focal Loss} for focusing on hard
 examples ($\gamma=2.0$, $\alpha=0.25$) and \textbf{Contrastive Label
@@ -570,7 +578,7 @@ document and label embeddings).
 \textbf{Calibration.} Platt scaling and isotonic regression per node,
 fitted on validation. We find raw scores with threshold sweep
 outperform calibration for highly imbalanced multi-label settings
-(Section~\ref{sec:ablation}).
+(Section~\ref{sec:calib}).
 
 % ═══════════════════════════════════════════════════════════════════════
 \section{Experiments}
@@ -752,9 +760,14 @@ $\Delta$ vs.\ previous best         & \textbf{+0.045} & -- \\
 state-of-the-art (+4.5 points over HiMatch at 0.723). Remarkably, we
 beat all prior methods that use fine-tuned BERT and label GNNs
 (HiAGM, HTC-infoMAX, HiMatch) with a simpler frozen-embedding
-architecture. The R-matrix gain is small ($\Delta < 0.001$) because
-the 2-level AAPD hierarchy is easily learned by the MLP alone; the
-constraint provides robustness rather than raw performance.
+architecture. The R-matrix gain is small ($\Delta < 0.001$) for a
+structural reason: the constraint rewrites a node's score as the
+maximum over its descendants, so only \emph{internal} nodes can
+change---on AAPD that is the six area nodes, while the remaining 91
+leaf labels keep exactly their unconstrained scores. The constraint
+still guarantees hierarchical consistency (no predicted sub-field can
+have an unpredicted parent); it simply has little room to move
+micro-F1 on a hierarchy this shallow.
 
 \textbf{EUR-Lex 57K.} With 2,901 labels (observed in 10K train sample)
 and frozen SPECTER2 embeddings
@@ -1085,6 +1098,19 @@ Positive $\Delta$ means R helps.}
 \label{fig:ablation}
 \end{figure}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_ablation.pdf}
+\caption{R-matrix decomposition: plain BCE, training-time consistency
+loss (Eq.~\ref{eq:hierloss}), inference-time reconciliation
+(Eq.~\ref{eq:reconcile}), and both. Training with the consistency loss
+alone is never better than plain BCE, while the gains come from
+inference-time reconciliation (with or without the loss). Independent
+single-seed run; absolute values may differ slightly from
+Table~\ref{tab:ablation}.}
+\label{fig:decomp}
+\end{figure}
+
 The R-matrix provides a small but consistent benefit on text datasets
 ($\Delta \approx +0.001$--$0.003$ F1) with frozen transformer
 embeddings. On FunCat and EUR-Lex, the effect is negligible---FunCat
@@ -1095,10 +1121,15 @@ most at inference time via reconciliation} (Eq.~\ref{eq:reconcile}),
 not during training via the consistency loss
 (Eq.~\ref{eq:hierloss}). The bottom-up max propagation ensures every
 parent score is at least its children's maximum, which boosts recall
-significantly (see Table~\ref{tab:pr}). The training-time loss adds
-little beyond what the model already learns from data.
+significantly (see Table~\ref{tab:pr}). The two mechanisms are
+separable: every row of Table~\ref{tab:ablation} applies $R$ only when
+predicting, while training uses plain binary cross-entropy, so those
+numbers isolate the inference-time constraint.  Figure~\ref{fig:decomp}
+makes the split explicit: the consistency-loss arm never beats plain
+BCE, while reconciliation accounts for the gains.
 
 \subsection{Ablation: Platt Calibration on FunCat}
+\label{sec:calib}
 
 Applying Platt scaling (per-node logistic regression fitted on
 validation) \textbf{decreased} GBDT AUPRC from 0.250 to 0.136 on

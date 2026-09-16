@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1788788213.75845 "main.tex" "main.pdf" "main" 1788788215.02423 0
+["pdflatex"] 1789577250.18628 "main.tex" "main.pdf" "main" 1789577251.30279 0
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1136849721 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -212,9 +212,10 @@
   "figures/fig4_cross_domain.pdf" 1788615044.53136 30626 88a72668e49e186e8e863a9ce3005c9b ""
   "figures/fig5_per_level_f1.pdf" 1788615044.53209 20559 5242dc544aa5f0def7805e4c4faaab45 ""
   "figures/fig6_cd_diagram.pdf" 1788615044.5332 27843 e48c319446c0c228f4fd249dd39b3ba0 ""
-  "main.aux" 1788788214.85896 15627 4853895de1a05cd98c349a61a4228762 "pdflatex"
-  "main.out" 1788788214.85996 7042 0264640fb66368886a9508e2d9da7413 "pdflatex"
-  "main.tex" 1788788208.32164 59110 c3f21ab8732f6ced750b2ae507c246f3 ""
+  "figures/fig_ablation.pdf" 1788615044.5333 36667 40a5ee4e9dcb20131ba2c35d8517183c ""
+  "main.aux" 1789577251.15455 16745 d35085d4d331c52f38fa81eeb2a6526d "pdflatex"
+  "main.out" 1789577251.15555 7042 0264640fb66368886a9508e2d9da7413 "pdflatex"
+  "main.tex" 1789577237.07558 60808 54a0522bfbdb3ed045e438e539513e61 ""
   (generated)
   "main.aux"
   "main.log"

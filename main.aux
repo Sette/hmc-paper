@@ -40,6 +40,7 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Training and Loss Functions}{5}{subsection.3.6}\protected@file@percent }
 \newlabel{eq:bce}{{4}{5}{Training and Loss Functions}{equation.4}{}}
 \citation{giunchiglia2018hmc}
+\citation{giunchiglia2018hmc}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Sparse R-matrix flow. The sparse formulation processes the hierarchy bottom-up along the actual parent-child edges. The $O(C^2)$ term refers only to the dense baseline; the sparse formulation uses $O(C+E)$ memory.}}{6}{figure.caption.2}\protected@file@percent }
 \newlabel{fig:sparse_flow}{{2}{6}{Sparse R-matrix flow. The sparse formulation processes the hierarchy bottom-up along the actual parent-child edges. The $O(C^2)$ term refers only to the dense baseline; the sparse formulation uses $O(C+E)$ memory}{figure.caption.2}{}}
 \newlabel{eq:total}{{5}{6}{Training and Loss Functions}{equation.5}{}}
@@ -47,17 +48,18 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.8}R-Matrix Constraint}{6}{subsection.3.8}\protected@file@percent }
 \newlabel{sec:rmatrix}{{3.8}{6}{R-Matrix Constraint}{subsection.3.8}{}}
 \citation{giunchiglia2018hmc}
-\citation{specter}
 \newlabel{eq:hierloss-impl}{{7}{7}{R-Matrix Constraint}{equation.7}{}}
 \newlabel{eq:reconcile-impl}{{8}{7}{R-Matrix Constraint}{equation.8}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.9}Sparse R-Matrix for Large Hierarchies}{7}{subsection.3.9}\protected@file@percent }
 \newlabel{sec:sparse-impl}{{3.9}{7}{Sparse R-Matrix for Large Hierarchies}{subsection.3.9}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.10}Terminology}{7}{subsection.3.10}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.11}Additional Components}{7}{subsection.3.11}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Experiments}{7}{section.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Datasets}{7}{subsection.4.1}\protected@file@percent }
+\citation{specter}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Experiments}{8}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Datasets}{8}{subsection.4.1}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Dataset statistics. FunCat datasets use HPT standard splits.}}{8}{table.caption.3}\protected@file@percent }
 \newlabel{tab:datasets}{{1}{8}{Dataset statistics. FunCat datasets use HPT standard splits}{table.caption.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Methods Compared}{8}{subsection.4.2}\protected@file@percent }
 \citation{zhou2020hiagm}
 \citation{htcinfomax}
 \citation{giunchiglia2018hmc}
@@ -68,21 +70,20 @@
 \citation{htcinfomax}
 \citation{aapd}
 \citation{eurlex57k}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Methods Compared}{9}{subsection.4.2}\protected@file@percent }
+\citation{zhou2020hiagm}
+\citation{htcinfomax}
+\citation{himatch}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Training Details}{9}{subsection.4.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {5}Results}{9}{section.5}\protected@file@percent }
 \newlabel{sec:results}{{5}{9}{Results}{section.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Text Benchmarks: New State-of-the-Art}{9}{subsection.5.1}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Micro-F1 on text HMC benchmarks. \textbf  {Bold} = best.}}{9}{table.caption.4}\protected@file@percent }
 \newlabel{tab:text}{{2}{9}{Micro-F1 on text HMC benchmarks. \textbf {Bold} = best}{table.caption.4}{}}
-\citation{zhou2020hiagm}
-\citation{htcinfomax}
-\citation{himatch}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Cross-Domain Text Generalization}{9}{subsection.5.2}\protected@file@percent }
 \citation{www2022ontology}
 \citation{www2022ontology}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces State-of-the-art comparison on ArXiv and WOS benchmarks. Our method (global+R, dark blue) surpasses all previous methods.}}{10}{figure.caption.5}\protected@file@percent }
 \newlabel{fig:sota}{{3}{10}{State-of-the-art comparison on ArXiv and WOS benchmarks. Our method (global+R, dark blue) surpasses all previous methods}{figure.caption.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Cross-Domain Text Generalization}{10}{subsection.5.2}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Micro-F1 on new text HMC benchmarks (frozen SPECTER2 + R). $^\dagger $RCV1-V2 infrastructure ready, pending data access.}}{10}{table.caption.6}\protected@file@percent }
 \newlabel{tab:new_text}{{3}{10}{Micro-F1 on new text HMC benchmarks (frozen SPECTER2 + R). $^\dagger $RCV1-V2 infrastructure ready, pending data access}{table.caption.6}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Critical Difference diagram (Friedman + Nemenyi, $\alpha =0.05$) on 8 FunCat datasets. Methods within CD=2.16 of each other are NOT significantly different. Our GBDT is statistically tied with HMCN-F.}}{11}{figure.caption.8}\protected@file@percent }
@@ -117,6 +118,7 @@
 \@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces R-matrix ablation: Micro-F1 with and without the constraint. $\Delta $ = R on $-$ R off. Positive $\Delta $ means R helps.}}{15}{table.caption.17}\protected@file@percent }
 \newlabel{tab:ablation}{{10}{15}{R-matrix ablation: Micro-F1 with and without the constraint. $\Delta $ = R on $-$ R off. Positive $\Delta $ means R helps}{table.caption.17}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.10}Ablation: Platt Calibration on FunCat}{15}{subsection.5.10}\protected@file@percent }
+\newlabel{sec:calib}{{5.10}{15}{Ablation: Platt Calibration on FunCat}{subsection.5.10}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{15}{section.6}\protected@file@percent }
 \newlabel{sec:discussion}{{6}{15}{Discussion}{section.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Where the R-Matrix Excels---and Where It Doesn't}{15}{subsection.6.1}\protected@file@percent }
@@ -131,10 +133,10 @@
 \bibcite{silla2011hmc}{2}
 \bibcite{cerri2014hmc}{3}
 \bibcite{weihs2018hmc}{4}
-\bibcite{zhou2020hiagm}{5}
 \@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps.}}{17}{figure.caption.18}\protected@file@percent }
 \newlabel{fig:ablation}{{8}{17}{R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps}{figure.caption.18}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{17}{section.7}\protected@file@percent }
+\bibcite{zhou2020hiagm}{5}
 \bibcite{htcinfomax}{6}
 \bibcite{www2022ontology}{7}
 \bibcite{chmcnn}{8}
@@ -143,4 +145,6 @@
 \bibcite{eurlex57k}{11}
 \bibcite{aapd}{12}
 \bibcite{specter}{13}
-\gdef \@abspage@last{18}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces R-matrix decomposition: plain BCE, training-time consistency loss (Eq.~\ref {eq:hierloss}), inference-time reconciliation (Eq.~\ref {eq:reconcile}), and both. Training with the consistency loss alone is never better than plain BCE, while the gains come from inference-time reconciliation (with or without the loss). Independent single-seed run; absolute values may differ slightly from Table~\ref {tab:ablation}.}}{19}{figure.caption.19}\protected@file@percent }
+\newlabel{fig:decomp}{{9}{19}{R-matrix decomposition: plain BCE, training-time consistency loss (Eq.~\ref {eq:hierloss}), inference-time reconciliation (Eq.~\ref {eq:reconcile}), and both. Training with the consistency loss alone is never better than plain BCE, while the gains come from inference-time reconciliation (with or without the loss). Independent single-seed run; absolute values may differ slightly from Table~\ref {tab:ablation}}{figure.caption.19}{}}
+\gdef \@abspage@last{19}

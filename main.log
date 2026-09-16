@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.6)  7 SEP 2026 10:36
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.9.6)  16 SEP 2026 13:47
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -829,46 +829,56 @@ fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <10.95> not available
 (Font)              Font shape `T1/cmtt/m/n' tried instead on input line 196.
  [3] [4] [5] [6] [7] [8]
-<figures/fig1_sota_comparison.pdf, id=281, 715.40468pt x 338.57317pt>
+<figures/fig1_sota_comparison.pdf, id=286, 715.40468pt x 338.57317pt>
 File: figures/fig1_sota_comparison.pdf Graphic file (type pdf)
 <use figures/fig1_sota_comparison.pdf>
 Package pdftex.def Info: figures/fig1_sota_comparison.pdf  used on input line 7
-00.
+08.
 (pdftex.def)             Requested size: 452.9679pt x 214.37679pt.
  [9]
 [10 <./figures/fig1_sota_comparison.pdf>]
-<figures/fig6_cd_diagram.pdf, id=405, 705.15355pt x 209.34908pt>
+<figures/fig6_cd_diagram.pdf, id=409, 705.15355pt x 209.34908pt>
 File: figures/fig6_cd_diagram.pdf Graphic file (type pdf)
 <use figures/fig6_cd_diagram.pdf>
-Package pdftex.def Info: figures/fig6_cd_diagram.pdf  used on input line 821.
+Package pdftex.def Info: figures/fig6_cd_diagram.pdf  used on input line 834.
 (pdftex.def)             Requested size: 407.66833pt x 121.03282pt.
  [11 <./figures/fig6_cd_diagram.pdf>]
-<figures/fig4_cross_domain.pdf, id=500, 712.87895pt x 351.50739pt>
+<figures/fig4_cross_domain.pdf, id=504, 712.87895pt x 351.50739pt>
 File: figures/fig4_cross_domain.pdf Graphic file (type pdf)
 <use figures/fig4_cross_domain.pdf>
-Package pdftex.def Info: figures/fig4_cross_domain.pdf  used on input line 881.
+Package pdftex.def Info: figures/fig4_cross_domain.pdf  used on input line 894.
 
 (pdftex.def)             Requested size: 452.9679pt x 223.34952pt.
 
 [12 <./figures/fig4_cross_domain.pdf>] [13]
-<figures/fig3_go_sparse.pdf, id=608, 640.08856pt x 314.97371pt>
+<figures/fig3_go_sparse.pdf, id=612, 640.08856pt x 314.97371pt>
 File: figures/fig3_go_sparse.pdf Graphic file (type pdf)
 <use figures/fig3_go_sparse.pdf>
-Package pdftex.def Info: figures/fig3_go_sparse.pdf  used on input line 1036.
+Package pdftex.def Info: figures/fig3_go_sparse.pdf  used on input line 1049.
 (pdftex.def)             Requested size: 407.66833pt x 200.61165pt.
-<figures/fig5_per_level_f1.pdf, id=609, 859.74023pt x 570.21031pt>
+<figures/fig5_per_level_f1.pdf, id=613, 859.74023pt x 570.21031pt>
 File: figures/fig5_per_level_f1.pdf Graphic file (type pdf)
 <use figures/fig5_per_level_f1.pdf>
-Package pdftex.def Info: figures/fig5_per_level_f1.pdf  used on input line 1046
+Package pdftex.def Info: figures/fig5_per_level_f1.pdf  used on input line 1059
 .
 (pdftex.def)             Requested size: 452.9679pt x 300.42638pt.
-<figures/fig2_ablation.pdf, id=611, 640.28934pt x 279.48305pt>
+<figures/fig2_ablation.pdf, id=615, 640.28934pt x 279.48305pt>
 File: figures/fig2_ablation.pdf Graphic file (type pdf)
 <use figures/fig2_ablation.pdf>
-Package pdftex.def Info: figures/fig2_ablation.pdf  used on input line 1082.
+Package pdftex.def Info: figures/fig2_ablation.pdf  used on input line 1095.
 (pdftex.def)             Requested size: 385.02547pt x 168.06212pt.
- [14] [15 <./figures/fig3_go_sparse.pdf>] [16 <./figures/fig5_per_level_f1.pdf>
-] [17 <./figures/fig2_ablation.pdf>] [18] (./main.aux)
+<figures/fig_ablation.pdf, id=616, 734.47838pt x 3235.51338pt>
+File: figures/fig_ablation.pdf Graphic file (type pdf)
+<use figures/fig_ablation.pdf>
+Package pdftex.def Info: figures/fig_ablation.pdf  used on input line 1103.
+(pdftex.def)             Requested size: 452.9679pt x 1995.3831pt.
+
+
+LaTeX Warning: Float too large for page by 1359.27625pt on input line 1112.
+
+[14] [15 <./figures/fig3_go_sparse.pdf>] [16 <./figures/fig5_per_level_f1.pdf>]
+[17 <./figures/fig2_ablation.pdf>] [18] [19 <./figures/fig_ablation.pdf>]
+(./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-03-20>
@@ -877,11 +887,11 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 0264640FB66368886A9508E2D9DA7413;7042.
  ) 
 Here is how much of TeX's memory you used:
- 25769 strings out of 467363
- 472953 string characters out of 5419002
- 906083 words of memory out of 6000000
- 54064 multiletter control sequences out of 15000+600000
- 659473 words of font info for 241 fonts, out of 8000000 for 9000
+ 25784 strings out of 467363
+ 473284 string characters out of 5419002
+ 907584 words of memory out of 6000000
+ 54073 multiletter control sequences out of 15000+600000
+ 659657 words of font info for 243 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  84i,12n,94p,1001b,813s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
@@ -908,10 +918,10 @@ m-super/sfrm1095.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/cm-super
 95.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb>
 </usr/share/texlive/texmf-dist/fonts/type1/public/cm-super/sftt1095.pfb></usr/s
 hare/texlive/texmf-dist/fonts/type1/public/cm-super/sftt1200.pfb>
-Output written on main.pdf (18 pages, 664788 bytes).
+Output written on main.pdf (19 pages, 697621 bytes).
 PDF statistics:
- 1020 PDF objects out of 1200 (max. 8388607)
- 495 compressed objects within 5 object streams
- 106 named destinations out of 1000 (max. 500000)
- 61259 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 1147 PDF objects out of 1200 (max. 8388607)
+ 525 compressed objects within 6 object streams
+ 108 named destinations out of 1000 (max. 500000)
+ 61264 words of extra memory for PDF output out of 61914 (max. 10000000)
 
