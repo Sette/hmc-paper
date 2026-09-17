@@ -115,7 +115,7 @@ Our contributions are:
   \item \textbf{New SOTA on ArXiv, WOS, and AAPD} using frozen or
     fine-tuned SPECTER2 with the R-matrix constraint.
   \item \textbf{Sparse R-matrix formulation}: a graph-based
-    $O(C{+}E)$ approximation that preserves the constraint on large
+    $O(C{+}E)$ formulation that enforces the same constraint on large
     DAGs without materializing the dense matrix.
   \item Competitive FunCat performance with simpler models, plus an
     explicit analysis of where the R-matrix is insufficient relative
@@ -306,14 +306,15 @@ $j$), we compute the transitive closure:
 
 \begin{equation}
 R_{ij} = \begin{cases}
-1 & \text{if } i = j \text{ or } \exists \text{ path } i \rightarrow \ldots \rightarrow j \text{ in } A \\
+1 & \text{if } i = j \text{ or } \exists \text{ path } j \rightarrow \ldots \rightarrow i \text{ in } A \\
 0 & \text{otherwise}
 \end{cases}
 \label{eq:rmatrix}
 \end{equation}
 
-$R \in \{0,1\}^{C \times C}$ encodes all ancestor relationships:
-$R_{ij}=1$ means class $i$ is an ancestor of class $j$ (or $i=j$).
+Because $A$'s edges point from a child to its parent, a path
+$j \rightarrow \ldots \rightarrow i$ means $i$ is an ancestor of $j$:
+$R \in \{0,1\}^{C \times C}$ marks exactly those pairs (or $i=j$).
 Our contribution is not the R-matrix itself---we credit Giunchiglia \&
 Lukasiewicz for the original idea---but its elevation to a
 \textbf{reusable, modular layer} with two operating modes:
@@ -504,7 +505,7 @@ transitive closure of the hierarchy adjacency matrix $A$:
 
 \begin{equation}
 R_{ij} = \begin{cases}
-1 & \text{if } i = j \text{ or } \exists \text{ path } i \rightarrow \ldots \rightarrow j \text{ in } A \\
+1 & \text{if } i = j \text{ or } \exists \text{ path } j \rightarrow \ldots \rightarrow i \text{ in } A \\
 0 & \text{otherwise}
 \end{cases}
 \end{equation}
@@ -592,7 +593,10 @@ cross-domain text generalization:
 
 \begin{table}[htbp]
 \centering
-\caption{Dataset statistics. FunCat datasets use HPT standard splits.}
+\caption{Dataset statistics. ArXiv and AAPD use a 64/16/20 split; the
+other text datasets follow their released partitions; FunCat and GO
+datasets use the train/validation/test files shipped with the benchmark
+ARFFs.}
 \label{tab:datasets}
 \begin{tabular}{lrrrrr}
 \toprule
@@ -602,7 +606,7 @@ cross-domain text generalization:
 \multicolumn{6}{c}{\textit{Text (Transformer-based)}} \\
 ArXiv  & 40,982 & 10,245 & 768 (SPECTER2) & 157 & 156 \\
 WOS    & 37,588 & 9,397  & 768 (SPECTER2) & 142 & 141 \\
-AAPD   & 44,672 & 11,168 & 768 (SPECTER2) & 98  & 97 \\
+AAPD   & 44,672 & 11,168 & 768 (SPECTER2) & 62  & 61 \\
 RCV1-V2$^\dagger$ & 18,519 & 781,265 & 768 (SPECTER2) & 104 & 103 \\
 EUR-Lex 57K & 45,000 & 6,000 & 768 (SPECTER2) & 2,901 & 2,900 \\
 \midrule
@@ -645,7 +649,7 @@ pending NIST license for raw text access.
 
 \begin{itemize}[leftmargin=*,nosep]
   \item \textbf{Global} (Ours): MLP + R-matrix constraint.
-    SPECTER2-base~\cite{specter} embeddings for text (frozen or
+    SPECTER2-base~\cite{specter2} embeddings for text (frozen or
     fine-tuned). Hidden dim per dataset from the registry.
   \item \textbf{Local}: Per-level MLPs, trained jointly, no R-matrix.
   \item \textbf{Tabular GBDT}: HistGradientBoosting One-vs-Rest
@@ -664,18 +668,20 @@ pending NIST license for raw text access.
 
 \subsection{Training Details}
 
-All experiments use seed 42, AdamW ($\beta_1=0.9, \beta_2=0.999$),
+The FunCat and GO runs use seed 42; text results are means over three
+seeds (0, 42, 123). Optimizer: AdamW ($\beta_1=0.9, \beta_2=0.999$),
 weight decay $10^{-5}$. Text: SPECTER2-base (768-dim CLS-pooled).
 E2E fine-tuning: transformer LR $2\times10^{-5}$, classifier LR
-$10^{-4}$, batch 8, 3 epochs (WOS). Tabular GPU: LR $10^{-4}$, batch
-128, epochs from dataset registry. GBDT: CPU-only (scikit-learn
-HistGradientBoosting, max\_iter=100, no early stopping). NVIDIA RTX
-3060 (12GB).
+$10^{-4}$, batch 8, 3 epochs (WOS). Tabular: LR $10^{-4}$, batch 32,
+epochs from the dataset registry, CPU for the FunCat/GO tables. GBDT:
+CPU-only (scikit-learn HistGradientBoosting, max\_iter=100, no early
+stopping). NVIDIA RTX 3060 (12GB).
 
 \textbf{Metrics.} \textbf{Micro-F1} (primary for text) and
 \textbf{micro-AUPRC} (primary for FunCat, following literature
-convention~\cite{www2022ontology}). Threshold sweep: $[0.02, 0.90]$
-step 0.02 (tabular) or $[0.10, 0.90]$ step 0.05 (text).
+convention~\cite{www2022ontology}). Threshold sweep: $[0.10, 0.90)$
+in steps of 0.05, selected on the test split; AUPRC and every
+threshold-free comparison are unaffected.
 
 % ═══════════════════════════════════════════════════════════════════════
 \section{Results}
@@ -729,7 +735,7 @@ are pending due to computational cost ($\sim$1.5h/seed on RTX 3060).
 \subsection{Cross-Domain Text Generalization}
 
 We extend our evaluation to three new text datasets spanning diverse
-domains: \textbf{AAPD}~\cite{aapd} (arXiv papers, 97 labels, 2-level tree),
+domains: \textbf{AAPD}~\cite{aapd} (arXiv papers, 54 labels, 2-level tree),
 \textbf{RCV1-V2} (Reuters news, 103 topics, 4-level tree), and
 \textbf{EUR-Lex 57K}~\cite{eurlex57k} (EU legislation, 2,901 EUROVOC
 concepts, up to 8 levels deep).
@@ -747,24 +753,24 @@ HiAGM (Zhou+ 2020)~\cite{zhou2020hiagm}  & 0.701 & -- \\
 HTC-infoMAX (ICML'21)~\cite{htcinfomax} & 0.716 & -- \\
 HiMatch (2021)~\cite{himatch}            & 0.723 & -- \\
 \midrule
-Ours global (frozen SPECTER2 + R)  & \textbf{0.768} & 0.666 \\
-Ours global (w/o R)                 & 0.768 & 0.666 \\
+Ours global (frozen SPECTER2 + R)  & \textbf{0.823} & 0.666 \\
+Ours global (w/o R)                 & 0.822 & 0.666 \\
 \midrule
-$\Delta$ vs.\ previous best         & \textbf{+0.045} & -- \\
+$\Delta$ vs.\ previous best         & \textbf{+0.100} & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{AAPD.} With frozen SPECTER2 + MLP + R-matrix (50K train,
-50 epochs), we achieve \textbf{0.7684 Micro-F1}, a new
-state-of-the-art (+4.5 points over HiMatch at 0.723). Remarkably, we
+\textbf{AAPD.} With frozen SPECTER2 + MLP + R-matrix (44,672 train,
+50 epochs, mean of 3 seeds), we achieve \textbf{0.8228 Micro-F1}, a new
+state-of-the-art (+10.0 points over HiMatch at 0.723). Remarkably, we
 beat all prior methods that use fine-tuned BERT and label GNNs
 (HiAGM, HTC-infoMAX, HiMatch) with a simpler frozen-embedding
 architecture. The R-matrix gain is small ($\Delta < 0.001$) for a
 structural reason: the constraint rewrites a node's score as the
 maximum over its descendants, so only \emph{internal} nodes can
-change---on AAPD that is the six area nodes, while the remaining 91
-leaf labels keep exactly their unconstrained scores. The constraint
+change---on AAPD that is the seven area nodes, while the remaining 54
+annotated labels keep exactly their unconstrained scores. The constraint
 still guarantees hierarchical consistency (no predicted sub-field can
 have an unpredicted parent); it simply has little room to move
 micro-F1 on a hierarchy this shallow.
@@ -817,8 +823,8 @@ spo       & \textbf{0.241} & 0.215 & 0.211 & 0.202 & 0.198 \\
 \end{table}
 
 \textbf{Analysis.} The WWW'22 ontology learning method dominates all
-FunCat datasets by large margins (+39--71\% AUPRC from ontology
-learning alone). Our simpler methods are competitive with C-HMCNN and
+FunCat datasets by large margins (+13--41\% AUPRC from ontology
+learning alone, per dataset). Our simpler methods are competitive with C-HMCNN and
 HMCN-F (the neural SOTA before ontology learning), and we
 \textbf{beat HMCN-F on seq\_FUN} (0.307 vs 0.291 AUPRC) using a
 simple GBDT baseline.  Church\_FUN and pheno\_FUN are contributed as
@@ -839,10 +845,12 @@ significantly different.  Our GBDT is statistically tied with HMCN-F.}
 \end{figure}
 
 \textbf{Statistical significance.}  A Friedman test confirms that
-methods are not all equivalent ($\chi^2=27.50$, $p<0.0001$).
-Nemenyi post-hoc analysis (Figure~\ref{fig:cd}) reveals that
-WWW'22 Ontology Learning significantly outperforms all other methods
-($p<0.05$).  However, our simple GBDT baseline is \textbf{statistically
+methods are not all equivalent ($\chi^2=27.80$, $p<0.0001$).
+Nemenyi post-hoc analysis (Figure~\ref{fig:cd}, CD$=2.16$) shows that
+WWW'22 Ontology Learning significantly outperforms our GBDT and Global
+models, and that C-HMCNN significantly outperforms our Global model
+($p<0.05$); against C-HMCNN and HMCN-F, WWW'22 is not separable at this
+sample size.  However, our simple GBDT baseline is \textbf{statistically
 indistinguishable from HMCN-F} (NeurIPS 2018), a recurrent neural HMC
 method, while being 30$\times$ faster to train.  Our Global and GBDT
 methods are also within the critical difference of each other,
@@ -915,9 +923,12 @@ tabular\_mlp        & 0.22 & 0.24 & 0.231 \\
 \end{tabular}
 \end{table}
 
-The R-matrix boosts recall (+11 points over GBDT) by propagating
-scores up the hierarchy, at the cost of precision ($-6$ points). The
-global method wins on F1 by leveraging this trade-off effectively.
+The global MLP trades precision for recall relative to GBDT (+11 and
+$-6$ points, respectively): bottom-up max propagation raises parent
+scores, and with them recall, at the cost of precision.  The R-matrix's
+own contribution on FunCat is neutral (Table~\ref{tab:ablation}), so
+this gap is driven by the head rather than by the constraint.  The
+global method wins on F1 by leveraging the trade-off effectively.
 
 \subsection{GPU Acceleration}
 
@@ -929,8 +940,8 @@ global method wins on F1 by leveraging this trade-off effectively.
 \toprule
 \textbf{Method} & \textbf{CPU} & \textbf{GPU} & \textbf{Speedup} \\
 \midrule
-global (FunCat avg) & 16.7s & 1.2s & \textbf{14$\times$} \\
-tabular\_mlp (FunCat avg) & 5.3s & 2.0s & 2.7$\times$ \\
+global (FunCat avg) & 15.7s & 5.5s & \textbf{2.9$\times$} \\
+tabular\_mlp (FunCat avg) & 5.0s & 2.8s & 1.8$\times$ \\
 WOS globalE2E (3 ep) & -- & 5,791s & -- \\
 \bottomrule
 \end{tabular}
@@ -964,7 +975,7 @@ spo\_GO       & 4120 & 0.3687 & 0.3632 & $-$0.0055 & +0.0039 \\
 \textit{Avg}  & --   & 0.3718 & 0.3667 & $-$0.0051 & +0.0055 \\
 \bottomrule
 \multicolumn{6}{l}{\small Training: 20 epochs, batch 64, identity R-matrix + sparse reconciliation at inference.} \\
-\multicolumn{6}{l}{\small Dense R would OOM at batch 64: the batched $C\times C$ float64 step peaks at $\approx$10.4\,GB.} \\
+\multicolumn{6}{l}{\small Dense R would OOM at batch 64: the batched $C\times C$ float64 step peaks at $\approx$10.4\,GB for the largest hierarchy ($C{=}4{,}504$).} \\
 \multicolumn{6}{l}{\small AUPRC improves on \textbf{all 9 datasets} (avg +0.0055).} \\
 \end{tabular}
 \end{table}
@@ -977,16 +988,16 @@ time---R-matrix-constrained inference on the full Gene Ontology
 benchmark suite.  The dense R-matrix costs $C^2 \times 4$ bytes
 ($\approx$65~MB for $C{=}4{,}126$) to store, and applying it to a
 batch materializes a batch$\times C\times C$ float64 tensor
-($\approx$8.7\,GB at batch 64), which cannot fit in GPU memory
-alongside model parameters and activations; the sparse approximation
+($\approx$8.7\,GB at batch 64 for $C{=}4{,}126$), which cannot fit in GPU memory
+alongside model parameters and activations; the sparse formulation
 uses only graph edges ($\sim$46~KB, $>1{,}400\times$ reduction).
 
 \textbf{2. AUPRC improvement.} Sparse reconciliation improves AUPRC on
-all four datasets (avg +0.0065), consistent with the recall-boosting
-effect observed on FunCat (Table~\ref{tab:pr}).  The largest gain is
+all nine datasets (avg +0.0055), driven by the recall gain of bottom-up
+max propagation (Table~\ref{tab:pr}).  The largest gain is
 on eisen\_GO (+0.0193 AUPRC).
 
-\textbf{3. F1 trade-off.} Raw F1 decreases slightly (avg $-$0.0059)
+\textbf{3. F1 trade-off.} Raw F1 decreases slightly (avg $-$0.0051)
 due to the precision-recall trade-off inherent in bottom-up max
 propagation: parent scores are raised to match children, which boosts
 recall at the cost of precision.  The optimal operating point depends
@@ -1030,7 +1041,7 @@ spo\_GO       & \textbf{0.439} & 0.382 & 0.376 & 0.251 \\
 \textbf{Why the gap?} Our GO results are below the SOTA by
 $\sim$0.19 AUPRC on average.  This gap has three main causes:
 (1) \textbf{Ontology representation learning} (WWW'22) contributes
-+39--71\% AUPRC on FunCat, and similar gains on GO---we do not
++13--41\% AUPRC on FunCat, and similar gains on GO---we do not
 implement this; (2) \textbf{GCN label propagation} (C-HMCNN, HMCN-F)
 uses graph convolutions over the label hierarchy, while we use a
 simple MLP; (3) Our GO experiments use only 20 epochs with identity
@@ -1082,8 +1093,8 @@ $\Delta$ = R on $-$ R off. Positive $\Delta$ means R helps.}
 \midrule
 ArXiv   & 0.7295 & 0.7283 & +0.0012 \\
 WOS     & 0.7519 & 0.7488 & +0.0031 \\
-AAPD    & 0.7684 & 0.7679 & +0.0005 \\
-cellcycle\_FUN & 0.2719 & 0.2722 & $-$0.0004 \\
+AAPD    & 0.8228 & 0.8224 & +0.0004 \\
+cellcycle\_FUN & 0.2719 & 0.2722 & $-$0.0003 \\
 seq\_FUN      & 0.2984 & 0.2980 & +0.0004 \\
 EUR-Lex 57K & 0.6656 & 0.6656 & 0.0000 \\
 \bottomrule
@@ -1145,26 +1156,26 @@ calibration for highly imbalanced HMC.
 
 \subsection{Where the R-Matrix Excels---and Where It Doesn't}
 
-The R-matrix constraint~\cite{giunchiglia2018hmc} provides clear
-benefits when:
-
-\begin{enumerate}[leftmargin=*,nosep]
-  \item \textbf{The hierarchy is clean and informative.} ArXiv's
-    2-level taxonomy (19 areas $\rightarrow$ 137 subcategories) and
-    WOS's (7 areas $\rightarrow$ 134 subcategories) provide strong
-    structural priors. The constraint alone boosts ArXiv F1 by 13.5
-    points over HiAGM.
-  \item \textbf{Training data is limited relative to classes.} FunCat
-    datasets have $\sim$2500 samples for 500 classes; the R-matrix
-    provides structural regularization that prevents ``impossible''
-    predictions.
-\end{enumerate}
+The R-matrix constraint~\cite{giunchiglia2018hmc} provides its clearest
+benefit when the hierarchy is clean and informative: ArXiv's 2-level
+taxonomy (19 areas $\rightarrow$ 137 subcategories) and WOS's (7 areas
+$\rightarrow$ 134 subcategories) give the frozen SPECTER2 embeddings
+strong structural priors, and the constraint adds a small, consistent
+F1 gain there (+0.0012 on ArXiv, +0.0031 on WOS,
+Table~\ref{tab:ablation}).  The bulk of the gap to prior work comes
+from the embeddings themselves---frozen SPECTER2 with the R-matrix
+reaches 13.5 F1 points over HiAGM on ArXiv.
 
 However, the R-matrix is \textbf{not a silver bullet}:
 
 \begin{enumerate}[leftmargin=*,nosep]
+  \item \textbf{Scarce data alone is not enough.} FunCat datasets have
+    $\sim$2500 samples for 500 classes, yet the constraint is neutral
+    there ($-0.0003$ F1, Table~\ref{tab:ablation}): structural
+    regularization does not materialize when the features already
+    yield hierarchically consistent predictions.
   \item \textbf{Ontology semantics matter.} The WWW'22 method gains
-    39--71\% AUPRC on FunCat by learning class representations from
+    13--41\% AUPRC on FunCat by learning class representations from
     the Gene Ontology structure---information that the R-matrix (a
     binary ancestor mask) cannot capture. Integrating ontology
     embeddings into our platform is a natural next step.
@@ -1187,8 +1198,8 @@ We explicitly credit:
 \begin{itemize}[leftmargin=*,nosep]
   \item \textbf{R-matrix constraint:} Giunchiglia \& Lukasiewicz (2018,
     NeurIPS)~\cite{giunchiglia2018hmc}.
-  \item \textbf{SPECTER2 embeddings:} Cohan et al.~(2020,
-    ACL)~\cite{specter}.
+  \item \textbf{SPECTER2 embeddings:} Singh et al.~(2023,
+    EMNLP)~\cite{specter2}.
   \item \textbf{FunCat/GO benchmarks and splits:} Standard HMC
     literature~\cite{clus,cerri2014hmc}.
 \end{itemize}
@@ -1220,15 +1231,16 @@ key findings are:
     frozen or fine-tuned SPECTER2.
   \item Competitive FunCat performance with simpler models, including
     a GBDT baseline.
-  \item \textbf{Sparse R-Matrix}: an $O(C{+}E)$ approximation that
+  \item \textbf{Sparse R-Matrix}: an $O(C{+}E)$ formulation that
     extends hierarchical consistency to Gene Ontology while avoiding
     dense materialization.
-  \item GPU acceleration provides 14$\times$ speedup.
+  \item GPU acceleration gives a 1.8--2.9$\times$ speedup on the FunCat
+    table runs, the larger model benefiting more.
 \end{itemize}
 
 The platform is designed to grow with the field. Integrating ontology
-embeddings, sparse R-matrix approximations for large DAGs, and protein
-sequence encoders (ESM-2) are natural next steps.
+embeddings and completing the protein sequence encoder (ESM-2), today a
+placeholder, are natural next steps.
 
 \smallskip
 \noindent
@@ -1306,11 +1318,11 @@ P.~Yang, X.~Sun, W.~Li, S.~Ma, W.~Wu, and H.~Wang.
 \newblock SGM: Sequence generation model for multi-label classification.
 \newblock In {\em Proceedings of COLING}, pages 3915--3926, 2018.
 
-\bibitem{specter}
-A.~Cohan, S.~Feldman, I.~Beltagy, D.~Downey, and D.~S.~Weld.
-\newblock SPECTER: Document-level representation learning using
-  citation-informed transformers.
-\newblock In {\em Proceedings of ACL}, pages 2270--2282, 2020.
+\bibitem{specter2}
+A.~Singh, M.~D'Arcy, A.~Cohan, D.~Downey, and S.~Feldman.
+\newblock SciRepEval: A multi-format benchmark for scientific document
+  representations.
+\newblock In {\em Proceedings of EMNLP}, pages 5548--5566, 2023.
 
 \end{thebibliography}
 

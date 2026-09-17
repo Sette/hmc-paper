@@ -38,27 +38,27 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Sparse R-Matrix: Scaling to Large DAGs}{5}{subsection.3.5}\protected@file@percent }
 \newlabel{sec:sparse}{{3.5}{5}{Sparse R-Matrix: Scaling to Large DAGs}{subsection.3.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Training and Loss Functions}{5}{subsection.3.6}\protected@file@percent }
-\newlabel{eq:bce}{{4}{5}{Training and Loss Functions}{equation.4}{}}
 \citation{giunchiglia2018hmc}
 \citation{giunchiglia2018hmc}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Sparse R-matrix flow. The sparse formulation processes the hierarchy bottom-up along the actual parent-child edges. The $O(C^2)$ term refers only to the dense baseline; the sparse formulation uses $O(C+E)$ memory.}}{6}{figure.caption.2}\protected@file@percent }
 \newlabel{fig:sparse_flow}{{2}{6}{Sparse R-matrix flow. The sparse formulation processes the hierarchy bottom-up along the actual parent-child edges. The $O(C^2)$ term refers only to the dense baseline; the sparse formulation uses $O(C+E)$ memory}{figure.caption.2}{}}
+\newlabel{eq:bce}{{4}{6}{Training and Loss Functions}{equation.4}{}}
 \newlabel{eq:total}{{5}{6}{Training and Loss Functions}{equation.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Reproducibility Infrastructure}{6}{subsection.3.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.8}R-Matrix Constraint}{6}{subsection.3.8}\protected@file@percent }
-\newlabel{sec:rmatrix}{{3.8}{6}{R-Matrix Constraint}{subsection.3.8}{}}
 \citation{giunchiglia2018hmc}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.8}R-Matrix Constraint}{7}{subsection.3.8}\protected@file@percent }
+\newlabel{sec:rmatrix}{{3.8}{7}{R-Matrix Constraint}{subsection.3.8}{}}
 \newlabel{eq:hierloss-impl}{{7}{7}{R-Matrix Constraint}{equation.7}{}}
 \newlabel{eq:reconcile-impl}{{8}{7}{R-Matrix Constraint}{equation.8}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.9}Sparse R-Matrix for Large Hierarchies}{7}{subsection.3.9}\protected@file@percent }
 \newlabel{sec:sparse-impl}{{3.9}{7}{Sparse R-Matrix for Large Hierarchies}{subsection.3.9}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.10}Terminology}{7}{subsection.3.10}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.11}Additional Components}{7}{subsection.3.11}\protected@file@percent }
-\citation{specter}
+\citation{specter2}
 \@writefile{toc}{\contentsline {section}{\numberline {4}Experiments}{8}{section.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Datasets}{8}{subsection.4.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Dataset statistics. FunCat datasets use HPT standard splits.}}{8}{table.caption.3}\protected@file@percent }
-\newlabel{tab:datasets}{{1}{8}{Dataset statistics. FunCat datasets use HPT standard splits}{table.caption.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Dataset statistics. ArXiv and AAPD use a 64/16/20 split; the other text datasets follow their released partitions; FunCat and GO datasets use the train/validation/test files shipped with the benchmark ARFFs.}}{8}{table.caption.3}\protected@file@percent }
+\newlabel{tab:datasets}{{1}{8}{Dataset statistics. ArXiv and AAPD use a 64/16/20 split; the other text datasets follow their released partitions; FunCat and GO datasets use the train/validation/test files shipped with the benchmark ARFFs}{table.caption.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Methods Compared}{8}{subsection.4.2}\protected@file@percent }
 \citation{zhou2020hiagm}
 \citation{htcinfomax}
@@ -97,9 +97,9 @@
 \newlabel{sec:others}{{5.4}{12}{Cross-Domain Results (Enron, Diatoms, ImCLEF)}{subsection.5.4}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Global (MLP+R) on cross-domain datasets spanning email classification (Enron), microscopy (Diatoms), and medical imaging (ImCLEF). All use pre-extracted features from ARFF files.}}{12}{table.caption.9}\protected@file@percent }
 \newlabel{tab:others}{{5}{12}{Global (MLP+R) on cross-domain datasets spanning email classification (Enron), microscopy (Diatoms), and medical imaging (ImCLEF). All use pre-extracted features from ARFF files}{table.caption.9}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}GBDT vs.\ Global: Precision-Recall Trade-off}{12}{subsection.5.5}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Precision/recall comparison on FunCat (CPU, avg across 8 datasets).}}{13}{table.caption.11}\protected@file@percent }
 \newlabel{tab:pr}{{6}{13}{Precision/recall comparison on FunCat (CPU, avg across 8 datasets)}{table.caption.11}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}GBDT vs.\ Global: Precision-Recall Trade-off}{13}{subsection.5.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.6}GPU Acceleration}{13}{subsection.5.6}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Training time comparison (RTX 3060 vs CPU).}}{13}{table.caption.12}\protected@file@percent }
 \newlabel{tab:gpu}{{7}{13}{Training time comparison (RTX 3060 vs CPU)}{table.caption.12}{}}
@@ -110,32 +110,32 @@
 \@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces AUPRC on Gene Ontology datasets. Our method uses MLP with sparse R-matrix reconciliation at inference (no ontology learning, no GCN). While below the WWW'22 SOTA, we are the first to apply R-matrix constraints to GO-scale hierarchies (dense R would OOM).}}{14}{table.caption.14}\protected@file@percent }
 \newlabel{tab:go_sota}{{9}{14}{AUPRC on Gene Ontology datasets. Our method uses MLP with sparse R-matrix reconciliation at inference (no ontology learning, no GCN). While below the WWW'22 SOTA, we are the first to apply R-matrix constraints to GO-scale hierarchies (dense R would OOM)}{table.caption.14}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.8}Per-Level Analysis: Where Does the Model Fail?}{14}{subsection.5.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.9}Ablation: R-Matrix On/Off}{14}{subsection.5.9}\protected@file@percent }
-\newlabel{sec:ablation}{{5.9}{14}{Ablation: R-Matrix On/Off}{subsection.5.9}{}}
-\citation{giunchiglia2018hmc}
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Sparse R-Matrix on 9 Gene Ontology datasets. AUPRC improves on all datasets (avg +0.0055).}}{15}{figure.caption.15}\protected@file@percent }
 \newlabel{fig:go}{{6}{15}{Sparse R-Matrix on 9 Gene Ontology datasets. AUPRC improves on all datasets (avg +0.0055)}{figure.caption.15}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.9}Ablation: R-Matrix On/Off}{15}{subsection.5.9}\protected@file@percent }
+\newlabel{sec:ablation}{{5.9}{15}{Ablation: R-Matrix On/Off}{subsection.5.9}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces R-matrix ablation: Micro-F1 with and without the constraint. $\Delta $ = R on $-$ R off. Positive $\Delta $ means R helps.}}{15}{table.caption.17}\protected@file@percent }
 \newlabel{tab:ablation}{{10}{15}{R-matrix ablation: Micro-F1 with and without the constraint. $\Delta $ = R on $-$ R off. Positive $\Delta $ means R helps}{table.caption.17}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.10}Ablation: Platt Calibration on FunCat}{15}{subsection.5.10}\protected@file@percent }
 \newlabel{sec:calib}{{5.10}{15}{Ablation: Platt Calibration on FunCat}{subsection.5.10}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{15}{section.6}\protected@file@percent }
-\newlabel{sec:discussion}{{6}{15}{Discussion}{section.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Where the R-Matrix Excels---and Where It Doesn't}{15}{subsection.6.1}\protected@file@percent }
 \citation{giunchiglia2018hmc}
-\citation{specter}
-\citation{clus}
-\citation{cerri2014hmc}
 \@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces F1 by hierarchy depth level across 4 representative datasets. F1 drops sharply with depth: leaves are 3--10$\times $ harder than the root.}}{16}{figure.caption.16}\protected@file@percent }
 \newlabel{fig:perlevel}{{7}{16}{F1 by hierarchy depth level across 4 representative datasets. F1 drops sharply with depth: leaves are 3--10$\times $ harder than the root}{figure.caption.16}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Attribution of Contributions}{16}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{16}{section.6}\protected@file@percent }
+\newlabel{sec:discussion}{{6}{16}{Discussion}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Where the R-Matrix Excels---and Where It Doesn't}{16}{subsection.6.1}\protected@file@percent }
+\citation{giunchiglia2018hmc}
+\citation{specter2}
+\citation{clus}
+\citation{cerri2014hmc}
 \bibcite{giunchiglia2018hmc}{1}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps.}}{17}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:ablation}{{8}{17}{R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps}{figure.caption.18}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Attribution of Contributions}{17}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{17}{section.7}\protected@file@percent }
 \bibcite{silla2011hmc}{2}
 \bibcite{cerri2014hmc}{3}
 \bibcite{weihs2018hmc}{4}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps.}}{17}{figure.caption.18}\protected@file@percent }
-\newlabel{fig:ablation}{{8}{17}{R-matrix ablation: Micro-F1 with and without the constraint. Positive $\Delta $ means R helps}{figure.caption.18}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{17}{section.7}\protected@file@percent }
 \bibcite{zhou2020hiagm}{5}
 \bibcite{htcinfomax}{6}
 \bibcite{www2022ontology}{7}
@@ -144,7 +144,7 @@
 \bibcite{himatch}{10}
 \bibcite{eurlex57k}{11}
 \bibcite{aapd}{12}
-\bibcite{specter}{13}
+\bibcite{specter2}{13}
 \@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces R-matrix decomposition: plain BCE, training-time consistency loss (Eq.~\ref {eq:hierloss}), inference-time reconciliation (Eq.~\ref {eq:reconcile}), and both. Training with the consistency loss alone is never better than plain BCE, while the gains come from inference-time reconciliation (with or without the loss). Independent single-seed run; absolute values may differ slightly from Table~\ref {tab:ablation}.}}{19}{figure.caption.19}\protected@file@percent }
 \newlabel{fig:decomp}{{9}{19}{R-matrix decomposition: plain BCE, training-time consistency loss (Eq.~\ref {eq:hierloss}), inference-time reconciliation (Eq.~\ref {eq:reconcile}), and both. Training with the consistency loss alone is never better than plain BCE, while the gains come from inference-time reconciliation (with or without the loss). Independent single-seed run; absolute values may differ slightly from Table~\ref {tab:ablation}}{figure.caption.19}{}}
 \gdef \@abspage@last{19}
