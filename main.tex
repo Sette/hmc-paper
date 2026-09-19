@@ -312,9 +312,17 @@ R_{ij} = \begin{cases}
 \label{eq:rmatrix}
 \end{equation}
 
-Because $A$'s edges point from a child to its parent, a path
-$j \rightarrow \ldots \rightarrow i$ means $i$ is an ancestor of $j$:
-$R \in \{0,1\}^{C \times C}$ marks exactly those pairs (or $i=j$).
+Each step of $A$ is a parent link, so a path
+$j \rightarrow \ldots \rightarrow i$ climbs the hierarchy one level per
+hop and ends at an ancestor of $j$.  The ArXiv label \texttt{cs.AI},
+for instance, yields the edges \texttt{cs.AI}$\rightarrow$\texttt{cs}
+and \texttt{cs}$\rightarrow$root, hence a two-hop path
+\texttt{cs.AI}$\rightarrow$\texttt{cs}$\rightarrow$root and
+$R_{\text{root},\text{cs.AI}}=1$, even though root is not a direct
+parent of \texttt{cs.AI}.  The closure thus expands the direct edges
+into \emph{all} ancestor--descendant pairs: $R \in \{0,1\}^{C \times C}$
+marks exactly those, plus the diagonal $i=j$, listed separately because
+$A$ has no self-loops.
 Our contribution is not the R-matrix itself---we credit Giunchiglia \&
 Lukasiewicz for the original idea---but its elevation to a
 \textbf{reusable, modular layer} with two operating modes:
@@ -556,6 +564,12 @@ To avoid ambiguity, we use the following terms consistently throughout
 the paper:
 
 \begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Path.} A chain of edges in the adjacency matrix $A$
+    traversed from a node up to one of its ancestors, one level per hop
+    ($A$'s edges point child~$\rightarrow$~parent); \emph{ancestor} and
+    \emph{descendant} refer to this relation throughout.  Paths are a
+    construction device: the closure turns the $E$ direct edges into the
+    full ancestor--descendant pair set materialized in $R$.
   \item \textbf{Dense R-matrix.} The explicit $C \times C$ ancestor
     closure matrix. It is exact, but has quadratic memory cost.
   \item \textbf{R-matrix constraint.} The hierarchical consistency
