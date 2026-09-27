@@ -40,17 +40,20 @@ Classification\\ with R-Matrix Constraints}}
 We present \textsc{hmc-torch}, a modular and extensible platform for
 Hierarchical Multi-Label Classification (HMC) that integrates the
 R-matrix constraint---originally proposed by Giunchiglia \&
-Lukasiewicz (2018, NeurIPS)---as a first-class architectural
-component. The framework separates data contracts
+Lukasiewicz (2020, NeurIPS)~\cite{chmcnn}---as a first-class
+architectural component. The framework separates data contracts
 (\texttt{DatasetBundle}, \texttt{Hierarchy}), feature encoders, and
-reusable HMC heads, enabling reproducible experimentation across 28
-datasets spanning tree and DAG hierarchies. We report
-\textbf{new state-of-the-art} on ArXiv, WOS, and AAPD, competitive
-baselines on FunCat and EUR-Lex 57K, and a sparse R-matrix formulation
-that preserves hierarchical consistency in $O(C{+}E)$ memory. On 9 Gene
-Ontology datasets, sparse reconciliation improves AUPRC on every
-dataset while avoiding the dense $O(C^2)$ matrix, which exceeds GPU
-memory at this scale.
+reusable HMC heads, enabling structured experimentation across 28
+datasets spanning tree and DAG hierarchies. We report a
+\textbf{marginal new state of the art on WOS} (0.8743 Micro-F1,
+$+0.0027$ over the best published BERT-based result, single seed) and,
+under our own re-split protocol, competitive results on ArXiv and
+AAPD; we also report competitive baselines on FunCat and EUR-Lex 57K.
+We contribute a sparse R-matrix formulation that preserves
+hierarchical consistency in $O(C{+}E)$ memory: on 9 Gene Ontology
+datasets, sparse reconciliation improves AUPRC on every dataset while
+avoiding the dense $O(C^2)$ matrix, which exceeds GPU memory at this
+scale.
 
 \smallskip
 \noindent\textbf{Availability:} \url{https://github.com/sette/hmc-torch} \textbar{}
@@ -73,7 +76,7 @@ methods---from local per-level classifiers~\cite{silla2011hmc} to
 global approaches with graph neural networks~\cite{zhou2020hiagm} and
 ontology representation learning~\cite{www2022ontology}. A key
 architectural innovation was introduced by Giunchiglia \&
-Lukasiewicz~\cite{giunchiglia2018hmc}: the \textbf{R-matrix}
+Lukasiewicz~\cite{chmcnn}: the \textbf{R-matrix}
 (ancestor closure matrix) that enforces hierarchical consistency by
 ensuring every parent node's predicted probability is at least as
 large as its children's. However, this constraint has typically been
@@ -109,11 +112,13 @@ same semantics without materializing the dense matrix.
 
 Our contributions are:
 \begin{itemize}[leftmargin=*,nosep]
-  \item A modular HMC platform supporting 28 datasets across 7
-    domains, with reproducible experiment manifests and a shared
-    encoder/head interface.
-  \item \textbf{New SOTA on ArXiv, WOS, and AAPD} using frozen or
-    fine-tuned SPECTER2 with the R-matrix constraint.
+  \item A modular HMC platform supporting 28 datasets spanning text,
+    genomic tabular, Gene Ontology, microscopy, email, and medical
+    imaging data, with a shared encoder/head interface and
+    self-contained run artifacts.
+  \item \textbf{A marginal new state of the art on WOS} and competitive
+    text results on ArXiv and AAPD under our split protocol, using
+    frozen or fine-tuned SPECTER2 with the R-matrix constraint.
   \item \textbf{Sparse R-matrix formulation}: a graph-based
     $O(C{+}E)$ formulation that enforces the same constraint on large
     DAGs without materializing the dense matrix.
@@ -142,24 +147,24 @@ representation learning, achieving state-of-the-art AUPRC by jointly
 learning class embeddings from the GO hierarchy structure.
 
 For tabular/genomic data, CLUS-HMC~\cite{clus} uses decision trees
-with hierarchical constraints, while HMCN~\cite{giunchiglia2018hmc}
+with hierarchical constraints, while HMCN~\cite{weihs2018hmc}
 propagates information across hierarchy levels via recurrent
-architectures and introduced the R-matrix constraint that we build
-upon.
+architectures, and C-HMCNN~\cite{chmcnn} introduced the R-matrix
+constraint that we build upon.
 
 \subsection{The R-Matrix Constraint}
 
 The R-matrix (ancestor/closure matrix) is an $N \times N$ binary
 matrix where $R_{ij} = 1$ iff class $i$ is an ancestor of class $j$
-(including $i=j$). It was introduced by~\cite{giunchiglia2018hmc} as
-a post-processing step in the HMCN architecture to enforce
+(including $i=j$). It was introduced by~\cite{chmcnn} as a constraint
+layer on top of a base network, enforcing
 hierarchical consistency: $\forall (i,j): \text{ancestor}(i,j)
 \implies p_i \geq p_j$.  Subsequent work~\cite{zhou2020hiagm,
 htcinfomax, www2022ontology} adopted similar constraint mechanisms,
 but the R-matrix remained tightly coupled to specific architectures.
 
 Our contribution is \textbf{not} the R-matrix itself---we credit
-Giunchiglia \& Lukasiewicz (2018) for the original idea---but rather
+Giunchiglia \& Lukasiewicz (2020) for the original idea---but rather
 its elevation to a \textbf{reusable, modular component} within a
 general-purpose HMC platform. By making the R-matrix a first-class
 abstraction available to any encoder/head combination, we enable
@@ -216,11 +221,12 @@ encapsulates everything a model needs to know about a dataset:
 \end{enumerate}
 
 This contract-based design enforces a clean boundary between data
-loading and model training.  Any dataset adapter (ARFF parser, JSONL
-reader, HDF5 loader) must produce a \texttt{DatasetBundle}; any model
-must consume one.  This eliminates the ad-hoc data handling that
-plagues most HMC implementations and enables the systematic
-cross-dataset comparison in Section~\ref{sec:results}.
+loading and model training: dataset adapters (ARFF parsers, JSONL
+readers) and models meet at the same \texttt{Split} layout, so a new
+dataset or a new head plugs in without touching the rest of the
+pipeline.  This is what makes the cross-dataset comparison in
+Section~\ref{sec:results} possible, and it removes the ad-hoc data
+handling that plagues most HMC implementations.
 
 \subsection{Feature Encoders: One Protocol, Many Modalities}
 
@@ -229,77 +235,73 @@ All feature encoding follows a two-method protocol:
 \begin{center}
 \texttt{encoder.fit(train\_split)} $\rightarrow$
 \texttt{encoder.transform(any\_split)} $\rightarrow$
-\texttt{EncodedSplit}
+\texttt{Split}
 \end{center}
 
-The \texttt{fit} method learns parameters exclusively from the
-training split (scaler statistics, imputation values, feature
-selection masks).  The \texttt{transform} method applies the fitted
-transformation to any split, returning a new \texttt{Split} with
-encoded features.  This protocol is \textbf{stateless by
-construction}: the same fitted encoder can be serialized, shared, and
-applied to new data without leakage.
+The \texttt{fit} method learns parameters from the split it is given
+(scaler statistics, imputation values, feature-selection masks) and
+\texttt{transform} applies the fitted transformation, returning a new
+\texttt{Split} with encoded features.  In our tabular runs \texttt{fit}
+is called on the training partition with the validation split merged
+in, which keeps the fitted statistics independent of the test set, and
+the fitted encoder is an ordinary object that can be reused across
+splits.
 
-Current implementations span the major HMC modalities:
+The protocol is implemented for the modalities we use, with two
+stubs for future work:
 
 \begin{itemize}[leftmargin=*,nosep]
-  \item \textbf{Tabular} (\texttt{TabularFeatureEncoder}).  Handles
-    missing value imputation (mean), standardization (zero mean, unit
-    variance), and optional feature selection via variance threshold
-    or mutual information with the label matrix.  For datasets with
-    $>$500 features, variance-based filtering removes near-constant
-    columns; mutual information selects the top-$K$ most
-    label-informative features.
+  \item \textbf{Tabular} (\texttt{TabularFeatureEncoder}).  Mean
+    imputation and standardization, both enabled by default, plus
+    optional feature selection via variance threshold or mutual
+    information with the label matrix.  The reported tabular runs
+    enable variance filtering for datasets with $>$500 features;
+    mutual-information selection is implemented but not used in the
+    experiments here.
   \item \textbf{Text} (\texttt{TextFeatureEncoder}).  Wraps a
     HuggingFace transformer (SPECTER2-base by default) with CLS-pooling
-    for document-level representations.  Supports both frozen
-    embeddings (fast, 768-dim output) and fine-tuned mode where
-    transformer weights are updated end-to-end with the HMC head.
-    Raw-text availability is detected from \texttt{FeatureMetadata};
-    if only pre-extracted features exist, the encoder passes through
-    unchanged.
-  \item \textbf{Protein} (\texttt{ProteinFeatureEncoder}, placeholder).
-    Designed for ESM-2 embeddings of amino acid sequences, cached
-    per-sequence with model version hashing.  Activated only when raw
-    sequences are confirmed available for \texttt{seq\_FUN}.
-  \item \textbf{Vision} (\texttt{VisionFeatureEncoder}, placeholder).
-    Targets DINOv2/ConvNeXt backbones for Diatoms and ImCLEF image
-    data.  Falls back to pre-extracted ARFF features when raw images
-    are unavailable.
+    for document-level representations, and passes pre-extracted
+    features through unchanged when no raw text is available.  The
+    encoder itself always runs frozen (no gradient); end-to-end
+    fine-tuning is implemented separately, by the E2E model that owns
+    the transformer.
+  \item \textbf{Protein} and \textbf{Vision}
+    (\texttt{ProteinFeatureEncoder}, \texttt{VisionFeatureEncoder}).
+    Experimental stubs that pass pre-extracted features through
+    unchanged; ESM-2 sequence embeddings and DINOv2/ConvNeXt image
+    backbones are the intended targets.
 \end{itemize}
 
-This protocol means that \textbf{any encoder works with any head}:
-a tabular model can be swapped for a text transformer without
-modifying the downstream HMC architecture.
+Because encoders and heads share the \texttt{Split} contract, the
+tabular and text paths swap without changes to the downstream HMC
+architecture.
 
 \subsection{Hierarchical Classification Heads}
 
-The platform provides three head architectures, all producing
-\texttt{node\_scores} of shape $(B, C)$ regardless of internal
-structure:
+The platform provides three head architectures:
 
 \begin{itemize}[leftmargin=*,nosep]
   \item \textbf{GlobalSigmoidHead}. A shared multi-layer perceptron
     over all $C$ class nodes: $\text{MLP}(\mathbf{x}) \rightarrow
-    \sigma(\cdot) \rightarrow [0,1]^C$.  This is the simplest and most
-    widely applicable head, used in all our experiments except where
-    noted.
+    \sigma(\cdot) \rightarrow [0,1]^C$.  This is the head used in every
+    experiment reported in this paper.
   \item \textbf{LocalLevelHead}. One independent MLP per hierarchy
     level, each predicting only the classes at that depth:
     $\text{MLP}_\ell(\mathbf{x}) \rightarrow [0,1]^{C_\ell}$.  Trained
     jointly with per-level BCE loss.  Level predictions are assembled
     into a global score vector via the \texttt{to\_global} method using
     the hierarchy's node index mapping.
-  \item \textbf{TreePathHead}. For strictly tree-structured tasks
-    where each sample follows exactly one root-to-leaf path.  Uses
-    masked softmax at each level, where the mask restricts choices to
-    children of the parent node chosen at the previous level.  This
-    enforces mutual exclusivity within sibling groups.
+  \item \textbf{TreePathHead}. Per-level heads for strictly
+    tree-structured tasks, with path decoding by per-level argmax.
+    The intent is to restrict each sample to a single root-to-leaf path
+    by masking each level to the children of the node chosen above; the
+    masking is not implemented in the current release, so the head is
+    experimental and is not used in the experiments here.
 \end{itemize}
 
 \subsection{R-Matrix: The Hierarchical Constraint Layer}
 
-The R-matrix, introduced by~\cite{giunchiglia2018hmc}, is the
+The R-matrix, introduced by~\cite{chmcnn}, is the
 centrepiece of our hierarchical modeling.  Given the class hierarchy
 adjacency matrix $A$ (where $A_{ij}=1$ if $i$ is a direct child of
 $j$), we compute the transitive closure:
@@ -472,7 +474,7 @@ inference-time reconciliation (Eq.~\ref{eq:reconcile}) is where the
 R-matrix provides its main value.  Section~\ref{sec:ablation}
 accordingly isolates the inference-time constraint.  The platform's
 \texttt{global} and \texttt{globalE2E} trainers apply the MC-style
-consistency penalty of~\cite{giunchiglia2018hmc} to the constrained
+consistency penalty of~\cite{chmcnn} to the constrained
 outputs during training by default; the runs reported here instead train
 with plain BCE and restrict the constraint to prediction time
 (\texttt{-{}-consistency\_loss none}), while
@@ -481,28 +483,32 @@ explicit term weighted by $\lambda$.
 
 \subsection{Reproducibility Infrastructure}
 
-Every experiment run produces a self-contained output directory with:
+The tabular pipeline (\texttt{tabular\_gbdt}, \texttt{tabular\_mlp})
+writes a self-contained output directory per run:
 
 \begin{itemize}[leftmargin=*,nosep]
   \item \texttt{scores\_before\_postprocess.npz} — raw model outputs.
   \item \texttt{scores\_final.npz} — after reconciliation.
   \item \texttt{metrics.json} — Micro-F1, AUPRC, precision, recall,
     best threshold.
-  \item \texttt{run-config.json} — all hyperparameters, dataset
-    dimensions, preprocessing choices.
-  \item \texttt{manifest.json} — git SHA, Python version, dependency
-    versions, hostname, timestamp.
+  \item \texttt{run-config.json} — the hyperparameters, dataset
+    dimensions, and preprocessing choices of that run.
 \end{itemize}
 
-Combined with fixed random seeds (42 across all experiments) and
-deterministic CUDA operations, this ensures that any result in this
-paper can be reproduced exactly by running the corresponding
-configuration.
+The text and FunCat experiments reported here were produced by
+standalone scripts under \texttt{experiments/}, which write the
+reconciled scores together with the metric dictionary
+(\texttt{metrics.json}, or \texttt{test-scores.json} for the text
+pipelines).  Seed handling is script-level and not yet uniform: the
+text runs average seeds 0, 42, and 123, the GO and GPU runs use seed
+42, and the two FunCat table scripts run without an explicit seed.  The
+command-line entry point (\texttt{python -m hmc.main}) fixes
+Python/NumPy/PyTorch seeds and enables deterministic cuDNN kernels.
 
 \subsection{R-Matrix Constraint}
 \label{sec:rmatrix}
 
-Following~\cite{giunchiglia2018hmc}, we define the R-matrix via
+Following~\cite{chmcnn}, we define the R-matrix via
 transitive closure of the hierarchy adjacency matrix $A$:
 
 \begin{equation}
@@ -531,11 +537,12 @@ p_i^{\text{rec}} = \max\left(p_i,\; \max_{j: \text{child}(i,j)} p_j^{\text{rec}}
 \label{eq:reconcile-impl}
 \end{equation}
 
-Unlike the original HMCN~\cite{giunchiglia2018hmc}, where the
-constraint is embedded in a recurrent architecture, we treat the
+Unlike HMCN's recurrent formulations~\cite{weihs2018hmc}, where the
+constraint is embedded in the architecture, and C-HMCNN's constraint
+layer~\cite{chmcnn}, we treat the
 R-matrix as a \textbf{standalone component} that can be combined with
-any encoder (frozen transformer, fine-tuned transformer, GBDT, MLP)
-and any head (global, local, tree-path). This enables the ablation
+any encoder (frozen transformer, fine-tuned transformer, GBDT, MLP);
+our experiments pair it with the global head. This enables the ablation
 studies in Section~\ref{sec:results}.
 
 \subsection{Sparse R-Matrix for Large Hierarchies}
@@ -580,14 +587,17 @@ to process the hierarchy bottom-up during reconciliation.
 
 \subsection{Additional Components}
 
-\textbf{Losses.} Weighted BCE, Focal Loss, Hierarchical Consistency
-(Eq.~\ref{eq:hierloss}), and Contrastive Label Loss (InfoNCE between
-document and label embeddings).
+\textbf{Losses.} Weighted BCE and the hierarchical consistency loss of
+Eq.~\ref{eq:hierloss} are the objectives used by the tabular and text
+paths.  Focal loss and a document--document contrastive loss (gated to
+the GNN trainer) are implemented but not used in the experiments
+reported here; a document--label contrastive variant remains
+experimental.
 
 \textbf{Calibration.} Platt scaling and isotonic regression per node,
-fitted on validation. We find raw scores with threshold sweep
-outperform calibration for highly imbalanced multi-label settings
-(Section~\ref{sec:calib}).
+fitted on validation.  Isotonic is implemented but not used here.  We
+find raw scores with threshold sweep outperform calibration for highly
+imbalanced multi-label settings (Section~\ref{sec:calib}).
 
 % ═══════════════════════════════════════════════════════════════════════
 \section{Experiments}
@@ -604,7 +614,12 @@ cross-domain text generalization:
 \caption{Dataset statistics. ArXiv and AAPD use a 64/16/20 split; the
 other text datasets follow their released partitions; FunCat and GO
 datasets use the train/validation/test files shipped with the benchmark
-ARFFs.}
+ARFFs.  The \textbf{Train} column reports train$+$validation, the
+partition actually optimized in our runs: where a release ships a
+validation file it is merged back in, and where it does not (the four
+cross-domain datasets), 20\% of the training file is held out for
+validation and merged back, so the counts here are the benchmark's
+training partitions and no test document is ever optimized on.}
 \label{tab:datasets}
 \begin{tabular}{lrrrrr}
 \toprule
@@ -616,12 +631,12 @@ ArXiv  & 40,982 & 10,245 & 768 (SPECTER2) & 157 & 156 \\
 WOS    & 37,588 & 9,397  & 768 (SPECTER2) & 142 & 141 \\
 AAPD   & 44,672 & 11,168 & 768 (SPECTER2) & 62  & 61 \\
 RCV1-V2$^\dagger$ & 18,519 & 781,265 & 768 (SPECTER2) & 104 & 103 \\
-EUR-Lex 57K & 45,000 & 6,000 & 768 (SPECTER2) & 2,901 & 2,900 \\
+EUR-Lex 57K$^\ddagger$ & 10,000 & 6,000 & 768 (SPECTER2) & 2,901 & 2,900 \\
 \midrule
 \multicolumn{6}{c}{\textit{Tabular (FunCat hierarchy, 10 datasets)}} \\
 cellcycle\_FUN & 2,476 & 1,281 & 77  & 500 & 499 \\
 church\_FUN    & 2,474 & 1,281 & 31  & 500 & 499 \\
-derisi\_FUN    & 2,480 & 1,284 & 63  & 500 & 499 \\
+derisi\_FUN    & 2,450 & 1,275 & 63  & 500 & 499 \\
 eisen\_FUN     & 1,587 & 837   & 79  & 462 & 461 \\
 expr\_FUN      & 2,488 & 1,291 & 561 & 500 & 499 \\
 gasch1\_FUN    & 2,480 & 1,284 & 173 & 500 & 499 \\
@@ -631,26 +646,30 @@ seq\_FUN       & 2,580 & 1,339 & 529 & 500 & 499 \\
 spo\_FUN       & 2,437 & 1,266 & 86  & 500 & 499 \\
 \midrule
 \multicolumn{6}{c}{\textit{Gene Ontology (DAG, 9 datasets)}} \\
-cellcycle\_GO & 2,474 & 1,280 & 77  & 4,126 & 4,122 \\
-derisi\_GO    & 2,478 & 1,283 & 63  & 4,120 & 4,116 \\
-eisen\_GO     & 1,586 & 836   & 79  & 3,574 & 3,570 \\
-expr\_GO      & 2,486 & 1,290 & 561 & 4,132 & 4,128 \\
-gasch1\_GO    & 2,478 & 1,283 & 173 & 4,126 & 4,122 \\
-gasch2\_GO    & 2,486 & 1,290 & 52  & 4,132 & 4,128 \\
-pheno\_GO     & 1,008 & 581   & 276 & 4,504 & 4,500 \\
-seq\_GO       & 2,578 & 1,338 & 529 & 4,134 & 4,130 \\
-spo\_GO       & 2,435 & 1,265 & 86  & 4,120 & 4,116 \\
+cellcycle\_GO & 2,473 & 1,278 & 77  & 4,126 & 4,122 \\
+derisi\_GO    & 2,447 & 1,272 & 63  & 4,120 & 4,116 \\
+eisen\_GO     & 1,583 & 835   & 79  & 3,574 & 3,570 \\
+expr\_GO      & 2,485 & 1,288 & 561 & 4,132 & 4,128 \\
+gasch1\_GO    & 2,477 & 1,281 & 173 & 4,126 & 4,122 \\
+gasch2\_GO    & 2,485 & 1,288 & 52  & 4,132 & 4,128 \\
+pheno\_GO     & 1,005 & 581   & 276 & 3,128 & 3,124 \\
+seq\_GO       & 2,568 & 1,332 & 529 & 4,134 & 4,130 \\
+spo\_GO       & 2,434 & 1,263 & 86  & 4,120 & 4,116 \\
 \midrule
 \multicolumn{6}{c}{\textit{Cross-domain (Others, 4 datasets)}} \\
-enron\_others      & 1,648  & 660   & 1001 & 57   & 56 \\
-diatoms\_others    & 3,119  & 1,054 & 371  & 399  & 398 \\
-imclef07a\_others  & 11,006 & 1,006 & 80   & 97   & 96 \\
-imclef07d\_others  & 11,006 & 1,006 & 80   & 47   & 46 \\
+enron\_others      & 988    & 660   & 1001 & 57   & 56 \\
+diatoms\_others    & 2,065  & 1,054 & 371  & 399  & 398 \\
+imclef07a\_others  & 10,000 & 1,006 & 80   & 97   & 96 \\
+imclef07d\_others  & 10,000 & 1,006 & 80   & 47   & 46 \\
 \bottomrule
 \end{tabular}
 \vspace{4pt}
 \par\noindent\textsuperscript{$\dagger$}RCV1-V2: infrastructure ready;
 pending NIST license for raw text access.
+\par\noindent\textsuperscript{$\ddagger$}EUR-Lex 57K: run on a
+10{,}000-document training subsample (the label space of 2{,}901
+concepts is the one observed in that subsample; the full training
+partition holds 4{,}109 concepts).
 \end{table}
 
 \subsection{Methods Compared}
@@ -667,23 +686,26 @@ pending NIST license for raw text access.
   \item \textbf{HiAGM}~\cite{zhou2020hiagm}: Text encoder + label GCN.
   \item \textbf{HTC-infoMAX}~\cite{htcinfomax}: HiAGM + mutual
     information maximization.
-  \item \textbf{HMCN-F}~\cite{giunchiglia2018hmc}: Recurrent label
-    propagation with R-matrix (FunCat).
-  \item \textbf{C-HMCNN}~\cite{chmcnn}: Constrained HMC neural network.
-  \item \textbf{Ontology Learning}~\cite{www2022ontology}: WWW'22 SOTA
-    on FunCat/GO via ontology representation learning.
+  \item \textbf{HMCN-F}~\cite{weihs2018hmc}: Feed-forward hierarchical
+    network with level-wise propagation (FunCat).
+  \item \textbf{C-HMCNN}~\cite{chmcnn}: Constraint layer that enforces
+    coherence with the R-matrix.
+  \item \textbf{Surj}~\cite{www2022ontology}: ontology representation
+    learning, the WWW'22 state of the art on FunCat/GO.
 \end{itemize}
 
 \subsection{Training Details}
 
-The FunCat and GO runs use seed 42; text results are means over three
-seeds (0, 42, 123). Optimizer: AdamW ($\beta_1=0.9, \beta_2=0.999$),
-weight decay $10^{-5}$. Text: SPECTER2-base (768-dim CLS-pooled).
+Text results are means over three seeds (0, 42, 123); the FunCat and GO
+runs are single runs. Optimizer: AdamW ($\beta_1=0.9, \beta_2=0.999$)
+with weight decay $10^{-5}$. Text: SPECTER2-base (768-dim CLS-pooled).
 E2E fine-tuning: transformer LR $2\times10^{-5}$, classifier LR
-$10^{-4}$, batch 8, 3 epochs (WOS). Tabular: LR $10^{-4}$, batch 32,
-epochs from the dataset registry, CPU for the FunCat/GO tables. GBDT:
-CPU-only (scikit-learn HistGradientBoosting, max\_iter=100, no early
-stopping). NVIDIA RTX 3060 (12GB).
+$10^{-4}$, batch 8, 3 epochs (WOS). Tabular: LR $10^{-4}$, batch 32
+(global) and 64 (GBDT/MLP), epochs taken from the dataset registry
+with a cap of 30--50 for the FunCat table, CPU for the FunCat/GO
+tables. GO runs: 20 epochs at batch 64. GBDT: CPU-only (scikit-learn
+HistGradientBoosting, max\_iter=100, no early stopping, one classifier
+per node with $\geq 5$ positives). NVIDIA RTX 3060 (12GB).
 
 \textbf{Metrics.} \textbf{Micro-F1} (primary for text) and
 \textbf{micro-AUPRC} (primary for FunCat, following literature
@@ -700,19 +722,26 @@ threshold-free comparison are unaffected.
 
 \begin{table}[htbp]
 \centering
-\caption{Micro-F1 on text HMC benchmarks. \textbf{Bold} = best.}
+\caption{Micro-F1 on text HMC benchmarks. \textbf{Bold} = best.
+\textsuperscript{\S}ArXiv has no canonical HMC release: published numbers use
+different label sets, depths, and splits, so the ArXiv column is
+reported for reference and is \emph{not} a like-for-like comparison.
+WOS values are as reported with BERT backbones
+by HPT~\cite{hpt}.}
 \label{tab:text}
 \begin{tabular}{lcc}
 \toprule
-\textbf{Method} & \textbf{ArXiv} & \textbf{WOS} \\
+\textbf{Method} & \textbf{ArXiv}\textsuperscript{\S} & \textbf{WOS} \\
 \midrule
 HiAGM (Zhou+ ACL'20)~\cite{zhou2020hiagm}  & 0.5950 & 0.8604 \\
-HTC-infoMAX (ICML'21)~\cite{htcinfomax}    & 0.6130 & 0.8720 \\
+HTC-infoMAX (Deng+ NAACL'21)~\cite{htcinfomax} & 0.6130 & 0.8630 \\
+HGCLR (Wang+ ACL'22)~\cite{hgclr}          & --     & 0.8711 \\
+HPT (Wang+ EMNLP'22)~\cite{hpt}            & --     & 0.8716 \\
 \midrule
 Ours global (frozen SPECTER2 + R)  & \textbf{0.7295} & 0.7519 \\
 Ours globalE2E (fine-tuned + R)    & --            & \textbf{0.8743} \\
 \midrule
-$\Delta$ vs.\ previous best        & \textbf{+0.1345} & \textbf{+0.0023} \\
+$\Delta$ vs.\ best published       & --            & \textbf{+0.0027} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -726,55 +755,72 @@ Our method (global+R, dark blue) surpasses all previous methods.}
 \end{figure}
 
 \textbf{ArXiv.} Frozen SPECTER2 + MLP + R-matrix achieves 0.7295
-($\pm$0.0003 across 3 seeds), surpassing HiAGM by 13.45 points.
-The near-zero variance indicates that the R-matrix provides stable,
-deterministic regularization rather than stochastic benefits.
-The constraint alone (without fine-tuning or GCN) outperforms all
-previous methods, demonstrating that hierarchical consistency is more
-impactful than complex architectures when the taxonomy is clean.
+($\pm$0.0003 across seeds 0/42/123) on our ArXiv split
+(Table~\ref{tab:datasets}).  We deliberately do \emph{not} claim a
+state-of-the-art margin here: ArXiv has no canonical HMC release---
+published works use different subsets, label depths, and splits---so
+the baseline figures in Table~\ref{tab:text} come from different
+configurations and are not directly comparable.  On our configuration
+the constraint is what closes most of the gap: a frozen encoder plus
+inference-time reconciliation is competitive with fine-tuned
+BERT-based hierarchy models.  The near-zero seed variance indicates
+that the R-matrix behaves as a stable, deterministic prior rather than
+a stochastic benefit.
 
 \textbf{WOS.} Frozen SPECTER2 achieves 0.7519 ($\pm$0.0005 across 3
-seeds); fine-tuning raises it to \textbf{0.8743} (single seed), a new
-state-of-the-art (+0.0023 over HTC-infoMAX). The fine-tuning adapts
-SPECTER2 to scientific abstracts, while the R-matrix enforces the
-7-area $\rightarrow$ 134-subcategory hierarchy. Multi-seed E2E results
-are pending due to computational cost ($\sim$1.5h/seed on RTX 3060).
+seeds); fine-tuning raises it to \textbf{0.8743} (single seed), a
+marginal new state of the art on the WOS benchmark (+0.0027 over HPT
+at 0.8716 and +0.0032 over HGCLR at 0.8711, both with BERT backbones
+and both published after the baselines listed in
+Table~\ref{tab:text}). The fine-tuning adapts SPECTER2 to scientific
+abstracts, while the R-matrix enforces the 7-area $\rightarrow$
+134-subcategory hierarchy.  Since the margin lies within single-seed
+noise, we report it as provisional; multi-seed E2E results are pending
+due to computational cost ($\sim$1.6h/seed on RTX 3060).
 
 \subsection{Cross-Domain Text Generalization}
 
 We extend our evaluation to three new text datasets spanning diverse
-domains: \textbf{AAPD}~\cite{aapd} (arXiv papers, 54 labels, 2-level tree),
+domains: \textbf{AAPD}~\cite{aapd} (arXiv papers, 54 leaf labels over
+seven areas, 2-level tree),
 \textbf{RCV1-V2} (Reuters news, 103 topics, 4-level tree), and
 \textbf{EUR-Lex 57K}~\cite{eurlex57k} (EU legislation, 2,901 EUROVOC
-concepts, up to 8 levels deep).
+concepts in the training subsample; the release used here ships the
+concept file without \texttt{broader} relations, so its label space is
+flat).
 
 \begin{table}[htbp]
 \centering
-\caption{Micro-F1 on new text HMC benchmarks (frozen SPECTER2 + R).
-$^\dagger$RCV1-V2 infrastructure ready, pending data access.}
+\caption{Micro-F1 on additional text HMC benchmarks (frozen SPECTER2 +
+R).  $^\dagger$RCV1-V2 infrastructure ready, pending data access.
+Published AAPD numbers use the official SGM split
+(53{,}840/1{,}000/1{,}000); our runs re-split all 55{,}840 documents
+(44{,}672 train / 11{,}168 test), so the comparison is \emph{not}
+like-for-like and we report no $\Delta$.}
 \label{tab:new_text}
-\begin{tabular}{lccc}
+\begin{tabular}{lcc}
 \toprule
 \textbf{Method} & \textbf{AAPD} & \textbf{EUR-Lex 57K} \\
 \midrule
 HiAGM (Zhou+ 2020)~\cite{zhou2020hiagm}  & 0.701 & -- \\
-HTC-infoMAX (ICML'21)~\cite{htcinfomax} & 0.716 & -- \\
+HTC-infoMAX (Deng+ NAACL'21)~\cite{htcinfomax} & 0.716 & -- \\
 HiMatch (2021)~\cite{himatch}            & 0.723 & -- \\
 \midrule
 Ours global (frozen SPECTER2 + R)  & \textbf{0.823} & 0.666 \\
 Ours global (w/o R)                 & 0.822 & 0.666 \\
-\midrule
-$\Delta$ vs.\ previous best         & \textbf{+0.100} & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{AAPD.} With frozen SPECTER2 + MLP + R-matrix (44,672 train,
-50 epochs, mean of 3 seeds), we achieve \textbf{0.8228 Micro-F1}, a new
-state-of-the-art (+10.0 points over HiMatch at 0.723). Remarkably, we
-beat all prior methods that use fine-tuned BERT and label GNNs
-(HiAGM, HTC-infoMAX, HiMatch) with a simpler frozen-embedding
-architecture. The R-matrix gain is small ($\Delta < 0.001$) for a
+50 epochs, mean of 3 seeds), we achieve \textbf{0.8228 Micro-F1} on our
+re-split of the dataset.  Because the published baselines were measured
+on the official 1,000-document SGM test set while our split holds out
+11,168 documents, the figures are not directly comparable, and we
+therefore do not claim a margin over them; on our split, a
+frozen-embedding architecture is nonetheless competitive with
+fine-tuned BERT models that use label GNNs
+(HiAGM, HTC-infoMAX, HiMatch). The R-matrix gain is small ($\Delta < 0.001$) for a
 structural reason: the constraint rewrites a node's score as the
 maximum over its descendants, so only \emph{internal} nodes can
 change---on AAPD that is the seven area nodes, while the remaining 54
@@ -807,9 +853,9 @@ learning SOTA.  \underline{Underlined}: beats HMCN-F.  \textbf{Bold}: best.}
 \label{tab:funcat}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{Dataset} & \textbf{Ontology} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
+\textbf{Dataset} & \textbf{Surj} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
 \textbf{Ours} & \textbf{Ours} \\
-& \textbf{(WWW'22)} & \textbf{(NeurIPS'20)} & \textbf{(NeurIPS'18)} &
+& \textbf{(WWW'22)} & \textbf{(NeurIPS'20)} & \textbf{(ICML'18)} &
 \textbf{GBDT} & \textbf{Global} \\
 \midrule
 cellcycle & \textbf{0.269} & 0.255 & 0.252 & 0.241 & 0.239 \\
@@ -825,12 +871,12 @@ spo       & \textbf{0.241} & 0.215 & 0.211 & 0.202 & 0.198 \\
 \midrule
 \textit{Avg (8 common)} & \textbf{0.312} & 0.264 & 0.261 & 0.250 & 0.250 \\
 \bottomrule
-\multicolumn{6}{l}{\small Ontology = Ontology Representation Learning (WWW'22).} \\
+\multicolumn{6}{l}{\small Surj = ontology representation learning (Yang \& Howe, WWW'22).} \\
 \multicolumn{6}{l}{\small Church and pheno datasets have no published baselines.} \\
 \end{tabular}
 \end{table}
 
-\textbf{Analysis.} The WWW'22 ontology learning method dominates all
+\textbf{Analysis.} Surj (WWW'22 ontology learning) dominates all
 FunCat datasets by large margins (+13--41\% AUPRC from ontology
 learning alone, per dataset). Our simpler methods are competitive with C-HMCNN and
 HMCN-F (the neural SOTA before ontology learning), and we
@@ -838,7 +884,7 @@ HMCN-F (the neural SOTA before ontology learning), and we
 simple GBDT baseline.  Church\_FUN and pheno\_FUN are contributed as
 new datasets with no published baselines.
 
-The gap to WWW'22 (avg 0.250 vs 0.312 AUPRC) is largely attributable
+The gap to Surj (avg 0.250 vs 0.312 AUPRC) is largely attributable
 to ontology representation learning, which we do not implement.
 Section~\ref{sec:discussion} discusses this as a clear direction for
 future improvement within our modular platform.
@@ -852,15 +898,17 @@ significantly different.  Our GBDT is statistically tied with HMCN-F.}
 \label{fig:cd}
 \end{figure}
 
-\textbf{Statistical significance.}  A Friedman test confirms that
-methods are not all equivalent ($\chi^2=27.80$, $p<0.0001$).
+\textbf{Statistical significance.}  A Friedman test over the five
+methods with published baselines (Global, GBDT, HMCN-F, C-HMCNN, Surj)
+confirms that they are not all equivalent ($\chi^2=27.80$,
+$p<0.0001$).
 Nemenyi post-hoc analysis (Figure~\ref{fig:cd}, CD$=2.16$) shows that
-WWW'22 Ontology Learning significantly outperforms our GBDT and Global
+Surj (WWW'22) significantly outperforms our GBDT and Global
 models, and that C-HMCNN significantly outperforms our Global model
-($p<0.05$); against C-HMCNN and HMCN-F, WWW'22 is not separable at this
+($p<0.05$); against C-HMCNN and HMCN-F, Surj is not separable at this
 sample size.  However, our simple GBDT baseline is \textbf{statistically
-indistinguishable from HMCN-F} (NeurIPS 2018), a recurrent neural HMC
-method, while being 30$\times$ faster to train.  Our Global and GBDT
+indistinguishable from HMCN-F} (ICML 2018), a recurrent neural HMC
+method, while requiring a fraction of its training time.  Our Global and GBDT
 methods are also within the critical difference of each other,
 confirming that the R-matrix is the key differentiator, not the
 specific choice of MLP vs.\ tree-based head.
@@ -872,38 +920,41 @@ specific choice of MLP vs.\ tree-based head.
 \centering
 \caption{Global (MLP+R) on cross-domain datasets spanning email
 classification (Enron), microscopy (Diatoms), and medical imaging
-(ImCLEF).  All use pre-extracted features from ARFF files.}
+(ImCLEF).  All use pre-extracted features from ARFF files.  These four
+releases ship no validation partition, so 20\% of the training file is
+held out for validation and merged back for training; the test split is
+never seen during optimization.  Time is wall-clock per run on CPU
+(50 epochs, batch 128).}
 \label{tab:others}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{Dataset} & \textbf{Domain} & \textbf{Nodes} & \textbf{F1} &
 \textbf{AUPRC} & \textbf{Time} \\
 \midrule
-enron\_others     & Email (TF-IDF)       & 57   & 0.8068 & 0.8930 & 0.4s \\
-imclef07a\_others & Medical images       & 97   & 0.8188 & 0.8938 & 0.4s \\
-imclef07d\_others & Medical images       & 47   & 0.8025 & 0.8814 & 0.4s \\
-diatoms\_others   & Microscopy           & 399  & 0.2948 & 0.2497 & 0.1s \\
+enron\_others     & Email (TF-IDF)       & 57   & 0.6891 & 0.7609 & 10.3s \\
+imclef07a\_others & Medical images       & 97   & 0.8847 & 0.9463 & 39.6s \\
+imclef07d\_others & Medical images       & 47   & 0.8434 & 0.9179 & 38.3s \\
+diatoms\_others   & Microscopy           & 399  & 0.4424 & 0.4458 & 30.1s \\
 \midrule
-\textit{Avg}      & --                   & --   & 0.6807 & 0.7295 & -- \\
+\textit{Avg}      & --                   & --   & 0.7149 & 0.7677 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The global method with R-matrix achieves strong results on three
-additional domains beyond scientific text and genomics:
-\textbf{email classification} (Enron, F1=0.81), \textbf{medical
-imaging} (ImCLEF07A/D, F1=0.80--0.82), and \textbf{microscopy}
-(Diatoms, F1=0.29).  The lower Diatoms result is consistent with
-FunCat-scale hierarchies (399 classes), suggesting that the R-matrix
-benefits most from clean, well-separated taxonomies (Enron's 57-class
-tree, ImCLEF's 47--97 class hierarchies) rather than dense, fine-grained
-ones (Diatoms' 399 classes, FunCat's 500).
+The global method with R-matrix transfers to three additional domains
+beyond scientific text and genomics: \textbf{email classification}
+(Enron, F1=0.69), \textbf{medical imaging} (ImCLEF07A/D, F1=0.84--0.88),
+and \textbf{microscopy} (Diatoms, F1=0.44).  The Diatoms result trails
+the others, consistent with its FunCat-scale label space (399 classes):
+the strongest cross-domain transfers are on small, well-separated
+taxonomies (ImCLEF's 47--97 class hierarchies), while dense,
+fine-grained label spaces remain the hard case (Diatoms, FunCat's 500
+classes).
 
-These results demonstrate the platform's \textbf{cross-domain
+These results illustrate the platform's \textbf{cross-domain
 generality}: the same architecture (MLP + R-matrix), without any
-domain-specific tuning, achieves competitive or state-of-the-art
-performance across scientific text, email, genomics, microscopy, and
-medical imaging.
+domain-specific tuning, runs across scientific text, email, genomics,
+microscopy, and medical imaging.
 
 \begin{figure}[t]
 \centering
@@ -961,7 +1012,7 @@ WOS globalE2E (3 ep) & -- & 5,791s & -- \\
 \begin{table}[htbp]
 \centering
 \caption{Sparse R-Matrix on Gene Ontology datasets (9 datasets,
-3,500--4,504 classes).  The dense baseline is infeasible at this
+3,128--4,134 classes).  The dense baseline is infeasible at this
 scale, whereas the sparse formulation remains tractable and improves
 AUPRC on all datasets.}
 \label{tab:sparse}
@@ -976,14 +1027,14 @@ eisen\_GO     & 3574 & 0.3414 & 0.3404 & $-$0.0010 & +\textbf{0.0193} \\
 expr\_GO      & 4132 & 0.4073 & 0.4083 & \textbf{+0.0010} & +0.0008 \\
 gasch1\_GO    & 4126 & 0.3888 & 0.3833 & $-$0.0055 & +0.0080 \\
 gasch2\_GO    & 4132 & 0.3275 & 0.3240 & $-$0.0035 & +0.0041 \\
-pheno\_GO     & 4504 & 0.3812 & 0.3780 & $-$0.0032 & +0.0055 \\
+pheno\_GO     & 3128 & 0.3812 & 0.3780 & $-$0.0032 & +0.0055 \\
 seq\_GO       & 4134 & 0.4356 & 0.4310 & $-$0.0046 & +0.0023 \\
 spo\_GO       & 4120 & 0.3687 & 0.3632 & $-$0.0055 & +0.0039 \\
 \midrule
 \textit{Avg}  & --   & 0.3718 & 0.3667 & $-$0.0051 & +0.0055 \\
 \bottomrule
 \multicolumn{6}{l}{\small Training: 20 epochs, batch 64, identity R-matrix + sparse reconciliation at inference.} \\
-\multicolumn{6}{l}{\small Dense R would OOM at batch 64: the batched $C\times C$ float64 step peaks at $\approx$10.4\,GB for the largest hierarchy ($C{=}4{,}504$).} \\
+\multicolumn{6}{l}{\small Dense R would OOM at batch 64: the batched $C\times C$ float64 step peaks at $\approx$8.8\,GB for the largest hierarchy ($C{=}4{,}134$).} \\
 \multicolumn{6}{l}{\small AUPRC improves on \textbf{all 9 datasets} (avg +0.0055).} \\
 \end{tabular}
 \end{table}
@@ -991,9 +1042,12 @@ spo\_GO       & 4120 & 0.3687 & 0.3632 & $-$0.0055 & +0.0039 \\
 The Sparse R-Matrix achieves \textbf{zero hierarchy violations}
 on all GO datasets while using $O(C{+}E)$ memory.  Key findings:
 
-\textbf{1. Feasibility.} The sparse R enables---for the first
-time---R-matrix-constrained inference on the full Gene Ontology
-benchmark suite.  The dense R-matrix costs $C^2 \times 4$ bytes
+\textbf{1. Feasibility.} The sparse formulation makes
+R-matrix-constrained inference practical on the full Gene Ontology
+benchmark suite: prior work applies hierarchy constraints to these
+datasets with small batches or recurrent architectures, whereas the
+dense matrix cannot be materialized at the batch size used here.  The
+dense R-matrix costs $C^2 \times 4$ bytes
 ($\approx$65~MB for $C{=}4{,}126$) to store, and applying it to a
 batch materializes a batch$\times C\times C$ float64 tensor
 ($\approx$8.7\,GB at batch 64 for $C{=}4{,}126$), which cannot fit in GPU memory
@@ -1011,22 +1065,23 @@ propagation: parent scores are raised to match children, which boosts
 recall at the cost of precision.  The optimal operating point depends
 on the application (threshold tuning can recover F1).
 
-\textbf{4. Training time.} Full experiments complete in 2.5--11.7\,s
-per dataset (20 epochs, RTX 3060), demonstrating that the sparse
+\textbf{4. Training time.} Full experiments complete in seconds per
+dataset (20 epochs, RTX 3060), demonstrating that the sparse
 R-matrix adds negligible overhead.
 
 \begin{table}[htbp]
 \centering
 \caption{AUPRC on Gene Ontology datasets. Our method uses MLP with
 sparse R-matrix reconciliation at inference (no ontology learning,
-no GCN).  While below the WWW'22 SOTA, we are the first to apply
-R-matrix constraints to GO-scale hierarchies (dense R would OOM).}
+no GCN).  While below the Surj (WWW'22) SOTA, ours is to our knowledge
+the first \emph{sparse} formulation that makes R-matrix-constrained
+inference feasible at this scale (dense R would OOM).}
 \label{tab:go_sota}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Dataset} & \textbf{Ontology} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
+\textbf{Dataset} & \textbf{Surj} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
 \textbf{Ours} \\
-& \textbf{(WWW'22)} & \textbf{(NeurIPS'20)} & \textbf{(NeurIPS'18)} &
+& \textbf{(WWW'22)} & \textbf{(NeurIPS'20)} & \textbf{(ICML'18)} &
 \textbf{Sparse R} \\
 \midrule
 cellcycle\_GO & \textbf{0.460} & 0.413 & 0.400 & 0.253 \\
@@ -1042,13 +1097,13 @@ spo\_GO       & \textbf{0.439} & 0.382 & 0.376 & 0.251 \\
 \textit{Avg (8 common)} & \textbf{0.468} & 0.420 & 0.422 & 0.282 \\
 \bottomrule
 \multicolumn{5}{l}{\small Our GO results use the sparse R formulation only; the dense baseline is infeasible.} \\
-\multicolumn{5}{l}{\small Pheno\_GO has no published baselines. Gap to SOTA: ontology learning + GCN.} \\
+\multicolumn{5}{l}{\small Pheno\_GO has no published baselines. Gap to SOTA: ontology learning (Surj) + GCN.} \\
 \end{tabular}
 \end{table}
 
 \textbf{Why the gap?} Our GO results are below the SOTA by
 $\sim$0.19 AUPRC on average.  This gap has three main causes:
-(1) \textbf{Ontology representation learning} (WWW'22) contributes
+(1) \textbf{Ontology representation learning} (Surj, WWW'22) contributes
 +13--41\% AUPRC on FunCat, and similar gains on GO---we do not
 implement this; (2) \textbf{GCN label propagation} (C-HMCNN, HMCN-F)
 uses graph convolutions over the label hierarchy, while we use a
@@ -1077,15 +1132,22 @@ on all datasets (avg +0.0055).}
 \centering
 \includegraphics[width=\textwidth]{figures/fig5_per_level_f1.pdf}
 \caption{F1 by hierarchy depth level across 4 representative datasets.
-F1 drops sharply with depth: leaves are 3--10$\times$ harder than the root.}
+F1 falls moderately with depth on the text hierarchies (1.3--1.6$\times$
+from the root to the deepest populated level) and by an order of
+magnitude on the FunCat and GO hierarchies; the GO panel is not
+monotonic, and its sparsest levels are effectively unlearnable.}
 \label{fig:perlevel}
 \end{figure}
 
-Figure~\ref{fig:perlevel} shows F1 broken down by hierarchy depth. The
-pattern is consistent across datasets and hierarchy types:
-\textbf{F1 decreases monotonically with depth}. Root-level predictions
-are substantially easier than deep-level predictions, which explains
-why bottom-up reconciliation helps most on shallow hierarchies.
+Figure~\ref{fig:perlevel} shows F1 broken down by hierarchy depth. On
+the text hierarchies the decrease is monotonic and moderate (ArXiv
+0.93 $\rightarrow$ 0.59, WOS 0.86 $\rightarrow$ 0.65).  On FunCat and
+GO the drop is an order of magnitude larger, and it is \emph{not}
+monotonic: the GO hierarchy's highest level---a single node---scores
+near zero while the level beneath it reaches 0.68, and the deepest
+levels hold only a handful of labels each.  Deep, sparsely populated
+levels are therefore both the hardest and the noisiest regime, and the
+one where bottom-up reconciliation changes the most predictions.
 
 \subsection{Ablation: R-Matrix On/Off}
 \label{sec:ablation}
@@ -1164,7 +1226,7 @@ calibration for highly imbalanced HMC.
 
 \subsection{Where the R-Matrix Excels---and Where It Doesn't}
 
-The R-matrix constraint~\cite{giunchiglia2018hmc} provides its clearest
+The R-matrix constraint~\cite{chmcnn} provides its clearest
 benefit when the hierarchy is clean and informative: ArXiv's 2-level
 taxonomy (19 areas $\rightarrow$ 137 subcategories) and WOS's (7 areas
 $\rightarrow$ 134 subcategories) give the frozen SPECTER2 embeddings
@@ -1182,7 +1244,7 @@ However, the R-matrix is \textbf{not a silver bullet}:
     there ($-0.0003$ F1, Table~\ref{tab:ablation}): structural
     regularization does not materialize when the features already
     yield hierarchically consistent predictions.
-  \item \textbf{Ontology semantics matter.} The WWW'22 method gains
+  \item \textbf{Ontology semantics matter.} Surj gains
     13--41\% AUPRC on FunCat by learning class representations from
     the Gene Ontology structure---information that the R-matrix (a
     binary ancestor mask) cannot capture. Integrating ontology
@@ -1190,9 +1252,9 @@ However, the R-matrix is \textbf{not a silver bullet}:
   \item \textbf{Scalability (addressed).} The dense R-matrix is $O(C^2)$,
     but our sparse R formulation (Section~\ref{sec:sparse})
     reduces this to $O(C{+}E)$ with zero violation penalty.  On all 9 GO
-    datasets (up to 4,504 nodes), sparse reconciliation improves
+    datasets (up to 4,134 nodes), sparse reconciliation improves
     AUPRC on every dataset (avg +0.0055) while the dense R-matrix
-    cannot even fit in GPU memory.  Training completes in 2--12\,s per
+    cannot even fit in GPU memory.  Training completes in seconds per
     dataset (RTX 3060).
   \item \textbf{GBDT integration.} Tree-based models cannot use the
     R-matrix during training (reconciliation is post-hoc only). An
@@ -1204,8 +1266,9 @@ However, the R-matrix is \textbf{not a silver bullet}:
 
 We explicitly credit:
 \begin{itemize}[leftmargin=*,nosep]
-  \item \textbf{R-matrix constraint:} Giunchiglia \& Lukasiewicz (2018,
-    NeurIPS)~\cite{giunchiglia2018hmc}.
+  \item \textbf{R-matrix constraint:} Giunchiglia \& Lukasiewicz (2020,
+    NeurIPS)~\cite{chmcnn}; the recurrent hierarchical architectures we
+    compare against are HMCN~\cite{weihs2018hmc}.
   \item \textbf{SPECTER2 embeddings:} Singh et al.~(2023,
     EMNLP)~\cite{specter2}.
   \item \textbf{FunCat/GO benchmarks and splits:} Standard HMC
@@ -1216,8 +1279,9 @@ Our \textbf{novel contributions} are:
 \begin{itemize}[leftmargin=*,nosep]
   \item A modular platform that makes the R-matrix a reusable,
     first-class component across arbitrary encoder/head combinations.
-  \item Systematic evaluation demonstrating \textbf{new SOTA on ArXiv,
-    WOS, and AAPD}, and competitive baselines on FunCat and EUR-Lex
+  \item Systematic evaluation demonstrating a marginal new state of the
+    art on \textbf{WOS}, competitive text results on ArXiv and AAPD
+    under our splits, and competitive baselines on FunCat and EUR-Lex
     57K.
   \item Honest analysis of \textbf{where the R-matrix helps} (clean
     hierarchies, data-scarce regimes) vs.\ where it falls short
@@ -1235,8 +1299,10 @@ the R-matrix constraint as a first-class architectural component. Our
 key findings are:
 
 \begin{itemize}[leftmargin=*,nosep]
-  \item \textbf{New SOTA on ArXiv, WOS, and AAPD} using R-matrix plus
-    frozen or fine-tuned SPECTER2.
+  \item A marginal new state of the art on \textbf{WOS} (0.8743
+    Micro-F1, single seed) and competitive text results on ArXiv and
+    AAPD under our split protocol, using the R-matrix plus frozen or
+    fine-tuned SPECTER2.
   \item Competitive FunCat performance with simpler models, including
     a GBDT baseline.
   \item \textbf{Sparse R-Matrix}: an $O(C{+}E)$ formulation that
@@ -1262,12 +1328,6 @@ and installable via \texttt{pip install hmc-torch}
 
 \begin{thebibliography}{20}
 
-\bibitem{giunchiglia2018hmc}
-E.~Giunchiglia and T.~Lukasiewicz.
-\newblock Coherent hierarchical multi-label classification networks.
-\newblock In {\em Advances in Neural Information Processing Systems (NeurIPS)},
-  2018.
-
 \bibitem{silla2011hmc}
 C.~N.~Silla~Jr. and A.~A.~Freitas.
 \newblock A survey of hierarchical classification across different application
@@ -1290,15 +1350,28 @@ J.~Zhou, C.~Ma, D.~Long, G.~Xu, J.~Ding, H.~Zhang, P.~Xie, and G.~Liu.
 \newblock In {\em Proceedings of ACL}, pages 1106--1117, 2020.
 
 \bibitem{htcinfomax}
+Z.~Deng, H.~Peng, D.~He, J.~Li, and P.~Yu.
+\newblock HTCInfoMax: A global model for hierarchical text classification via
+  information maximization.
+\newblock In {\em Proceedings of NAACL}, pages 3259--3265, 2021.
+
+\bibitem{hgclr}
 Z.~Wang, P.~Wang, L.~Huang, X.~Sun, and H.~Wang.
-\newblock Incorporating hierarchy into text encoder for hierarchical text
+\newblock Incorporating hierarchy into text encoder: A contrastive learning
+  approach for hierarchical text classification.
+\newblock In {\em Proceedings of ACL}, pages 7109--7119, 2022.
+
+\bibitem{hpt}
+Z.~Wang, P.~Wang, T.~Liu, B.~Lin, Y.~Cao, Z.~Sui, and H.~Wang.
+\newblock HPT: Hierarchy-aware prompt tuning for hierarchical text
   classification.
-\newblock In {\em Proceedings of ICML}, 2021.
+\newblock In {\em Proceedings of EMNLP}, pages 3740--3751, 2022.
 
 \bibitem{www2022ontology}
-J.~Chen, S.~Zhang, Y.~He, and S.~Zhao.
-\newblock Ontology-enhanced hierarchical multi-label classification.
-\newblock In {\em Proceedings of The Web Conference (WWW)}, 2022.
+S.~T.~Yang and B.~Howe.
+\newblock Surj: Ontological learning for fast, accurate, and robust
+  hierarchical multi-label classification.
+\newblock In {\em Companion Proceedings of the Web Conference (WWW)}, 2022.
 
 \bibitem{chmcnn}
 E.~Giunchiglia and T.~Lukasiewicz.

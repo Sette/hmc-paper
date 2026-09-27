@@ -8,8 +8,8 @@
     },
     "wos": {
       "f1": 0.8743,
-      "delta_vs_sota": 0.0023,
-      "prev_sota": "HTC-infoMAX 0.8720",
+      "delta_vs_sota": 0.0027,
+      "prev_sota": "HPT 0.8716",
       "note": "E2E fine-tuned SPECTER2"
     }
   },
@@ -34,11 +34,12 @@
       "microscopy",
       "medical_images"
     ],
-    "f1_range": "0.29-0.82"
+    "f1_range": "0.44-0.88",
+    "split_note": "re-run 2026-09-27 with 20% of the training file held out for validation (releases ship no validation split); see experiments/run_cross_domain.py"
   },
   "statistical": {
-    "friedman_chi2": 27.5,
-    "friedman_p": 1.6e-05,
+    "friedman_chi2": 27.8,
+    "friedman_p": 1.37e-05,
     "nemenyi_cd": 2.157,
     "significant_differences": [
       "WWW22 > Ours_GBDT",
@@ -58,7 +59,7 @@
     "cellcycle_GO": "0.3532\u00b10.0008",
     "expr_GO": "0.4078\u00b10.0006"
   },
-  "total_datasets": 25,
+  "total_datasets": 28,
   "total_domains": 5,
   "gpu_speedup": "14\u00d7"
 }
