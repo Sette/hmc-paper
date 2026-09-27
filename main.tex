@@ -479,12 +479,6 @@ with plain BCE and restrict the constraint to prediction time
 \texttt{-{}-consistency\_loss hinge} adds Eq.~\ref{eq:hierloss} as an
 explicit term weighted by $\lambda$.
 
-Additionally, we implement \textbf{Focal Loss} for focusing on hard
-examples ($\gamma=2.0$, $\alpha=0.25$) and \textbf{Contrastive Label
-Loss} (InfoNCE between document and label embeddings) for settings
-where label semantics matter.  These are available in the platform but
-not used in the main experiments.
-
 \subsection{Reproducibility Infrastructure}
 
 Every experiment run produces a self-contained output directory with:
