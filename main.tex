@@ -20,6 +20,21 @@
 \definecolor{darkblue}{RGB}{0,70,140}
 \hypersetup{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue}
 
+% Float placement: the default limits (70% of a page in floats, few floats
+% per page) make this paper's tabular/figure-heavy Results section defer
+% floats until they pile up at the end of the section.
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+
+% Let TeX stretch a line slightly instead of running into the margin: the
+% long \texttt{} names and URLs in this paper otherwise overflow it.
+\emergencystretch=2em
+
 % ── Title ─────────────────────────────────────────────────────────────
 \title{\textbf{HMC-Torch: A Modular Platform for Hierarchical Multi-Label
 Classification\\ with R-Matrix Constraints}}
@@ -763,7 +778,8 @@ the baseline figures in Table~\ref{tab:text} come from different
 configurations and are not directly comparable.  On our configuration
 the constraint is what closes most of the gap: a frozen encoder plus
 inference-time reconciliation is competitive with fine-tuned
-BERT-based hierarchy models.  The near-zero seed variance indicates
+BERT-based hierarchy models (Figure~\ref{fig:sota}).  The near-zero
+seed variance indicates
 that the R-matrix behaves as a stable, deterministic prior rather than
 a stochastic benefit.
 
@@ -813,8 +829,8 @@ Ours global (w/o R)                 & 0.822 & 0.666 \\
 \end{table}
 
 \textbf{AAPD.} With frozen SPECTER2 + MLP + R-matrix (44,672 train,
-50 epochs, mean of 3 seeds), we achieve \textbf{0.8228 Micro-F1} on our
-re-split of the dataset.  Because the published baselines were measured
+50 epochs, mean of 3 seeds), we achieve \textbf{0.8228 Micro-F1}
+(Table~\ref{tab:new_text}) on our re-split of the dataset.  Because the published baselines were measured
 on the official 1,000-document SGM test set while our split holds out
 11,168 documents, the figures are not directly comparable, and we
 therefore do not claim a margin over them; on our split, a
@@ -876,8 +892,9 @@ spo       & \textbf{0.241} & 0.215 & 0.211 & 0.202 & 0.198 \\
 \end{tabular}
 \end{table}
 
-\textbf{Analysis.} Surj (WWW'22 ontology learning) dominates all
-FunCat datasets by large margins (+13--41\% AUPRC from ontology
+\textbf{Analysis.} Table~\ref{tab:funcat} reports AUPRC on the FunCat
+datasets.  Surj (WWW'22 ontology learning) dominates all of them by
+large margins (+13--41\% AUPRC from ontology
 learning alone, per dataset). Our simpler methods are competitive with C-HMCNN and
 HMCN-F (the neural SOTA before ontology learning), and we
 \textbf{beat HMCN-F on seq\_FUN} (0.307 vs 0.291 AUPRC) using a
@@ -941,11 +958,13 @@ diatoms\_others   & Microscopy           & 399  & 0.4424 & 0.4458 & 30.1s \\
 \end{tabular}
 \end{table}
 
-The global method with R-matrix transfers to three additional domains
+Table~\ref{tab:others} shows that the global method with R-matrix
+transfers to three additional domains
 beyond scientific text and genomics: \textbf{email classification}
 (Enron, F1=0.69), \textbf{medical imaging} (ImCLEF07A/D, F1=0.84--0.88),
 and \textbf{microscopy} (Diatoms, F1=0.44).  The Diatoms result trails
-the others, consistent with its FunCat-scale label space (399 classes):
+the others (Figure~\ref{fig:cross}), consistent with its FunCat-scale
+label space (399 classes):
 the strongest cross-domain transfers are on small, well-separated
 taxonomies (ImCLEF's 47--97 class hierarchies), while dense,
 fine-grained label spaces remain the hard case (Diatoms, FunCat's 500
@@ -967,7 +986,10 @@ throughout.}
 
 \subsection{GBDT vs.\ Global: Precision-Recall Trade-off}
 
-\begin{table}[htbp]
+Table~\ref{tab:pr} compares the two heads on the same features: the
+global MLP trades precision for recall relative to the tree ensemble.
+
+\begin{table}[!ht]
 \centering
 \caption{Precision/recall comparison on FunCat (CPU, avg across 8 datasets).}
 \label{tab:pr}
@@ -991,7 +1013,13 @@ global method wins on F1 by leveraging the trade-off effectively.
 
 \subsection{GPU Acceleration}
 
-\begin{table}[htbp]
+Table~\ref{tab:gpu} compares CPU and GPU training for the FunCat table
+runs.  The global MLP benefits more from the device than the smaller
+tabular baseline, and end-to-end fine-tuning of the transformer (WOS)
+is GPU-only: three epochs already cost the better part of an hour, which
+is why the multi-seed E2E runs remain pending.
+
+\begin{table}[!ht]
 \centering
 \caption{Training time comparison (RTX 3060 vs CPU).}
 \label{tab:gpu}
@@ -1009,7 +1037,12 @@ WOS globalE2E (3 ep) & -- & 5,791s & -- \\
 \subsection{Sparse R-Matrix Validation on Gene Ontology}
 \label{sec:go_results}
 
-\begin{table}[htbp]
+Table~\ref{tab:sparse} validates the sparse formulation on all nine Gene
+Ontology datasets.  Each run trains with an identity R-matrix and applies
+sparse reconciliation only at inference, so the deltas isolate the
+inference-time constraint rather than the training-time loss.
+
+\begin{table}[!ht]
 \centering
 \caption{Sparse R-Matrix on Gene Ontology datasets (9 datasets,
 3,128--4,134 classes).  The dense baseline is infeasible at this
@@ -1033,9 +1066,9 @@ spo\_GO       & 4120 & 0.3687 & 0.3632 & $-$0.0055 & +0.0039 \\
 \midrule
 \textit{Avg}  & --   & 0.3718 & 0.3667 & $-$0.0051 & +0.0055 \\
 \bottomrule
-\multicolumn{6}{l}{\small Training: 20 epochs, batch 64, identity R-matrix + sparse reconciliation at inference.} \\
-\multicolumn{6}{l}{\small Dense R would OOM at batch 64: the batched $C\times C$ float64 step peaks at $\approx$8.8\,GB for the largest hierarchy ($C{=}4{,}134$).} \\
-\multicolumn{6}{l}{\small AUPRC improves on \textbf{all 9 datasets} (avg +0.0055).} \\
+\multicolumn{6}{p{0.97\textwidth}}{\small Training: 20 epochs, batch 64, identity R-matrix + sparse reconciliation at inference.} \\
+\multicolumn{6}{p{0.97\textwidth}}{\small Dense R would OOM at batch 64: the batched $C\times C$ float64 step peaks at $\approx$8.8\,GB for the largest hierarchy ($C{=}4{,}134$).} \\
+\multicolumn{6}{p{0.97\textwidth}}{\small AUPRC improves on \textbf{all 9 datasets} (avg +0.0055).} \\
 \end{tabular}
 \end{table}
 
@@ -1056,7 +1089,8 @@ uses only graph edges ($\sim$46~KB, $>1{,}400\times$ reduction).
 
 \textbf{2. AUPRC improvement.} Sparse reconciliation improves AUPRC on
 all nine datasets (avg +0.0055), driven by the recall gain of bottom-up
-max propagation (Table~\ref{tab:pr}).  The largest gain is
+max propagation (Table~\ref{tab:pr}, Figure~\ref{fig:go}).  The largest
+gain is
 on eisen\_GO (+0.0193 AUPRC).
 
 \textbf{3. F1 trade-off.} Raw F1 decreases slightly (avg $-$0.0051)
@@ -1101,7 +1135,8 @@ spo\_GO       & \textbf{0.439} & 0.382 & 0.376 & 0.251 \\
 \end{tabular}
 \end{table}
 
-\textbf{Why the gap?} Our GO results are below the SOTA by
+\textbf{Why the gap?} Table~\ref{tab:go_sota} puts our sparse-R numbers
+next to the published baselines: our GO results are below the SOTA by
 $\sim$0.19 AUPRC on average.  This gap has three main causes:
 (1) \textbf{Ontology representation learning} (Surj, WWW'22) contributes
 +13--41\% AUPRC on FunCat, and similar gains on GO---we do not
@@ -1192,7 +1227,8 @@ Table~\ref{tab:ablation}.}
 \label{fig:decomp}
 \end{figure}
 
-The R-matrix provides a small but consistent benefit on text datasets
+Figure~\ref{fig:ablation} shows the same ablation graphically: the
+R-matrix provides a small but consistent benefit on text datasets
 ($\Delta \approx +0.001$--$0.003$ F1) with frozen transformer
 embeddings. On FunCat and EUR-Lex, the effect is negligible---FunCat
 features already yield hierarchically consistent predictions, and
