@@ -63,7 +63,9 @@ datasets spanning tree and DAG hierarchies. We report a
 \textbf{marginal new state of the art on WOS} (0.8743 Micro-F1,
 $+0.0027$ over the best published BERT-based result, single seed) and,
 under our own re-split protocol, competitive results on ArXiv and
-AAPD; we also report competitive baselines on FunCat and EUR-Lex 57K.
+AAPD; on FunCat our MLP with MCLoss through the sparse R formulation
+is within 0.005 AUPRC of C-HMCNN on every dataset, and we report a
+competitive baseline on EUR-Lex 57K.
 We contribute a sparse R-matrix formulation that preserves
 hierarchical consistency in $O(C{+}E)$ memory: on 9 Gene Ontology
 datasets, sparse reconciliation improves AUPRC on every dataset while
@@ -137,9 +139,11 @@ Our contributions are:
   \item \textbf{Sparse R-matrix formulation}: a graph-based
     $O(C{+}E)$ formulation that enforces the same constraint on large
     DAGs without materializing the dense matrix.
-  \item Competitive FunCat performance with simpler models, plus an
-    explicit analysis of where the R-matrix is insufficient relative
-    to ontology-based methods.
+  \item FunCat results on par with C-HMCNN and HMCN-F (statistically
+    tied under Nemenyi), with an ablation showing that the remaining
+    differences come from the training recipe rather than the sparse
+    R formulation, plus an explicit analysis of where the R-matrix is
+    insufficient relative to ontology-based methods.
   \item Open-source release with GPU acceleration and reproducible
     experiment artifacts.
 \end{itemize}
@@ -515,8 +519,9 @@ standalone scripts under \texttt{experiments/}, which write the
 reconciled scores together with the metric dictionary
 (\texttt{metrics.json}, or \texttt{test-scores.json} for the text
 pipelines).  Seed handling is script-level and not yet uniform: the
-text runs average seeds 0, 42, and 123, the GO and GPU runs use seed
-42, and the two FunCat table scripts run without an explicit seed.  The
+text and FunCat runs average seeds 0, 42, and 123 (FunCat:
+\texttt{experiments/run\_protocol.py}), and the GO and GPU runs use
+seed 42.  The
 command-line entry point (\texttt{python -m hmc.main}) fixes
 Python/NumPy/PyTorch seeds and enables deterministic cuDNN kernels.
 
@@ -867,14 +872,15 @@ legal corpus.
 license required). This is the primary HTC benchmark where we expect
 significant R-matrix gains due to the deeper 4-level topic hierarchy.
 
-\subsection{FunCat Benchmarks: Competitive but Below SOTA}
+\subsection{FunCat Benchmarks: On Par with C-HMCNN, Below Ontology Learning}
 
 \begin{table}[htbp]
 \centering
 \caption{AUPRC on FunCat datasets. Standard metric per literature
-convention~\cite{www2022ontology}.  Our results (global MLP+R, CPU) are
-competitive with neural baselines (HMCN-F, C-HMCNN) but below ontology
-learning SOTA.  \underline{Underlined}: beats HMCN-F.  \textbf{Bold}: best.}
+convention~\cite{www2022ontology}.  Ours: FunCat protocol
+(Section~\ref{sec:recipe}), mean $\pm$ std over 3 seeds for Global
+(MLP + MCLoss through the sparse R, reconciled outputs).
+\underline{Underlined}: beats HMCN-F.  \textbf{Bold}: best.}
 \label{tab:funcat}
 \begin{tabular}{lccccc}
 \toprule
@@ -883,18 +889,18 @@ learning SOTA.  \underline{Underlined}: beats HMCN-F.  \textbf{Bold}: best.}
 & \textbf{(WWW'22)} & \textbf{(NeurIPS'20)} & \textbf{(ICML'18)} &
 \textbf{GBDT} & \textbf{Global} \\
 \midrule
-cellcycle & \textbf{0.269} & 0.255 & 0.252 & 0.241 & 0.239 \\
-church    & -- & -- & -- & -- & 0.169\textsuperscript{*} \\
-derisi    & \textbf{0.231} & 0.195 & 0.193 & 0.169 & 0.191 \\
-eisen     & \textbf{0.392} & 0.306 & 0.298 & 0.285 & 0.278 \\
-expr      & \textbf{0.382} & 0.302 & 0.301 & 0.297 & 0.297 \\
-gasch1    & \textbf{0.369} & 0.286 & 0.284 & 0.274 & 0.276 \\
-gasch2    & \textbf{0.273} & 0.258 & 0.254 & 0.228 & 0.239 \\
-pheno     & -- & -- & -- & -- & 0.160 \\
-seq       & \textbf{0.341} & 0.292 & 0.291 & \underline{0.307} & 0.282 \\
-spo       & \textbf{0.241} & 0.215 & 0.211 & 0.202 & 0.198 \\
+cellcycle & \textbf{0.269} & 0.255 & 0.252 & 0.219 & 0.250 $\pm$ 0.001 \\
+church    & -- & -- & -- & 0.128 & 0.181 $\pm$ 0.001 \\
+derisi    & \textbf{0.231} & 0.195 & 0.193 & 0.154 & 0.192 $\pm$ 0.000 \\
+eisen     & \textbf{0.392} & 0.306 & 0.298 & 0.253 & \underline{0.303} $\pm$ 0.002 \\
+expr      & \textbf{0.382} & 0.302 & 0.301 & 0.264 & 0.301 $\pm$ 0.002 \\
+gasch1    & \textbf{0.369} & 0.286 & 0.284 & 0.247 & 0.282 $\pm$ 0.002 \\
+gasch2    & \textbf{0.273} & 0.258 & 0.254 & 0.208 & 0.254 $\pm$ 0.001 \\
+pheno     & -- & -- & -- & 0.124 & 0.171 $\pm$ 0.001 \\
+seq       & \textbf{0.341} & 0.292 & 0.291 & 0.276 & 0.290 $\pm$ 0.002 \\
+spo       & \textbf{0.241} & 0.215 & 0.211 & 0.183 & \underline{0.214} $\pm$ 0.001 \\
 \midrule
-\textit{Avg (8 common)} & \textbf{0.312} & 0.264 & 0.261 & 0.250 & 0.250 \\
+\textit{Avg (8 common)} & \textbf{0.312} & 0.264 & 0.261 & 0.226 & 0.261 \\
 \bottomrule
 \multicolumn{6}{l}{\small Surj = ontology representation learning (Yang \& Howe, WWW'22).} \\
 \multicolumn{6}{l}{\small Church and pheno datasets have no published baselines.} \\
@@ -902,16 +908,21 @@ spo       & \textbf{0.241} & 0.215 & 0.211 & 0.202 & 0.198 \\
 \end{table}
 
 \textbf{Analysis.} Table~\ref{tab:funcat} reports AUPRC on the FunCat
-datasets.  Surj (WWW'22 ontology learning) dominates all of them by
-large margins (+13--41\% AUPRC from ontology
-learning alone, per dataset). Our simpler methods are competitive with C-HMCNN and
-HMCN-F (the neural SOTA before ontology learning), and we
-\textbf{beat HMCN-F on seq\_FUN} (0.307 vs 0.291 AUPRC) using a
-simple GBDT baseline.  Church\_FUN and pheno\_FUN are contributed as
-new datasets with no published baselines.
+datasets.  Our global model is within 0.001--0.005 AUPRC of C-HMCNN on
+every dataset (avg 0.261 vs 0.264) and matches HMCN-F on average
+(0.261), beating it on eisen and spo.  This is the same constraint and
+loss as C-HMCNN, computed through the sparse R formulation; the
+residual gap is within what the training recipe moves
+(Section~\ref{sec:recipe}).  The GBDT baseline, under the same
+validation-only protocol, is clearly weaker (avg 0.226).
+Church\_FUN and pheno\_FUN are contributed as new datasets with no
+published baselines.
 
-The gap to Surj (avg 0.250 vs 0.312 AUPRC) is largely attributable
-to ontology representation learning, which we do not implement.
+Surj (WWW'22 ontology learning) dominates all eight datasets
+(+7--31\% AUPRC over our model per dataset, avg 0.312 vs 0.261).
+Surj learns class representations offline with a graph autoencoder
+over the ontology and scores samples by cosine similarity, information
+that the binary R-matrix does not encode.
 Section~\ref{sec:discussion} discusses this as a clear direction for
 future improvement within our modular platform.
 
@@ -919,25 +930,22 @@ future improvement within our modular platform.
 \centering
 \includegraphics[width=0.9\textwidth]{figures/fig6_cd_diagram.pdf}
 \caption{Critical Difference diagram (Friedman + Nemenyi, $\alpha=0.05$)
-on 8 FunCat datasets.  Methods within CD=2.16 of each other are NOT
-significantly different.  Our GBDT is statistically tied with HMCN-F.}
+on 8 FunCat datasets.  Methods within CD$=$2.67 of each other are not
+significantly different.  MLP+R is our MLP trained with BCE;
+MCLoss (ours) is the model of Table~
+ef{tab:funcat}.}
 \label{fig:cd}
 \end{figure}
 
-\textbf{Statistical significance.}  A Friedman test over the five
-methods with published baselines (Global, GBDT, HMCN-F, C-HMCNN, Surj)
-confirms that they are not all equivalent ($\chi^2=27.80$,
-$p<0.0001$).
-Nemenyi post-hoc analysis (Figure~\ref{fig:cd}, CD$=2.16$) shows that
-Surj (WWW'22) significantly outperforms our GBDT and Global
-models, and that C-HMCNN significantly outperforms our Global model
-($p<0.05$); against C-HMCNN and HMCN-F, Surj is not separable at this
-sample size.  However, our simple GBDT baseline is \textbf{statistically
-indistinguishable from HMCN-F} (ICML 2018), a recurrent neural HMC
-method, while requiring a fraction of its training time.  Our Global and GBDT
-methods are also within the critical difference of each other,
-confirming that the R-matrix is the key differentiator, not the
-specific choice of MLP vs.\ tree-based head.
+\textbf{Statistical significance.}  A Friedman test over the six
+methods (Surj, C-HMCNN, HMCN-F, our GBDT, our MLP with BCE, and our MLP
+with MCLoss) confirms that they are not all equivalent
+($\chi^2=37.36$, $p<10^{-6}$).  Nemenyi post-hoc analysis
+(Figure~\ref{fig:cd}, CD$=2.67$) separates Surj and C-HMCNN from our
+GBDT and BCE-trained MLP ($p<0.05$).  Our MCLoss model ties HMCN-F in
+average rank (3.62) and is not separable from Surj, C-HMCNN or HMCN-F
+at this sample size; the Surj--MCLoss rank difference (2.62) falls just
+below the critical difference.
 
 \subsection{Ablation: Training Recipe on FunCat}
 \label{sec:recipe}
@@ -1035,21 +1043,21 @@ global MLP trades precision for recall relative to the tree ensemble.
 
 \begin{table}[!ht]
 \centering
-\caption{Precision/recall comparison on FunCat (CPU, avg across 8 datasets).}
+\caption{Precision/recall on FunCat (avg across the 10 datasets, FunCat
+protocol, threshold chosen on validation).}
 \label{tab:pr}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Method} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
 \midrule
-global (MLP + R)    & 0.28 & \textbf{0.36} & \textbf{0.305} \\
-tabular\_gbdt       & \textbf{0.34} & 0.25 & 0.283 \\
-tabular\_mlp        & 0.22 & 0.24 & 0.231 \\
+global (MLP + R)    & 0.25 & \textbf{0.36} & \textbf{0.296} \\
+tabular\_gbdt       & \textbf{0.27} & 0.31 & 0.285 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The global MLP trades precision for recall relative to GBDT (+11 and
-$-6$ points, respectively): bottom-up max propagation raises parent
+The global MLP trades precision for recall relative to GBDT (+5 and
+$-2$ points, respectively): bottom-up max propagation raises parent
 scores, and with them recall, at the cost of precision.  The R-matrix's
 own contribution on FunCat is neutral (Table~\ref{tab:ablation}), so
 this gap is driven by the head rather than by the constraint.  The
@@ -1182,8 +1190,8 @@ spo\_GO       & \textbf{0.439} & 0.382 & 0.376 & 0.251 \\
 \textbf{Why the gap?} Table~\ref{tab:go_sota} puts our sparse-R numbers
 next to the published baselines: our GO results are below the SOTA by
 $\sim$0.19 AUPRC on average.  This gap has three main causes:
-(1) \textbf{Ontology representation learning} (Surj, WWW'22) contributes
-+13--41\% AUPRC on FunCat, and similar gains on GO---we do not
+(1) \textbf{Ontology representation learning} (Surj, WWW'22) is
++7--31\% AUPRC above our model on FunCat, with similar gains on GO---we do not
 implement this; (2) \textbf{GCN label propagation} (C-HMCNN, HMCN-F)
 uses graph convolutions over the label hierarchy, while we use a
 simple MLP; (3) Our GO experiments use only 20 epochs with identity
@@ -1293,11 +1301,13 @@ BCE, while reconciliation accounts for the gains.
 \label{sec:calib}
 
 Applying Platt scaling (per-node logistic regression fitted on
-validation) \textbf{decreased} GBDT AUPRC from 0.250 to 0.136 on
-average. Calibrated probabilities shift toward class prevalence
-($<5\%$ for most leaf nodes), pushing optimal thresholds below
-standard sweep ranges. We recommend raw score optimization over
-calibration for highly imbalanced HMC.
+validation) \textbf{decreased} GBDT AUPRC from 0.219 to 0.212 on
+average over the 8 FunCat datasets with published baselines (raw
+scores).  Platt scaling is monotonic per node, so it cannot change the
+ranking within a class; micro-AUPRC, however, pools scores across
+classes, and pulling every node toward its prevalence ($<5\%$ for most
+leaf nodes) reorders them.  We recommend raw scores over calibration
+for highly imbalanced HMC.
 
 % ═══════════════════════════════════════════════════════════════════════
 \section{Discussion}
@@ -1324,10 +1334,11 @@ However, the R-matrix is \textbf{not a silver bullet}:
     there ($-0.0003$ F1, Table~\ref{tab:ablation}): structural
     regularization does not materialize when the features already
     yield hierarchically consistent predictions.
-  \item \textbf{Ontology semantics matter.} Surj gains
-    13--41\% AUPRC on FunCat by learning class representations from
-    the Gene Ontology structure---information that the R-matrix (a
-    binary ancestor mask) cannot capture. Integrating ontology
+  \item \textbf{Ontology semantics matter.} Surj is
+    7--31\% AUPRC above our model on FunCat, where we match C-HMCNN,
+    by learning class representations from the label hierarchy with a
+    graph autoencoder---information that the R-matrix (a binary
+    ancestor mask) cannot capture. Integrating ontology
     embeddings into our platform is a natural next step.
   \item \textbf{Scalability (addressed).} The dense R-matrix is $O(C^2)$,
     but our sparse R formulation (Section~\ref{sec:sparse})
@@ -1361,8 +1372,8 @@ Our \textbf{novel contributions} are:
     first-class component across arbitrary encoder/head combinations.
   \item Systematic evaluation demonstrating a marginal new state of the
     art on \textbf{WOS}, competitive text results on ArXiv and AAPD
-    under our splits, and competitive baselines on FunCat and EUR-Lex
-    57K.
+    under our splits, results on par with C-HMCNN on FunCat, and a
+    competitive baseline on EUR-Lex 57K.
   \item Honest analysis of \textbf{where the R-matrix helps} (clean
     hierarchies, data-scarce regimes) vs.\ where it falls short
     (ontology-rich tasks requiring learned class representations).
@@ -1383,8 +1394,9 @@ key findings are:
     Micro-F1, single seed) and competitive text results on ArXiv and
     AAPD under our split protocol, using the R-matrix plus frozen or
     fine-tuned SPECTER2.
-  \item Competitive FunCat performance with simpler models, including
-    a GBDT baseline.
+  \item FunCat results on par with C-HMCNN (avg 0.261 vs 0.264 AUPRC,
+    statistically tied), using the same constraint through the sparse
+    R formulation; the earlier gap came from the training recipe.
   \item \textbf{Sparse R-Matrix}: an $O(C{+}E)$ formulation that
     extends hierarchical consistency to Gene Ontology while avoiding
     dense materialization.
