@@ -1183,7 +1183,7 @@ spo\_GO       & \textbf{0.439} & 0.382 & 0.376 & 0.251 \\
 \textit{Avg (8 common)} & \textbf{0.468} & 0.420 & 0.422 & 0.282 \\
 \bottomrule
 \multicolumn{5}{l}{\small Our GO results use the sparse R formulation only; the dense baseline does not fit at batch 64.} \\
-\multicolumn{5}{l}{\small Pheno\_GO has no published baselines. Gap to SOTA: ontology learning (Surj) + GCN.} \\
+\multicolumn{5}{l}{\small Pheno\_GO has no published baselines. Gap to SOTA: ontology learning (Surj) + training recipe.} \\
 \end{tabular}
 \end{table}
 
@@ -1192,12 +1192,16 @@ next to the published baselines: our GO results are below the SOTA by
 $\sim$0.19 AUPRC on average.  This gap has three main causes:
 (1) \textbf{Ontology representation learning} (Surj, WWW'22) is
 +7--31\% AUPRC above our model on FunCat, with similar gains on GO---we do not
-implement this; (2) \textbf{GCN label propagation} (C-HMCNN, HMCN-F)
-uses graph convolutions over the label hierarchy, while we use a
-simple MLP; (3) Our GO experiments use only 20 epochs with identity
-R-matrix during training (sparse reconciliation at inference only),
-which is a weaker setting than the full dense R-matrix used on
-smaller hierarchies.
+implement this; (2) \textbf{The hierarchy during training.} C-HMCNN
+trains its MLP through the constraint module with MCLoss, and HMCN-F
+combines per-level and global outputs with a hierarchy-violation
+penalty; neither uses graph convolutions, but both inject the
+hierarchy into training, whereas our GO runs train with an identity
+R-matrix and reconcile only at inference; (3) \textbf{Training
+recipe.} Our GO runs use 20 epochs, dropout 0.3 and batch 64, without
+early stopping; on FunCat, moving to C-HMCNN's recipe and MCLoss
+through the sparse R closed the gap to C-HMCNN
+(Section~\ref{sec:recipe}), and the same has not yet been done on GO.
 
 However, our contribution is \textbf{scalability, not SOTA}: the dense
 R-matrix forces small batches on GO (C-HMCNN trains with batch 4),
