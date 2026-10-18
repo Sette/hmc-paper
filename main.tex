@@ -67,8 +67,8 @@ AAPD; we also report competitive baselines on FunCat and EUR-Lex 57K.
 We contribute a sparse R-matrix formulation that preserves
 hierarchical consistency in $O(C{+}E)$ memory: on 9 Gene Ontology
 datasets, sparse reconciliation improves AUPRC on every dataset while
-avoiding the dense $O(C^2)$ matrix, which exceeds GPU memory at this
-scale.
+avoiding the batch$\times C\times C$ tensor of the dense R-matrix,
+which exceeds GPU memory at batch 64 at this scale.
 
 \smallskip
 \noindent\textbf{Availability:} \url{https://github.com/sette/hmc-torch} \textbar{}
@@ -711,22 +711,31 @@ partition holds 4{,}109 concepts).
 
 \subsection{Training Details}
 
-Text results are means over three seeds (0, 42, 123); the FunCat and GO
-runs are single runs. Optimizer: AdamW ($\beta_1=0.9, \beta_2=0.999$)
+Text and FunCat results are means over three seeds (0, 42, 123); the
+GO runs are single runs. Optimizer: AdamW ($\beta_1=0.9, \beta_2=0.999$)
 with weight decay $10^{-5}$. Text: SPECTER2-base (768-dim CLS-pooled).
 E2E fine-tuning: transformer LR $2\times10^{-5}$, classifier LR
-$10^{-4}$, batch 8, 3 epochs (WOS). Tabular: LR $10^{-4}$, batch 32
-(global) and 64 (GBDT/MLP), epochs taken from the dataset registry
-with a cap of 30--50 for the FunCat table, CPU for the FunCat/GO
-tables. GO runs: 20 epochs at batch 64. GBDT: CPU-only (scikit-learn
+$10^{-4}$, batch 8, 3 epochs (WOS). GO runs: LR $10^{-4}$, 20 epochs
+at batch 64. GBDT: CPU-only (scikit-learn
 HistGradientBoosting, max\_iter=100, no early stopping, one classifier
 per node with $\geq 5$ positives). NVIDIA RTX 3060 (12GB).
+
+\textbf{FunCat protocol.} Features are mean-imputed and z-scored with
+training-split statistics.  The global model is a 3-layer MLP (hidden
+size per dataset from the registry, ReLU, dropout 0.7) trained with
+MCLoss through the sparse R formulation, LR $10^{-4}$, batch 4.  The
+number of epochs is chosen by early stopping on validation AUPRC
+(patience 20, at most 200 epochs), and the model is then refit on
+training + validation for that many epochs, the convention of HMCN and
+C-HMCNN.  The decision threshold is chosen on validation and the test
+split is used once.
 
 \textbf{Metrics.} \textbf{Micro-F1} (primary for text) and
 \textbf{micro-AUPRC} (primary for FunCat, following literature
 convention~\cite{www2022ontology}). Threshold sweep: $[0.10, 0.90)$
-in steps of 0.05, selected on the test split; AUPRC and every
-threshold-free comparison are unaffected.
+in steps of 0.05, selected on the test split (FunCat: $[0.05, 0.95]$,
+selected on validation); AUPRC and every threshold-free comparison are
+unaffected.
 
 % ═══════════════════════════════════════════════════════════════════════
 \section{Results}
@@ -930,6 +939,41 @@ methods are also within the critical difference of each other,
 confirming that the R-matrix is the key differentiator, not the
 specific choice of MLP vs.\ tree-based head.
 
+\subsection{Ablation: Training Recipe on FunCat}
+\label{sec:recipe}
+
+\begin{table}[htbp]
+\centering
+\caption{Test AUPRC of the global model (MCLoss, sparse R, reconciled
+outputs) under three training recipes, mean $\pm$ std over 3 seeds.
+Epochs, threshold and refit follow the FunCat protocol; nothing is
+chosen on the test split.}
+\label{tab:recipe}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Dataset} & \textbf{d0.3, b32} & \textbf{d0.7, b32} &
+\textbf{d0.7, b4} & \textbf{C-HMCNN} \\
+\midrule
+cellcycle & 0.249 $\pm$ 0.001 & \textbf{0.256} $\pm$ 0.000 & 0.250 $\pm$ 0.001 & 0.255 \\
+derisi    & 0.190 $\pm$ 0.001 & 0.194 $\pm$ 0.000 & 0.192 $\pm$ 0.001 & \textbf{0.195} \\
+seq       & 0.281 $\pm$ 0.001 & 0.290 $\pm$ 0.001 & 0.290 $\pm$ 0.002 & \textbf{0.292} \\
+spo       & 0.213 $\pm$ 0.001 & 0.209 $\pm$ 0.001$^\dagger$ & 0.214 $\pm$ 0.001 & \textbf{0.215} \\
+\midrule
+\textit{Avg} & 0.233 & 0.237 & 0.237 & 0.239 \\
+\bottomrule
+\multicolumn{5}{l}{\small $^\dagger$Early stopping hit the 200-epoch cap (197--200).} \\
+\end{tabular}
+\end{table}
+
+Our earlier gap to C-HMCNN on FunCat was a matter of training recipe,
+not of the sparse R formulation: it reproduces the dense constraint
+exactly, in both the forward pass and the MCLoss gradient (checked in
+the test suite).  Raising dropout from 0.3 to C-HMCNN's 0.7 accounts
+for most of the gap ($+0.004$ AUPRC on average).  Batch 4 does not
+change AUPRC but converges in about half the epochs, which keeps the
+200-epoch budget from binding (spo).  With both, the model is within
+0.003 AUPRC of C-HMCNN on average.
+
 \subsection{Cross-Domain Results (Enron, Diatoms, ImCLEF)}
 \label{sec:others}
 
@@ -1045,9 +1089,9 @@ inference-time constraint rather than the training-time loss.
 \begin{table}[!ht]
 \centering
 \caption{Sparse R-Matrix on Gene Ontology datasets (9 datasets,
-3,128--4,134 classes).  The dense baseline is infeasible at this
-scale, whereas the sparse formulation remains tractable and improves
-AUPRC on all datasets.}
+3,128--4,134 classes).  At batch 64 the dense baseline does not fit
+in GPU memory at this scale, whereas the sparse formulation remains
+tractable and improves AUPRC on all datasets.}
 \label{tab:sparse}
 \begin{tabular}{lccccc}
 \toprule
@@ -1108,8 +1152,8 @@ R-matrix adds negligible overhead.
 \caption{AUPRC on Gene Ontology datasets. Our method uses MLP with
 sparse R-matrix reconciliation at inference (no ontology learning,
 no GCN).  While below the Surj (WWW'22) SOTA, ours is to our knowledge
-the first \emph{sparse} formulation that makes R-matrix-constrained
-inference feasible at this scale (dense R would OOM).}
+the first \emph{sparse} formulation of R-matrix-constrained
+inference at this scale (dense R would OOM at batch 64).}
 \label{tab:go_sota}
 \begin{tabular}{lcccc}
 \toprule
@@ -1130,7 +1174,7 @@ spo\_GO       & \textbf{0.439} & 0.382 & 0.376 & 0.251 \\
 \midrule
 \textit{Avg (8 common)} & \textbf{0.468} & 0.420 & 0.422 & 0.282 \\
 \bottomrule
-\multicolumn{5}{l}{\small Our GO results use the sparse R formulation only; the dense baseline is infeasible.} \\
+\multicolumn{5}{l}{\small Our GO results use the sparse R formulation only; the dense baseline does not fit at batch 64.} \\
 \multicolumn{5}{l}{\small Pheno\_GO has no published baselines. Gap to SOTA: ontology learning (Surj) + GCN.} \\
 \end{tabular}
 \end{table}
@@ -1147,9 +1191,9 @@ R-matrix during training (sparse reconciliation at inference only),
 which is a weaker setting than the full dense R-matrix used on
 smaller hierarchies.
 
-However, our contribution is \textbf{feasibility, not SOTA}: the dense
-R-matrix cannot fit in GPU memory for GO datasets, whereas the sparse
-R formulation runs successfully on all 9 datasets. Combining sparse R
+However, our contribution is \textbf{scalability, not SOTA}: the dense
+R-matrix forces small batches on GO (C-HMCNN trains with batch 4),
+whereas the sparse R formulation runs at batch 64 on all 9 datasets. Combining sparse R
 with ontology embeddings and GCN label propagation is a clear path to
 closing the gap.
 
@@ -1289,8 +1333,8 @@ However, the R-matrix is \textbf{not a silver bullet}:
     but our sparse R formulation (Section~\ref{sec:sparse})
     reduces this to $O(C{+}E)$ with zero violation penalty.  On all 9 GO
     datasets (up to 4,134 nodes), sparse reconciliation improves
-    AUPRC on every dataset (avg +0.0055) while the dense R-matrix
-    cannot even fit in GPU memory.  Training completes in seconds per
+    AUPRC on every dataset (avg +0.0055) at batch sizes where the
+    dense R-matrix does not fit in GPU memory.  Training completes in seconds per
     dataset (RTX 3060).
   \item \textbf{GBDT integration.} Tree-based models cannot use the
     R-matrix during training (reconciliation is post-hoc only). An
