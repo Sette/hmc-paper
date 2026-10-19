@@ -993,40 +993,50 @@ change AUPRC but converges in about half the epochs, which keeps the
 
 \begin{table}[htbp]
 \centering
-\caption{Global (MLP+R) on cross-domain datasets spanning email
-classification (Enron), microscopy (Diatoms), and medical imaging
-(ImCLEF).  All use pre-extracted features from ARFF files.  These four
-releases ship no validation partition, so 20\% of the training file is
-held out for validation and merged back for training; the test split is
-never seen during optimization.  Time is wall-clock per run on CPU
-(50 epochs, batch 128).}
+\caption{AUPRC on the cross-domain datasets: email classification
+(Enron), microscopy (Diatoms) and medical imaging (ImCLEF), all with
+pre-extracted ARFF features.  Ours: MLP trained with BCE or with MCLoss
+through the sparse R, reconciled at inference, mean $\pm$ std over
+three seeds.  These releases ship no validation partition, so 20\% of
+the training file is held out for early stopping and the threshold, and
+merged back for the refit; the test split is used once.  F1 is that of
+the BCE model.  Published baselines from their papers.
+\textbf{Bold}: best.}
 \label{tab:others}
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccccc}
 \toprule
-\textbf{Dataset} & \textbf{Domain} & \textbf{Nodes} & \textbf{F1} &
-\textbf{AUPRC} & \textbf{Time} \\
+\textbf{Dataset} & \textbf{Domain} & \textbf{Nodes} & \textbf{C-HMCNN} &
+\textbf{HMCN-F} & \textbf{Ours} & \textbf{Ours} \\
+& & & & & \textbf{BCE + rec.} & \textbf{MCLoss + rec.} \\
 \midrule
-enron\_others     & Email (TF-IDF)       & 57   & 0.6891 & 0.7609 & 10.3s \\
-imclef07a\_others & Medical images       & 97   & 0.8847 & 0.9463 & 39.6s \\
-imclef07d\_others & Medical images       & 47   & 0.8434 & 0.9179 & 38.3s \\
-diatoms\_others   & Microscopy           & 399  & 0.4424 & 0.4458 & 30.1s \\
+enron      & Email (TF-IDF)  & 57  & 0.756 & 0.724 & 0.762 $\pm$ 0.002 & \textbf{0.763} $\pm$ 0.001 \\
+imclef07a  & Medical images  & 97  & 0.956 & 0.950 & \textbf{0.957} $\pm$ 0.000 & 0.955 $\pm$ 0.001 \\
+imclef07d  & Medical images  & 47  & \textbf{0.927} & 0.920 & 0.925 $\pm$ 0.002 & 0.922 $\pm$ 0.001 \\
+diatoms    & Microscopy      & 399 & 0.758 & 0.530 & \textbf{0.785} $\pm$ 0.002 & 0.772 $\pm$ 0.003 \\
 \midrule
-\textit{Avg}      & --                   & --   & 0.7149 & 0.7677 & -- \\
+\textit{Avg} & --            & --  & 0.849 & 0.781 & \textbf{0.857} & 0.853 \\
 \bottomrule
+\multicolumn{7}{p{0.97\textwidth}}{\small F1 (BCE + rec.): enron 0.674, imclef07a 0.899, imclef07d 0.848, diatoms 0.752.  Hidden size from the registry, dropout 0.3, batch 32, early stopping (patience 20, at most 200 epochs).} \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:others} shows that the global method with R-matrix
-transfers to three additional domains
-beyond scientific text and genomics: \textbf{email classification}
-(Enron, F1=0.69), \textbf{medical imaging} (ImCLEF07A/D, F1=0.84--0.88),
-and \textbf{microscopy} (Diatoms, F1=0.44).  The Diatoms result trails
-the others (Figure~\ref{fig:cross}), consistent with its FunCat-scale
-label space (399 classes):
-the strongest cross-domain transfers are on small, well-separated
-taxonomies (ImCLEF's 47--97 class hierarchies), while dense,
-fine-grained label spaces remain the hard case (Diatoms, FunCat's 500
-classes).
+Table~\ref{tab:others} shows that the global method transfers to three
+domains beyond scientific text and genomics.  Under the
+validation-only protocol our BCE model with reconciliation matches or
+exceeds C-HMCNN on three of the four datasets (enron $+0.006$,
+imclef07a $+0.001$, diatoms $+0.027$ AUPRC) and trails it on
+imclef07d by 0.002; the average is 0.857 against 0.849.  Diatoms, the
+largest of these hierarchies (399 classes), was the weak case of our
+earlier single-run configuration (50 epochs, batch 128, AUPRC 0.446):
+early stopping selects 100--150 epochs there, and the earlier budget
+had simply stopped training too soon.
+
+Unlike FunCat and GO, these datasets do not reward MCLoss: its raw
+outputs collapse (AUPRC 0.54--0.79 on diatoms and ImCLEF) and only
+reconciliation recovers them, ending 0.002--0.013 below the
+BCE-trained model, except on enron where the two are tied.
+Reconciliation of the BCE model helps on all four ($+0.004$ AUPRC on
+average).
 
 These results illustrate the platform's \textbf{cross-domain
 generality}: the same architecture (MLP + R-matrix), without any
@@ -1280,10 +1290,16 @@ $\Delta$ = R on $-$ R off. Positive $\Delta$ means R helps.}
 ArXiv   & 0.7295 & 0.7283 & +0.0012 \\
 WOS     & 0.7519 & 0.7488 & +0.0031 \\
 AAPD    & 0.8228 & 0.8224 & +0.0004 \\
-cellcycle\_FUN & 0.2719 & 0.2722 & $-$0.0003 \\
-seq\_FUN      & 0.2984 & 0.2980 & +0.0004 \\
 EUR-Lex 57K & 0.6656 & 0.6656 & 0.0000 \\
+\midrule
+cellcycle\_FUN$^\ast$ & 0.3013 & 0.2997 & +0.0016 \\
+seq\_FUN$^\ast$       & 0.3249 & 0.3234 & +0.0015 \\
+enron$^\ast$          & 0.6735 & 0.6718 & +0.0017 \\
+imclef07a$^\ast$      & 0.8994 & 0.8991 & +0.0003 \\
+imclef07d$^\ast$      & 0.8484 & 0.8481 & +0.0003 \\
+diatoms$^\ast$        & 0.7522 & 0.7408 & \textbf{+0.0114} \\
 \bottomrule
+\multicolumn{4}{p{0.6\textwidth}}{\small $^\ast$ARFF protocol (Sections~\ref{sec:recipe} and~\ref{sec:others}): BCE-trained MLP, mean of 3 seeds, threshold on validation, same seeds with and without reconciliation.} \\
 \end{tabular}
 \end{table}
 
@@ -1311,10 +1327,13 @@ Table~\ref{tab:ablation}.}
 Figure~\ref{fig:ablation} shows the same ablation graphically: the
 R-matrix provides a small but consistent benefit on text datasets
 ($\Delta \approx +0.001$--$0.003$ F1) with frozen transformer
-embeddings. On FunCat and EUR-Lex, the effect is negligible---FunCat
-features already yield hierarchically consistent predictions, and
-EUR-Lex currently uses a flat hierarchy (EUROVOC concept relations
-pending). This reveals an important nuance: \textbf{the R-matrix matters
+embeddings, and of the same size on FunCat ($+0.002$) and on the
+smaller cross-domain hierarchies.  The one large gain is on Diatoms
+($+0.011$ F1), the largest cross-domain label space and the one with
+the most internal nodes (87 of 398), which are the only scores
+reconciliation can move.  On
+EUR-Lex the effect is nil because it currently uses a flat hierarchy
+(EUROVOC concept relations pending). This reveals an important nuance: \textbf{the R-matrix matters
 most at inference time via reconciliation} (Eq.~\ref{eq:reconcile}),
 not during training via the consistency loss
 (Eq.~\ref{eq:hierloss}). The bottom-up max propagation ensures every

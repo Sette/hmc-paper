@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Regenerate figures/fig4_cross_domain.pdf (cross-domain Micro-F1 overview).
 
-The cross-domain bars come from a run of
-``hmc-torch/experiments/run_cross_domain.py`` (global MLP + R-matrix, CPU,
-50 epochs, batch 128, seed 42), which writes
-``output/cross_domain/global_results.json``.  The other bars repeat values
-already reported in the paper's tables.
+The ARFF bars (FunCat, GO, cross-domain) are the BCE-trained MLP with
+reconciliation under the validation-only protocol, mean of three seeds, from
+``hmc-torch/experiments/run_protocol.py`` (``output/protocol/*.json``; GO from
+``output/protocol_go_recipe/bce/``).  The text bars repeat values already
+reported in the paper's tables.  ``--results`` still accepts a
+``run_cross_domain.py`` JSON to override the cross-domain bars.
 
 Usage:
     python make_fig4_cross_domain.py [--results PATH] [--out PATH]
@@ -29,20 +30,19 @@ COLORS = {
 }
 
 # (label, second line, legend group, micro-F1) in plotting order, bottom first.
-# Cross-domain values are the 2026-09-27 re-run with a held-out validation
-# split (see run_cross_domain.py); the text/FunCat/GO values are unchanged
-# from the paper's tables.
+# ARFF values: run_protocol.py, BCE + reconciliation, mean of seeds 0/42/123
+# (2026-10-19); text values from the paper's tables.
 SERIES = [
     ("ArXiv", "", "Scientific Text", 0.730),
     ("WOS", "", "Scientific Text", 0.874),
-    ("enron", "", "Email", 0.6891),
-    ("imclef07a", "", "Medical Images", 0.8847),
-    ("imclef07d", "", "Medical Images", 0.8434),
-    ("diatoms", "", "Microscopy", 0.4424),
-    ("cellcycle", "FUN", "Genomics", 0.249),
-    ("seq", "FUN", "Genomics", 0.265),
-    ("expr", "GO", "Genomics", 0.408),
-    ("seq", "GO", "Genomics", 0.431),
+    ("enron", "", "Email", 0.674),
+    ("imclef07a", "", "Medical Images", 0.899),
+    ("imclef07d", "", "Medical Images", 0.848),
+    ("diatoms", "", "Microscopy", 0.752),
+    ("cellcycle", "FUN", "Genomics", 0.301),
+    ("seq", "FUN", "Genomics", 0.325),
+    ("expr", "GO", "Genomics", 0.454),
+    ("seq", "GO", "Genomics", 0.461),
 ]
 
 # Dataset keys in global_results.json for the cross-domain bars.
