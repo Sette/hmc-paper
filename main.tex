@@ -64,8 +64,11 @@ datasets spanning tree and DAG hierarchies. We report a
 $+0.0027$ over the best published BERT-based result, single seed) and,
 under our own re-split protocol, competitive results on ArXiv and
 AAPD; on FunCat our MLP with MCLoss through the sparse R formulation
-is within 0.005 AUPRC of C-HMCNN on every dataset, and we report a
-competitive baseline on EUR-Lex 57K.
+is within 0.005 AUPRC of C-HMCNN on every dataset (0.262 on average
+with a graph-autoencoder branch, against 0.264), and we report a
+competitive baseline on EUR-Lex 57K.  The only published model above
+C-HMCNN on FunCat and GO (Surj) released no code, and our
+reimplementation does not reproduce its reported results.
 We contribute a sparse R-matrix formulation that preserves
 hierarchical consistency in $O(C{+}E)$ memory: on 9 Gene Ontology
 datasets with up to 4,134 classes, MCLoss through the sparse R reaches
@@ -144,9 +147,13 @@ Our contributions are:
     tied under Nemenyi), with an ablation showing that the remaining
     differences come from the training recipe rather than the sparse
     R formulation; the same recipe brings Gene Ontology within
-    0.008 AUPRC of C-HMCNN on every dataset; plus an explicit analysis
-    of where the R-matrix is insufficient relative to ontology-based
-    methods.
+    0.008 AUPRC of C-HMCNN on every dataset.
+  \item An independent reimplementation of Surj~\cite{www2022ontology},
+    whose code was never released: built on C-HMCNN's own pipeline, it
+    stays below C-HMCNN, so Surj's reported results remain unverified;
+    and a validation-only study of three autoencoders in our model,
+    where only a graph-autoencoder branch helps (+0.002 AUPRC on
+    FunCat).
   \item Open-source release with GPU acceleration and reproducible
     experiment artifacts.
 \end{itemize}
@@ -165,8 +172,10 @@ introduced HiAGM, combining a text encoder with a Graph Convolutional
 Network (GCN) over the label hierarchy. HTC-infoMAX~\cite{htcinfomax}
 added mutual information maximization. For protein function prediction
 (FunCat/GO benchmarks),~\cite{www2022ontology} proposed ontology
-representation learning, achieving state-of-the-art AUPRC by jointly
-learning class embeddings from the GO hierarchy structure.
+representation learning (Surj), reporting the highest AUPRC on both
+suites with class embeddings learned from the hierarchy by a graph
+autoencoder; its code was not released, and we could not reproduce
+those results (Section~\ref{sec:surj}).
 
 For tabular/genomic data, CLUS-HMC~\cite{clus} uses decision trees
 with hierarchical constraints, while HMCN~\cite{weihs2018hmc}
@@ -713,8 +722,10 @@ partition holds 4{,}109 concepts).
     network with level-wise propagation (FunCat).
   \item \textbf{C-HMCNN}~\cite{chmcnn}: Constraint layer that enforces
     coherence with the R-matrix.
-  \item \textbf{Surj}~\cite{www2022ontology}: ontology representation
-    learning, the WWW'22 state of the art on FunCat/GO.
+  \item \textbf{Surj}~\cite{www2022ontology}: graph-autoencoder label
+    embeddings scored by cosine similarity (WWW'22).  Its code was never
+    released; we list its reported numbers and our reimplementation
+    (Section~\ref{sec:surj}), but do not rank against them.
 \end{itemize}
 
 \subsection{Training Details}
@@ -878,38 +889,44 @@ legal corpus.
 license required). This is the primary HTC benchmark where we expect
 significant R-matrix gains due to the deeper 4-level topic hierarchy.
 
-\subsection{FunCat Benchmarks: On Par with C-HMCNN, Below Ontology Learning}
+\subsection{FunCat Benchmarks: On Par with C-HMCNN}
 
 \begin{table}[htbp]
 \centering
 \caption{AUPRC on FunCat datasets. Standard metric per literature
-convention~\cite{www2022ontology}.  Ours: FunCat protocol
+convention~\cite{chmcnn}.  Ours: FunCat protocol
 (Section~\ref{sec:recipe}), mean $\pm$ std over 3 seeds for Global
-(MLP + MCLoss through the sparse R, reconciled outputs).
-\underline{Underlined}: beats HMCN-F.  \textbf{Bold}: best.}
+(MLP + MCLoss through the sparse R, reconciled outputs); Global + GAE
+adds the graph-autoencoder branch of Section~\ref{sec:autoenc}.
+\underline{Underlined}: beats HMCN-F.  \textbf{Bold}: best among the
+verifiable methods.}
 \label{tab:funcat}
-\begin{tabular}{lccccc}
+\small
+\begin{tabular}{lcccccc}
 \toprule
-\textbf{Dataset} & \textbf{Surj} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
-\textbf{Ours} & \textbf{Ours} \\
-& \textbf{(WWW'22)} & \textbf{(NeurIPS'20)} & \textbf{(ICML'18)} &
-\textbf{GBDT} & \textbf{Global} \\
+\textbf{Dataset} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
+\textbf{Ours} & \textbf{Ours} & \textbf{Ours} & \textit{Surj}$^\dagger$ \\
+& \textbf{(NeurIPS'20)} & \textbf{(ICML'18)} &
+\textbf{GBDT} & \textbf{Global} & \textbf{Global + GAE} & \textit{(reported)} \\
 \midrule
-cellcycle & \textbf{0.269} & 0.255 & 0.252 & 0.219 & 0.250 $\pm$ 0.001 \\
-church    & -- & -- & -- & 0.128 & 0.181 $\pm$ 0.001 \\
-derisi    & \textbf{0.231} & 0.195 & 0.193 & 0.154 & 0.192 $\pm$ 0.000 \\
-eisen     & \textbf{0.392} & 0.306 & 0.298 & 0.253 & \underline{0.303} $\pm$ 0.002 \\
-expr      & \textbf{0.382} & 0.302 & 0.301 & 0.264 & 0.301 $\pm$ 0.002 \\
-gasch1    & \textbf{0.369} & 0.286 & 0.284 & 0.247 & 0.282 $\pm$ 0.002 \\
-gasch2    & \textbf{0.273} & 0.258 & 0.254 & 0.208 & 0.254 $\pm$ 0.001 \\
-pheno     & -- & -- & -- & 0.124 & 0.171 $\pm$ 0.001 \\
-seq       & \textbf{0.341} & 0.292 & 0.291 & 0.276 & 0.290 $\pm$ 0.002 \\
-spo       & \textbf{0.241} & 0.215 & 0.211 & 0.183 & \underline{0.214} $\pm$ 0.001 \\
+cellcycle & \textbf{0.255} & 0.252 & 0.219 & 0.250 $\pm$ 0.001 & \underline{0.254} $\pm$ 0.001 & \textit{0.269} \\
+church    & -- & -- & 0.128 & 0.181 $\pm$ 0.001 & \textbf{0.182} $\pm$ 0.001 & -- \\
+derisi    & 0.195 & 0.193 & 0.154 & 0.192 $\pm$ 0.000 & \textbf{0.197} $\pm$ 0.001 & \textit{0.231} \\
+eisen     & \textbf{0.306} & 0.298 & 0.253 & \underline{0.303} $\pm$ 0.002 & \underline{0.305} $\pm$ 0.003 & \textit{0.392} \\
+expr      & \textbf{0.302} & 0.301 & 0.264 & 0.301 $\pm$ 0.002 & 0.301 $\pm$ 0.001 & \textit{0.382} \\
+gasch1    & \textbf{0.286} & 0.284 & 0.247 & 0.282 $\pm$ 0.002 & \underline{0.285} $\pm$ 0.001 & \textit{0.369} \\
+gasch2    & \textbf{0.258} & 0.254 & 0.208 & 0.254 $\pm$ 0.001 & 0.254 $\pm$ 0.002 & \textit{0.273} \\
+pheno     & -- & -- & 0.124 & 0.171 $\pm$ 0.001 & \textbf{0.172} $\pm$ 0.001 & -- \\
+seq       & \textbf{0.292} & 0.291 & 0.276 & 0.290 $\pm$ 0.002 & 0.288 $\pm$ 0.003 & \textit{0.341} \\
+spo       & 0.215 & 0.211 & 0.183 & \underline{0.214} $\pm$ 0.001 & \textbf{0.217} $\pm$ 0.001 & \textit{0.241} \\
 \midrule
-\textit{Avg (8 common)} & \textbf{0.312} & 0.264 & 0.261 & 0.226 & 0.261 \\
+\textit{Avg (8 common)} & \textbf{0.264} & 0.261 & 0.226 & 0.261 & 0.262 & \textit{0.312} \\
 \bottomrule
-\multicolumn{6}{l}{\small Surj = ontology representation learning (Yang \& Howe, WWW'22).} \\
-\multicolumn{6}{l}{\small Church and pheno datasets have no published baselines.} \\
+\multicolumn{7}{p{0.97\textwidth}}{\small $^\dagger$Reported by Yang \& Howe (WWW'22);
+the code was never released, so these numbers cannot be verified.  Our
+reimplementation following the paper (Section~\ref{sec:surj}) does not
+reach them; they are excluded from the bold marks and the statistical tests.
+Church and pheno have no published baselines.} \\
 \end{tabular}
 \end{table}
 
@@ -922,36 +939,36 @@ residual gap is within what the training recipe moves
 (Section~\ref{sec:recipe}).  The GBDT baseline, under the same
 validation-only protocol, is clearly weaker (avg 0.226).
 Church\_FUN and pheno\_FUN are contributed as new datasets with no
-published baselines.
+published baselines.  Adding the graph-autoencoder branch of
+Section~\ref{sec:autoenc} raises our average to 0.262 and puts us above
+C-HMCNN on derisi (0.197 vs 0.195) and spo (0.217 vs 0.215).
 
-Surj (WWW'22 ontology learning) dominates all eight datasets
-(+7--31\% AUPRC over our model per dataset, avg 0.312 vs 0.261).
-Surj learns class representations offline with a graph autoencoder
-over the ontology and scores samples by cosine similarity, information
-that the binary R-matrix does not encode.
-Section~\ref{sec:discussion} discusses this as a clear direction for
-future improvement within our modular platform.
+Surj~\cite{www2022ontology} reports 0.312 on average (+7--31\% per
+dataset over C-HMCNN) by learning label embeddings with a graph
+autoencoder.  Its code was never made public, and our reimplementation,
+built on C-HMCNN's own data pipeline (which reproduces C-HMCNN's
+published numbers) with every unspecified hyperparameter chosen on
+validation, stays below C-HMCNN (Section~\ref{sec:surj}).  We therefore
+list Surj's figures as reported but leave them out of the comparison.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/fig6_cd_diagram.pdf}
 \caption{Critical Difference diagram (Friedman + Nemenyi, $\alpha=0.05$)
-on 8 FunCat datasets.  Methods within CD$=$2.67 of each other are not
+on 8 FunCat datasets.  Methods within CD$=$2.16 of each other are not
 significantly different.  MLP+R is our MLP trained with BCE;
-MCLoss (ours) is the model of Table~
-ef{tab:funcat}.}
+MCLoss (ours) is the model of Table~\ref{tab:funcat}.}
 \label{fig:cd}
 \end{figure}
 
-\textbf{Statistical significance.}  A Friedman test over the six
-methods (Surj, C-HMCNN, HMCN-F, our GBDT, our MLP with BCE, and our MLP
-with MCLoss) confirms that they are not all equivalent
-($\chi^2=37.36$, $p<10^{-6}$).  Nemenyi post-hoc analysis
-(Figure~\ref{fig:cd}, CD$=2.67$) separates Surj and C-HMCNN from our
-GBDT and BCE-trained MLP ($p<0.05$).  Our MCLoss model ties HMCN-F in
-average rank (3.62) and is not separable from Surj, C-HMCNN or HMCN-F
-at this sample size; the Surj--MCLoss rank difference (2.62) falls just
-below the critical difference.
+\textbf{Statistical significance.}  A Friedman test over the five
+verifiable methods (C-HMCNN, HMCN-F, our GBDT, our MLP with BCE, and our
+MLP with MCLoss) confirms that they are not all equivalent
+($\chi^2=28.30$, $p=1.1\times10^{-5}$).  Nemenyi post-hoc analysis
+(Figure~\ref{fig:cd}, CD$=2.16$) separates C-HMCNN from our GBDT and
+BCE-trained MLP, and HMCN-F and our MCLoss model from the GBDT
+($p<0.05$).  Our MCLoss model ties HMCN-F in average rank (2.62) and is
+not separable from C-HMCNN (rank 1.00; difference 1.62).
 
 \subsection{Ablation: Training Recipe on FunCat}
 \label{sec:recipe}
@@ -1003,20 +1020,21 @@ merged back for the refit; the test split is used once.  F1 is that of
 the BCE model.  Published baselines from their papers.
 \textbf{Bold}: best.}
 \label{tab:others}
-\begin{tabular}{lcccccc}
+\begin{tabular}{lccccccc}
 \toprule
 \textbf{Dataset} & \textbf{Domain} & \textbf{Nodes} & \textbf{C-HMCNN} &
-\textbf{HMCN-F} & \textbf{Ours} & \textbf{Ours} \\
-& & & & & \textbf{BCE + rec.} & \textbf{MCLoss + rec.} \\
+\textbf{HMCN-F} & \textbf{Ours} & \textbf{Ours} & \textit{Surj}$^\dagger$ \\
+& & & & & \textbf{BCE + rec.} & \textbf{MCLoss + rec.} & \textit{(reported)} \\
 \midrule
-enron      & Email (TF-IDF)  & 57  & 0.756 & 0.724 & 0.762 $\pm$ 0.002 & \textbf{0.763} $\pm$ 0.001 \\
-imclef07a  & Medical images  & 97  & 0.956 & 0.950 & \textbf{0.957} $\pm$ 0.000 & 0.955 $\pm$ 0.001 \\
-imclef07d  & Medical images  & 47  & \textbf{0.927} & 0.920 & 0.925 $\pm$ 0.002 & 0.922 $\pm$ 0.001 \\
-diatoms    & Microscopy      & 399 & 0.758 & 0.530 & \textbf{0.785} $\pm$ 0.002 & 0.772 $\pm$ 0.003 \\
+enron      & Email (TF-IDF)  & 57  & 0.756 & 0.724 & 0.762 $\pm$ 0.002 & \textbf{0.763} $\pm$ 0.001 & \textit{0.743} \\
+imclef07a  & Medical images  & 97  & 0.956 & 0.950 & \textbf{0.957} $\pm$ 0.000 & 0.955 $\pm$ 0.001 & \textit{0.943} \\
+imclef07d  & Medical images  & 47  & \textbf{0.927} & 0.920 & 0.925 $\pm$ 0.002 & 0.922 $\pm$ 0.001 & \textit{0.917} \\
+diatoms    & Microscopy      & 399 & 0.758 & 0.530 & \textbf{0.785} $\pm$ 0.002 & 0.772 $\pm$ 0.003 & \textit{0.772} \\
 \midrule
-\textit{Avg} & --            & --  & 0.849 & 0.781 & \textbf{0.857} & 0.853 \\
+\textit{Avg} & --            & --  & 0.849 & 0.781 & \textbf{0.857} & 0.853 & \textit{0.844} \\
 \bottomrule
-\multicolumn{7}{p{0.97\textwidth}}{\small F1 (BCE + rec.): enron 0.674, imclef07a 0.899, imclef07d 0.848, diatoms 0.752.  Hidden size from the registry, dropout 0.3, batch 32, early stopping (patience 20, at most 200 epochs).} \\
+\multicolumn{8}{p{0.97\textwidth}}{\small $^\dagger$Reported, not verifiable
+(code never released; Section~\ref{sec:surj}).  F1 (BCE + rec.): enron 0.674, imclef07a 0.899, imclef07d 0.848, diatoms 0.752.  Hidden size from the registry, dropout 0.3, batch 32, early stopping (patience 20, at most 200 epochs).} \\
 \end{tabular}
 \end{table}
 
@@ -1195,24 +1213,27 @@ training + validation).  Published baselines from their papers.}
 \label{tab:go_sota}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{Dataset} & \textbf{Surj} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
-\textbf{Ours} & \textbf{Ours} \\
-& \textbf{(WWW'22)} & \textbf{(NeurIPS'20)} & \textbf{(ICML'18)} &
-\textbf{BCE + rec.} & \textbf{MCLoss + rec.} \\
+\textbf{Dataset} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
+\textbf{Ours} & \textbf{Ours} & \textit{Surj}$^\dagger$ \\
+& \textbf{(NeurIPS'20)} & \textbf{(ICML'18)} &
+\textbf{BCE + rec.} & \textbf{MCLoss + rec.} & \textit{(reported)} \\
 \midrule
-cellcycle\_GO & \textbf{0.460} & 0.413 & 0.400 & 0.407 $\pm$ 0.002 & 0.408 $\pm$ 0.002 \\
-derisi\_GO    & \textbf{0.445} & 0.370 & 0.369 & 0.368 $\pm$ 0.001 & 0.369 $\pm$ 0.000 \\
-eisen\_GO     & \textbf{0.487} & 0.455 & 0.440 & 0.453 $\pm$ 0.001 & 0.454 $\pm$ 0.000 \\
-expr\_GO      & \textbf{0.477} & 0.447 & 0.452 & 0.439 $\pm$ 0.002 & 0.439 $\pm$ 0.002 \\
-gasch1\_GO    & \textbf{0.481} & 0.436 & 0.428 & 0.432 $\pm$ 0.001 & 0.433 $\pm$ 0.001 \\
-gasch2\_GO    & \textbf{0.473} & 0.414 & 0.465 & 0.411 $\pm$ 0.001 & 0.413 $\pm$ 0.001 \\
-pheno\_GO     & -- & -- & -- & 0.342 $\pm$ 0.000 & 0.342 $\pm$ 0.000 \\
-seq\_GO       & \textbf{0.478} & 0.446 & 0.447 & 0.442 $\pm$ 0.002 & 0.446 $\pm$ 0.001 \\
-spo\_GO       & \textbf{0.439} & 0.382 & 0.376 & 0.379 $\pm$ 0.000 & 0.379 $\pm$ 0.000 \\
+cellcycle\_GO & \textbf{0.413} & 0.400 & 0.407 $\pm$ 0.002 & 0.408 $\pm$ 0.002 & \textit{0.460} \\
+derisi\_GO    & \textbf{0.370} & 0.369 & 0.368 $\pm$ 0.001 & 0.369 $\pm$ 0.000 & \textit{0.445} \\
+eisen\_GO     & \textbf{0.455} & 0.440 & 0.453 $\pm$ 0.001 & 0.454 $\pm$ 0.000 & \textit{0.487} \\
+expr\_GO      & 0.447 & \textbf{0.452} & 0.439 $\pm$ 0.002 & 0.439 $\pm$ 0.002 & \textit{0.477} \\
+gasch1\_GO    & \textbf{0.436} & 0.428 & 0.432 $\pm$ 0.001 & 0.433 $\pm$ 0.001 & \textit{0.481} \\
+gasch2\_GO    & 0.414 & \textbf{0.465} & 0.411 $\pm$ 0.001 & 0.413 $\pm$ 0.001 & \textit{0.473} \\
+pheno\_GO     & -- & -- & \textbf{0.342} $\pm$ 0.000 & \textbf{0.342} $\pm$ 0.000 & -- \\
+seq\_GO       & 0.446 & \textbf{0.447} & 0.442 $\pm$ 0.002 & 0.446 $\pm$ 0.001 & \textit{0.478} \\
+spo\_GO       & \textbf{0.382} & 0.376 & 0.379 $\pm$ 0.000 & 0.379 $\pm$ 0.000 & \textit{0.439} \\
 \midrule
-\textit{Avg (8 common)} & \textbf{0.468} & 0.420 & 0.422 & 0.416 & 0.418 \\
+\textit{Avg (8 common)} & 0.420 & \textbf{0.422} & 0.416 & 0.418 & \textit{0.468} \\
 \bottomrule
-\multicolumn{6}{p{0.97\textwidth}}{\small Pheno\_GO has no published baselines.  Previous recipe (20 epochs, dropout 0.3, batch 64, identity R): avg 0.282.} \\
+\multicolumn{6}{p{0.97\textwidth}}{\small $^\dagger$Reported, not verifiable (code never
+released; see Section~\ref{sec:surj}); excluded from the bold marks.
+Pheno\_GO has no published baselines.  Previous recipe (20 epochs, dropout 0.3,
+batch 64, identity R): avg 0.282.} \\
 \end{tabular}
 \end{table}
 
@@ -1233,15 +1254,13 @@ poor (0.375 on average) and need the reconciliation they were trained
 through, whereas reconciliation adds +0.002 AUPRC to BCE (on 8 of 9 datasets;
 $-$0.0003 on pheno\_GO).
 
-\textbf{Remaining gap to Surj.} Surj~\cite{www2022ontology} is 0.050
-AUPRC above our MCLoss model on average (+7--21\% relative per
-dataset).  It learns class representations from the ontology with a
-graph autoencoder---information that a binary ancestor mask does not
-encode---and we have not verified its protocol on these benchmarks.
-Our contribution here is \textbf{scalability, not SOTA}: the sparse
-formulation matches the published constraint-based models on the full
-Gene Ontology suite in $O(C{+}E)$ memory, and combining it with
-ontology embeddings is a natural next step.
+\textbf{Surj on GO.} Surj~\cite{www2022ontology} reports 0.468 on
+average, 0.046 above C-HMCNN.  As on FunCat, those numbers come without
+code, and our reimplementation does not reach them
+(Section~\ref{sec:surj}), so they stay out of the comparison.  Our
+contribution here is \textbf{scalability}: the sparse formulation
+matches the published constraint-based models on the full Gene
+Ontology suite in $O(C{+}E)$ memory.
 
 \begin{figure}[t]
 \centering
@@ -1251,6 +1270,177 @@ ablation of Table~\ref{tab:sparse} (20 epochs, batch 64). AUPRC improves
 on all datasets (avg +0.0055).}
 \label{fig:go}
 \end{figure}
+
+\subsection{Reproducing Surj}
+\label{sec:surj}
+
+Surj~\cite{www2022ontology} is the only published model above the
+constraint-based methods on FunCat and GO, by 7--31\% AUPRC.  Its code
+was announced but never released, so we reimplemented it
+(\texttt{surj\_repro/} in the repository) from the paper alone, on top of
+the components it says it reuses.
+
+\textbf{What the paper fixes, and what we chose.}  Surj ``adopts the code
+provided by'' C-HMCNN for preprocessing and evaluation: we import
+C-HMCNN's parser unmodified, and the same pipeline reproduces C-HMCNN's
+published FunCat numbers to within 0.003 AUPRC.  Label embeddings come
+from a two-layer GCN graph autoencoder~\cite{kipf2016vgae} trained on
+the ontology without node features; samples are mapped by three fully
+connected layers to the embedding space, compared to every label by
+cosine similarity, and passed through one more fully connected layer
+and a sigmoid, trained with BCE at learning rate $10^{-3}$.  Batch size,
+epochs, dropout, layer sizes, embedding dimension and whether
+C-HMCNN's hierarchy constraint was kept are not reported; following the
+paper (``optimized with the validation set'', ``consistent across
+datasets''), we chose them by a staged search of 25 configurations on
+FunCat validation AUPRC (seed 0; the test split never scored).  The
+search kept batch 4, dropout 0.7, hidden size 512, embedding dimension
+16 and, notably, C-HMCNN's max-constraint module with MCLoss: without
+it the model produces $10^4$--$10^5$ hierarchy violations per dataset,
+while Surj reports none.  The validation AUPRC of all 25 configurations
+spans 0.187--0.217, far less than the gap below.
+
+\begin{table}[htbp]
+\centering
+\caption{Surj as reported and as reimplemented (test AUPRC, FunCat,
+mean $\pm$ std over 10 seeds).  ``One-hot'' is the same network without
+ontology learning (Surj's Table~5).  All our runs have zero hierarchy
+violations.}
+\label{tab:surj_repro}
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{2}{c}{\textbf{Surj}} & \multicolumn{2}{c}{\textbf{One-hot}} & \textbf{C-HMCNN} \\
+\textbf{Dataset} & reported & ours & reported & ours & published \\
+\midrule
+cellcycle & 0.269 & 0.224 $\pm$ 0.003 & 0.211 & 0.155 $\pm$ 0.003 & 0.255 \\
+derisi    & 0.231 & 0.182 $\pm$ 0.004 & 0.209 & 0.156 $\pm$ 0.002 & 0.195 \\
+eisen     & 0.392 & 0.264 $\pm$ 0.003 & 0.281 & 0.161 $\pm$ 0.002 & 0.306 \\
+expr      & 0.382 & 0.258 $\pm$ 0.004 & 0.223 & 0.154 $\pm$ 0.001 & 0.302 \\
+gasch1    & 0.369 & 0.251 $\pm$ 0.006 & 0.256 & 0.155 $\pm$ 0.003 & 0.286 \\
+gasch2    & 0.273 & 0.229 $\pm$ 0.004 & 0.208 & 0.155 $\pm$ 0.003 & 0.258 \\
+seq       & 0.341 & 0.251 $\pm$ 0.006 & 0.218 & 0.153 $\pm$ 0.002 & 0.292 \\
+spo       & 0.241 & 0.194 $\pm$ 0.004 & 0.209 & 0.157 $\pm$ 0.002 & 0.215 \\
+\midrule
+\textit{Avg} & 0.312 & 0.232 & 0.227 & 0.156 & 0.264 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Outcome.}  Our reimplementation averages 0.232 on FunCat,
+0.080 below the reported 0.312 and 0.032 below C-HMCNN
+(Table~\ref{tab:surj_repro}); it is below C-HMCNN on every dataset.  The
+ontology embeddings do help the cosine head: the same network with
+one-hot labels averages 0.156, so the graph autoencoder adds +0.076,
+in the direction Surj reports (+0.085 over its one-hot baseline).  The
+head itself, however, is weaker than C-HMCNN's plain output layer on
+the same data, and the embeddings only recover part of that loss.
+
+\textbf{GO and cross-domain datasets} (same recipe, three seeds).  On
+the eight GO datasets our reimplementation averages 0.352 (per dataset
+0.308--0.396), against 0.468 reported and 0.420 for C-HMCNN.  On the
+cross-domain sets it reaches 0.713 on enron, 0.914 on imclef07a and
+0.904 on imclef07d (reported: 0.743, 0.943, 0.917), and fails on
+diatoms (0.279 vs 0.772 reported): the FunCat-selected recipe, which the
+Surj paper says it kept identical across datasets, does not transfer to
+its 399 labels.  All runs have zero hierarchy violations.
+
+\textbf{Can the evaluation explain the gap?}  We saved every test score
+and recomputed AUPRC under the variants a reimplementation might slip
+into.  Keeping the always-positive root column, or averaging precision
+per sample instead of pooling, brings our average to 1.12$\times$ and
+1.09$\times$ the reported values, but the per-dataset ratios range from
+0.92 to 1.36, and the same changes inflate C-HMCNN to 1.45$\times$ and
+1.40$\times$ its published numbers.  No single metric maps both models
+to their published figures, so we find no evaluation detail that
+accounts for the reported results.  We also note two internal
+inconsistencies in the Surj paper: in its Table~4 the ``V1'' column
+(20\% of the leaves removed from the ontology) repeats the full-ontology
+numbers of its Table~2 exactly, and the baseline column repeats its
+Table~5.
+
+\textbf{Conclusion.}  Without the authors' code, Surj's numbers cannot be
+verified, and a reimplementation that follows the paper and reproduces
+its reference pipeline does not approach them.  We report them in
+Tables~\ref{tab:funcat}, \ref{tab:go_sota} and~\ref{tab:others} as
+published, marked as unverified, and leave them out of every ranking and
+statistical test.  The reimplementation, its recipes, per-seed results
+and test scores are released for inspection.
+
+\subsection{Autoencoders in Our Model}
+\label{sec:autoenc}
+
+If ontology embeddings carry information that the binary R matrix does
+not, they should help our model too.  We tried three ways of adding an
+autoencoder to the global model of Table~\ref{tab:funcat}, keeping its
+MLP trunk, MCLoss through the sparse R, reconciled outputs and FunCat
+recipe (\texttt{experiments/run\_autoencoder.py}):
+\begin{itemize}
+  \item \textbf{GAE hybrid}: Surj's branch (projection to $D$
+    dimensions, cosine with frozen graph-autoencoder label embeddings,
+    a $V{\times}V$ layer) added to our output logits through a learnable
+    scale initialised at zero, so training starts from the baseline and
+    uses the embeddings only if they help; $D\in\{16,64\}$.
+  \item \textbf{Feature DAE}: the two hidden layers pretrained as a
+    denoising autoencoder of the training features (20\% masking, 100
+    epochs), then fine-tuned; optionally keeping the reconstruction as an
+    auxiliary loss (weight 0.1).
+  \item \textbf{Label AE} (C2AE-style): features and label vectors
+    mapped to a shared latent space and decoded to the labels, with
+    reconstruction and latent matching weighted by
+    $\lambda\in\{0.1,1\}$.
+\end{itemize}
+All variants were screened on validation only (seed 0, early stopping,
+test never scored), against the baseline rerun in the same code path.
+
+\begin{table}[htbp]
+\centering
+\caption{Autoencoder screening on FunCat: validation AUPRC of the
+baseline (MLP + MCLoss + rec.) and difference of each variant.}
+\label{tab:autoenc}
+\small
+\begin{tabular}{lccccccc}
+\toprule
+& & \multicolumn{2}{c}{\textbf{GAE hybrid}} & \multicolumn{2}{c}{\textbf{Feature DAE}} & \multicolumn{2}{c}{\textbf{Label AE}} \\
+\textbf{Dataset} & \textbf{Baseline} & $D{=}16$ & $D{=}64$ & plain & + aux & $\lambda{=}0.1$ & $\lambda{=}1$ \\
+\midrule
+cellcycle & 0.2306 & +0.0021 & +0.0031 & +0.0000 & $-$0.0017 & $-$0.0203 & $-$0.0176 \\
+church    & 0.1721 & +0.0004 & +0.0005 & $-$0.0033 & $-$0.0076 & +0.0037 & +0.0025 \\
+derisi    & 0.1788 & +0.0041 & +0.0041 & $-$0.0054 & $-$0.0079 & +0.0033 & $-$0.0001 \\
+eisen     & 0.2817 & +0.0018 & +0.0027 & $-$0.0047 & $-$0.0100 & $-$0.0181 & $-$0.0214 \\
+expr      & 0.2669 & $-$0.0002 & +0.0006 & +0.0070 & +0.0028 & $-$0.0103 & $-$0.0172 \\
+gasch1    & 0.2593 & +0.0009 & +0.0014 & $-$0.0016 & $-$0.0069 & $-$0.0080 & $-$0.0175 \\
+gasch2    & 0.2344 & $-$0.0030 & $-$0.0026 & +0.0027 & $-$0.0035 & $-$0.0199 & $-$0.0254 \\
+pheno     & 0.1856 & +0.0001 & +0.0001 & $-$0.0024 & $-$0.0048 & $-$0.0324 & $-$0.0385 \\
+seq       & 0.2708 & $-$0.0024 & $-$0.0017 & +0.0173 & +0.0097 & +0.0006 & $-$0.0113 \\
+spo       & 0.1881 & $-$0.0013 & $-$0.0017 & $-$0.0129 & $-$0.0167 & $-$0.0040 & $-$0.0088 \\
+\midrule
+\textit{Mean} & 0.2269 & +0.0002 & +0.0007 & $-$0.0003 & $-$0.0047 & $-$0.0105 & $-$0.0155 \\
+\textit{Wins} & -- & 6/10 & 7/10 & 4/10 & 2/10 & 3/10 & 1/10 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Screening.}  Only the GAE hybrid improves on the baseline on
+average, and only barely (+0.0007 with $D{=}64$, better on 7 of 10
+datasets; Table~\ref{tab:autoenc}).  Pretraining on the features helps
+on seq and expr and hurts elsewhere; the label autoencoder loses
+0.010--0.016 on average.  The cosine-only head of Surj, without our free
+output layer, collapses in our model (0.18 vs 0.25 on cellcycle): the
+graph-autoencoder embeddings of sibling labels are nearly parallel
+(cosine $\geq 0.997$ for the closest 10\% of pairs), so the head cannot
+separate them.
+
+\textbf{Test.}  The GAE hybrid with $D{=}64$, run under the full
+protocol (refit, threshold on validation, three seeds), averages 0.262
+on the eight common FunCat datasets against 0.261 for the baseline and
+0.264 for C-HMCNN (Table~\ref{tab:funcat}).  It is above the baseline on
+7 of 10 FunCat datasets (+0.0016 on average; Wilcoxon signed-rank
+$p=0.049$, uncorrected) and above C-HMCNN on derisi and spo.  On the
+cross-domain datasets the change is +0.0005 on average (diatoms +0.004,
+enron $-$0.002).  We did not run it on GO, where the screening gain was
+below our 0.003 threshold.  Ontology embeddings therefore add a small,
+consistent gain on FunCat when they complement, rather than replace,
+the free output layer; nothing close to the 7--31\% that Surj reports.
 
 \subsection{Per-Level Analysis: Where Does the Model Fail?}
 
@@ -1382,13 +1572,12 @@ However, the R-matrix is \textbf{not a silver bullet}:
     there ($-0.0003$ F1, Table~\ref{tab:ablation}): structural
     regularization does not materialize when the features already
     yield hierarchically consistent predictions.
-  \item \textbf{Ontology semantics matter.} Surj is
-    7--31\% AUPRC above our model on FunCat and 7--21\% on GO, where
-    we match C-HMCNN,
-    by learning class representations from the label hierarchy with a
-    graph autoencoder---information that the R-matrix (a binary
-    ancestor mask) cannot capture. Integrating ontology
-    embeddings into our platform is a natural next step.
+  \item \textbf{Ontology embeddings are not a free gain.} Surj
+    reports 7--31\% AUPRC over constraint-based models from graph-autoencoder
+    label embeddings, but without public code; our reimplementation does
+    not reproduce the gain (Section~\ref{sec:surj}), and the autoencoders
+    we added to our own model (Section~\ref{sec:autoenc}) are measured
+    under the same validation-only protocol as every other number here.
   \item \textbf{Scalability (addressed).} The dense R-matrix is $O(C^2)$,
     but our sparse R formulation (Section~\ref{sec:sparse})
     reduces this to $O(C{+}E)$ with zero violation penalty.  On the 9 GO
@@ -1446,7 +1635,14 @@ key findings are:
     fine-tuned SPECTER2.
   \item FunCat results on par with C-HMCNN (avg 0.261 vs 0.264 AUPRC,
     statistically tied), using the same constraint through the sparse
-    R formulation; the earlier gap came from the training recipe.
+    R formulation; the earlier gap came from the training recipe.  A
+    graph-autoencoder branch over the label hierarchy adds a small gain
+    (0.262), above C-HMCNN on derisi and spo.
+  \item Surj's reported FunCat/GO results, the only ones above
+    C-HMCNN, could not be reproduced: the code was never released, and
+    a reimplementation from the paper on C-HMCNN's own pipeline stays
+    below C-HMCNN (0.232 on FunCat).  We list them as reported and
+    release our reimplementation.
   \item \textbf{Sparse R-Matrix}: an $O(C{+}E)$ formulation that
     extends hierarchical consistency to Gene Ontology while avoiding
     dense materialization, on par with C-HMCNN there as well (avg
@@ -1455,9 +1651,9 @@ key findings are:
     table runs, the larger model benefiting more.
 \end{itemize}
 
-The platform is designed to grow with the field. Integrating ontology
-embeddings and completing the protein sequence encoder (ESM-2), today a
-placeholder, are natural next steps.
+The platform is designed to grow with the field. Label embeddings
+that do not oversmooth sibling classes, and completing the protein
+sequence encoder (ESM-2), today a placeholder, are natural next steps.
 
 \smallskip
 \noindent
@@ -1515,6 +1711,11 @@ S.~T.~Yang and B.~Howe.
 \newblock Surj: Ontological learning for fast, accurate, and robust
   hierarchical multi-label classification.
 \newblock In {\em Companion Proceedings of the Web Conference (WWW)}, 2022.
+
+\bibitem{kipf2016vgae}
+T.~N.~Kipf and M.~Welling.
+\newblock Variational graph auto-encoders.
+\newblock In {\em NIPS Workshop on Bayesian Deep Learning}, 2016.
 
 \bibitem{chmcnn}
 E.~Giunchiglia and T.~Lukasiewicz.
