@@ -1109,8 +1109,9 @@ global method wins on F1 by leveraging the trade-off effectively.
 Table~\ref{tab:gpu} compares CPU and GPU training for the FunCat table
 runs.  The global MLP benefits more from the device than the smaller
 tabular baseline, and end-to-end fine-tuning of the transformer (WOS)
-is GPU-only: three epochs already cost the better part of an hour, which
-is why the multi-seed E2E runs remain pending.
+is GPU-only: each epoch over the 30,070 training documents costs about
+26 minutes, so the WOS result of Table~\ref{tab:text} is a single seed
+(a 10-epoch budget, with the epoch chosen on validation, takes 4.5\,h).
 
 \begin{table}[!ht]
 \centering
@@ -1122,7 +1123,8 @@ is why the multi-seed E2E runs remain pending.
 \midrule
 global (FunCat avg) & 15.7s & 5.5s & \textbf{2.9$\times$} \\
 tabular\_mlp (FunCat avg) & 5.0s & 2.8s & 1.8$\times$ \\
-WOS globalE2E (3 ep) & -- & 5,791s & -- \\
+WOS globalE2E (per epoch) & -- & 1,575s & -- \\
+WOS globalE2E (10 ep) & -- & 16,077s & -- \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,0 +1,28 @@
+{
+  "_note": "Headline numbers of main.tex (2026-10-20). Validation-only protocol: epoch and threshold chosen on validation, test used once. Sources: hmc-torch output/protocol/, output/autoencoder/final/, surj_repro/results/.",
+  "text": {
+    "wos": {"micro_f1": 0.8671, "seeds": [0], "best_published": "HPT 0.8716", "delta": -0.0045,
+            "note": "globalE2E, run_wos_e2e.py --epochs 10, best epoch 5; earlier 0.8743 used the test threshold and is withdrawn"},
+    "arxiv": {"micro_f1": 0.7295, "std": 0.0003, "note": "own split, not comparable with published numbers"}
+  },
+  "funcat": {
+    "avg_auprc_8_common": {"C-HMCNN": 0.264, "HMCN-F": 0.261, "ours_global_mcloss": 0.261,
+                           "ours_global_gae": 0.262, "ours_gbdt": 0.226},
+    "ours_above_chmcnn_on": ["derisi_FUN", "spo_FUN"],
+    "friedman": {"methods": 5, "chi2": 28.30, "p": 1.08e-05},
+    "nemenyi_cd": 2.157,
+    "avg_rank": {"C-HMCNN": 1.0, "HMCN-F": 2.625, "MCLoss (ours)": 2.625, "MLP+R": 3.75, "GBDT": 5.0}
+  },
+  "go": {"avg_auprc_8_common": {"C-HMCNN": 0.420, "HMCN-F": 0.422, "ours_mcloss_rec": 0.418, "ours_bce_rec": 0.416},
+         "note": "sparse R (BlockDiagonalR), O(C+E) memory"},
+  "cross_domain": {"avg_auprc": {"C-HMCNN": 0.849, "HMCN-F": 0.781, "ours_bce_rec": 0.857},
+                   "ours_above_chmcnn_on": ["enron_others", "imclef07a_others", "diatoms_others"]},
+  "surj": {"status": "reported, not reproducible (code never released)",
+           "reported_avg": {"funcat": 0.312, "go": 0.468},
+           "reimplementation_avg": {"funcat": 0.232, "go": 0.352},
+           "excluded_from": ["bold marks", "Friedman/Nemenyi", "CD diagram"]},
+  "autoencoders_funcat_val_delta": {"gae_hybrid@64": 0.0007, "gae_hybrid@16": 0.0002, "feat_dae": -0.0003,
+                                    "feat_dae+aux": -0.0047, "label_ae@0.1": -0.0105, "label_ae@1": -0.0155},
+  "gpu_speedup": "1.8-2.9x (FunCat table runs)",
+  "total_datasets": 28
+}
