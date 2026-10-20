@@ -34,7 +34,7 @@ COLORS = {
 # (2026-10-19); text values from the paper's tables.
 SERIES = [
     ("ArXiv", "", "Scientific Text", 0.730),
-    ("WOS", "", "Scientific Text", 0.874),
+    ("WOS", "", "Scientific Text", 0.867),
     ("enron", "", "Email", 0.674),
     ("imclef07a", "", "Medical Images", 0.899),
     ("imclef07d", "", "Medical Images", 0.848),
