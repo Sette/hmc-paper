@@ -1,0 +1,5 @@
+- A modular platform exposes the R-matrix as a reusable HMC component.
+- Systematic study of BCE, hinge, and MCLoss with and without reconciliation.
+- Inference-time reconciliation, not the training loss, drives the gains.
+- Sparse O(C+E) R-matrix scales to Gene Ontology DAGs with 4,134 classes.
+- Reported Surj results are not reproducible from the published description.

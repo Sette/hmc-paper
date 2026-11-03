@@ -1,4 +1,4 @@
-\documentclass[11pt,a4paper]{article}
+\documentclass[preprint,12pt]{elsarticle}
 
 % ── Packages ──────────────────────────────────────────────────────────
 \usepackage[utf8]{inputenc}
@@ -9,7 +9,6 @@
 \usepackage{amsmath,amssymb}
 \usepackage{hyperref}
 \usepackage{enumitem}
-\usepackage[margin=1in]{geometry}
 \usepackage{xcolor}
 \usepackage{multirow}
 \usepackage{array}
@@ -35,53 +34,58 @@
 % long \texttt{} names and URLs in this paper otherwise overflow it.
 \emergencystretch=2em
 
-% ── Title ─────────────────────────────────────────────────────────────
-\title{\textbf{HMC-Torch: A Modular Platform for Hierarchical Multi-Label
-Classification\\ with R-Matrix Constraints}}
-
-\author{
-  Bruno Sette\textsuperscript{1} \\
-  \textsuperscript{1} Federal University of São Carlos (UFSCar), Brazil \\
-  \texttt{brunosilvasette@gmail.com}
-}
-
-\date{August 2026}
-
+% ── Front matter (Elsevier / KBS) ─────────────────────────────────────
 \begin{document}
-\maketitle
 
-% ── Abstract ──────────────────────────────────────────────────────────
+\begin{frontmatter}
+
+\title{When Do Hierarchical Constraints Help? A Systematic Study of
+R-Matrix Consistency and Reconciliation in Hierarchical Multi-Label
+Classification}
+
+\author[ufscar]{Bruno Sette\corref{cor1}}
+\ead{brunosilvasette@gmail.com}
+
+% TODO: replace the placeholder with the advisor's full name, e-mail,
+% affiliation and ORCID before submission.
+\author[ufscar]{[Orientador]}
+\ead{[orientador@ufscar.br]}
+
+\affiliation[ufscar]{organization={Federal University of S\~ao Carlos (UFSCar)},
+                    city={S\~ao Carlos},
+                    state={S\~ao Paulo},
+                    country={Brazil}}
+
+\cortext[cor1]{Corresponding author}
+
 \begin{abstract}
-We present \textsc{hmc-torch}, a modular and extensible platform for
-Hierarchical Multi-Label Classification (HMC) that integrates the
-R-matrix constraint---originally proposed by Giunchiglia \&
-Lukasiewicz (2020, NeurIPS)~\cite{chmcnn}---as a first-class
-architectural component. The framework separates data contracts
-(\texttt{DatasetBundle}, \texttt{Hierarchy}), feature encoders, and
-reusable HMC heads, enabling structured experimentation across 28
-datasets spanning tree and DAG hierarchies.  On WOS, fine-tuned
-SPECTER2 with the R-matrix reaches 0.8671 Micro-F1 with epoch and
-threshold chosen on validation, competitive with the best published
-BERT-based models (0.8716); under our own re-split protocol we report
-competitive results on ArXiv and AAPD; on FunCat our MLP with MCLoss through the sparse R formulation
-is within 0.005 AUPRC of C-HMCNN on every dataset (0.262 on average
-with a graph-autoencoder branch, against 0.264); on the cross-domain
-ARFF benchmarks (email, microscopy, medical imaging) we exceed C-HMCNN
-on three of four datasets (0.857 vs 0.849 average AUPRC; diatoms
-$+0.027$); and we report a competitive baseline on EUR-Lex 57K.  The only published model above
-C-HMCNN on FunCat and GO (Surj) released no code, and our
-reimplementation does not reproduce its reported results.
-We contribute a sparse R-matrix formulation that preserves
-hierarchical consistency in $O(C{+}E)$ memory: on 9 Gene Ontology
-datasets with up to 4,134 classes, MCLoss through the sparse R reaches
-0.418 average AUPRC, on par with C-HMCNN (0.420) and HMCN-F (0.422),
-without the batch$\times C\times C$ tensor of the dense R-matrix,
-which exceeds GPU memory at batch 64 at this scale.
-
-\smallskip
-\noindent\textbf{Availability:} \url{https://github.com/sette/hmc-torch} \textbar{}
-\url{https://pypi.org/project/hmc-torch/}
+Hierarchical multi-label classification (HMC) requires predictions to be
+consistent with a class hierarchy: an ancestor must not score lower than its
+descendants. The R-matrix constraint enforces this property during training and
+inference, but its benefit is usually reported together with a specific
+architecture and training recipe. We ask a narrower question: when does the
+constraint actually help? We present \textsc{hmc-torch}, a modular platform that
+exposes the R-matrix as a reusable component, and a controlled study of three
+training objectives (BCE, hinge, and MCLoss) with and without inference-time
+reconciliation on 27 datasets---text, FunCat, Gene Ontology, and cross-domain
+ARFF---under a validation-only protocol. The main finding is that the gain comes
+from reconciliation at inference time, not from the consistency loss during
+training: BCE with reconciliation is competitive with MCLoss, and the latter's
+raw scores can collapse before reconciliation. On FunCat and Gene Ontology the
+approach is on par with C-HMCNN (0.262 vs.\ 0.264 and 0.418 vs.\ 0.420 AUPRC on
+the datasets with published baselines), and on cross-domain ARFF it improves
+over C-HMCNN on three of four datasets (0.857 vs.\ 0.849). We also contribute a
+sparse $O(C{+}E)$ formulation of the R-matrix, which preserves the constraint on
+DAGs with 4{,}134 classes, and a reproducibility study showing that the reported
+Surj results cannot be reproduced from the published description.
 \end{abstract}
+
+\begin{keyword}
+Hierarchical multi-label classification \sep R-matrix \sep
+hierarchical consistency \sep reconciliation \sep reproducibility
+\end{keyword}
+
+\end{frontmatter}
 
 % ═══════════════════════════════════════════════════════════════════════
 \section{Introduction}
@@ -135,10 +139,11 @@ same semantics without materializing the dense matrix.
 
 Our contributions are:
 \begin{itemize}[leftmargin=*,nosep]
-  \item A modular HMC platform supporting 28 datasets spanning text,
+  \item A modular HMC platform evaluated on 27 datasets spanning text,
     genomic tabular, Gene Ontology, microscopy, email, and medical
     imaging data, with a shared encoder/head interface and
-    self-contained run artifacts.
+    self-contained run artifacts (28 datasets are supported; RCV1-V2 is
+    pending the NIST license).
   \item Competitive text results on WOS (0.8671 Micro-F1, 0.0045
     below HPT) and on ArXiv and AAPD under our split protocol, using
     frozen or fine-tuned SPECTER2 with the R-matrix constraint.
@@ -149,7 +154,7 @@ Our contributions are:
     tied under Nemenyi), with an ablation showing that the remaining
     differences come from the training recipe rather than the sparse
     R formulation; the same recipe brings Gene Ontology within
-    0.008 AUPRC of C-HMCNN on every dataset.
+    0.008 AUPRC of C-HMCNN on every dataset with a published baseline.
   \item Cross-domain results above C-HMCNN and HMCN-F on enron,
     imclef07a and diatoms (average AUPRC 0.857 vs 0.849 and 0.781),
     with the same architecture and no domain-specific tuning.
@@ -336,6 +341,7 @@ The platform provides three head architectures:
 \end{itemize}
 
 \subsection{R-Matrix: The Hierarchical Constraint Layer}
+\label{sec:rmatrix}
 
 The R-matrix, introduced by~\cite{chmcnn}, is the
 centrepiece of our hierarchical modeling.  Given the class hierarchy
@@ -405,6 +411,7 @@ the dense R-matrix.
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}[
+  scale=0.85, transform shape,
   node distance=11mm and 12mm,
   every node/.style={font=\small},
   nodebox/.style={draw, rounded corners=3pt, thick, align=center, minimum height=8mm, minimum width=20mm, fill=blue!4},
@@ -541,60 +548,6 @@ text, FunCat and GO runs average seeds 0, 42, and 123 (FunCat and GO:
 ablation (Table~\ref{tab:sparse}) and the GPU runs use seed 42.  The
 command-line entry point (\texttt{python -m hmc.main}) fixes
 Python/NumPy/PyTorch seeds and enables deterministic cuDNN kernels.
-
-\subsection{R-Matrix Constraint}
-\label{sec:rmatrix}
-
-Following~\cite{chmcnn}, we define the R-matrix via
-transitive closure of the hierarchy adjacency matrix $A$:
-
-\begin{equation}
-R_{ij} = \begin{cases}
-1 & \text{if } i = j \text{ or } \exists \text{ path } j \rightarrow \ldots \rightarrow i \text{ in } A \\
-0 & \text{otherwise}
-\end{cases}
-\end{equation}
-
-Our contribution is integrating this constraint at \textbf{two levels}
-within a modular platform:
-
-\textbf{1. Training-time consistency loss} (differentiable):
-
-\begin{equation}
-\mathcal{L}_{\text{hier}} = \frac{1}{B \cdot |R|}
-\sum_{b=1}^{B} \sum_{i,j: R_{ij}=1}
-\max(0,\; p_{b,j} - p_{b,i} + \gamma)
-\label{eq:hierloss-impl}
-\end{equation}
-
-\textbf{2. Inference-time reconciliation} (bottom-up max propagation):
-
-\begin{equation}
-p_i^{\text{rec}} = \max\left(p_i,\; \max_{j: \text{child}(i,j)} p_j^{\text{rec}}\right)
-\label{eq:reconcile-impl}
-\end{equation}
-
-Unlike HMCN's recurrent formulations~\cite{weihs2018hmc}, where the
-constraint is embedded in the architecture, and C-HMCNN's constraint
-layer~\cite{chmcnn}, we treat the
-R-matrix as a \textbf{standalone component} that can be combined with
-any encoder (frozen transformer, fine-tuned transformer, GBDT, MLP);
-our experiments pair it with the global head. This enables the ablation
-studies in Section~\ref{sec:results}.
-
-\subsection{Sparse R-Matrix for Large Hierarchies}
-\label{sec:sparse-impl}
-
-The sparse R-matrix formulation (Section~\ref{sec:sparse}) operates
-directly on the hierarchy graph, without constructing any dense
-matrix.  It stores only the parent-child structure and a
-breadth-first ordering of the nodes, then propagates scores bottom-up
-across the hierarchy.  Both the reconciliation step
-(Eq.~\ref{eq:reconcile}) and the training-time consistency loss
-(Eq.~\ref{eq:hierloss}) therefore scale with the size of the graph
-rather than with the square of the number of classes.  For
-cellcycle\_GO ($C{=}4{,}126$, $E{=}5{,}827$), this reduces memory from
-65~MB to $\sim$46~KB ($>1{,}400\times$ reduction).
 
 \subsection{Terminology}
 
@@ -759,10 +712,16 @@ follow the same protocol.
 
 \textbf{Metrics.} \textbf{Micro-F1} (primary for text) and
 \textbf{micro-AUPRC} (primary for FunCat, following literature
-convention~\cite{www2022ontology}). Threshold sweep: $[0.10, 0.90)$
-in steps of 0.05, selected on the test split (FunCat: $[0.05, 0.95]$,
-selected on validation); AUPRC and every threshold-free comparison are
-unaffected.
+convention~\cite{www2022ontology}). For FunCat, Gene Ontology, and the
+WOS end-to-end model, the decision threshold is selected on validation
+($[0.05,0.95]$ in steps of 0.05) and the test split is used once. For
+the frozen-feature text benchmarks (ArXiv, WOS frozen, AAPD, EUR-Lex),
+the threshold was selected on the test split in the runs reported here,
+so those Micro-F1 values are reported for reference and are not directly
+comparable to the validation-only protocol; AUPRC and every
+threshold-free comparison are unaffected.
+% TODO(P0): recompute the frozen-text numbers with validation-only
+% thresholds and remove this caveat before submission.
 
 % ═══════════════════════════════════════════════════════════════════════
 \section{Results}
@@ -834,9 +793,10 @@ SPECTER2 to scientific abstracts, while the R-matrix enforces the
 
 \subsection{Cross-Domain Text Generalization}
 
-We extend our evaluation to three new text datasets spanning diverse
-domains: \textbf{AAPD}~\cite{aapd} (arXiv papers, 54 leaf labels over
-seven areas, 2-level tree),
+We extend our evaluation to two new text datasets evaluated here---AAPD
+and EUR-Lex 57K---and prepare RCV1-V2 (infrastructure ready, pending
+data access), spanning diverse domains: \textbf{AAPD}~\cite{aapd}
+(arXiv papers, 54 leaf labels over seven areas, 2-level tree),
 \textbf{RCV1-V2} (Reuters news, 103 topics, 4-level tree), and
 \textbf{EUR-Lex 57K}~\cite{eurlex57k} (EU legislation, 2,901 EUROVOC
 concepts in the training subsample; the release used here ships the
@@ -909,6 +869,7 @@ adds the graph-autoencoder branch of Section~\ref{sec:autoenc}.
 verifiable methods.}
 \label{tab:funcat}
 \small
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccccc}
 \toprule
 \textbf{Dataset} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
@@ -935,11 +896,13 @@ reimplementation following the paper (Section~\ref{sec:surj}) does not
 reach them; they are excluded from the bold marks and the statistical tests.
 Church and pheno have no published baselines.} \\
 \end{tabular}
+}
 \end{table}
 
 \textbf{Analysis.} Table~\ref{tab:funcat} reports AUPRC on the FunCat
 datasets.  Our global model is within 0.001--0.005 AUPRC of C-HMCNN on
-every dataset (avg 0.261 vs 0.264) and matches HMCN-F on average
+every dataset with a published baseline (avg 0.261 vs 0.264) and matches
+HMCN-F on average
 (0.261), beating it on eisen and spo.  This is the same constraint and
 loss as C-HMCNN, computed through the sparse R formulation; the
 residual gap is within what the training recipe moves
@@ -1027,6 +990,7 @@ merged back for the refit; the test split is used once.  F1 is that of
 the BCE model.  Published baselines from their papers.
 \textbf{Bold}: best.}
 \label{tab:others}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccccc}
 \toprule
 \textbf{Dataset} & \textbf{Domain} & \textbf{Nodes} & \textbf{C-HMCNN} &
@@ -1043,6 +1007,7 @@ diatoms    & Microscopy      & 399 & 0.758 & 0.530 & \textbf{0.785} $\pm$ 0.002 
 \multicolumn{8}{p{0.97\textwidth}}{\small $^\dagger$Reported, not verifiable
 (code never released; Section~\ref{sec:surj}).  F1 (BCE + rec.): enron 0.674, imclef07a 0.899, imclef07d 0.848, diatoms 0.752.  Hidden size from the registry, dropout 0.3, batch 32, early stopping (patience 20, at most 200 epochs).} \\
 \end{tabular}
+}
 \end{table}
 
 Table~\ref{tab:others} shows that the global method transfers to three
@@ -1071,9 +1036,11 @@ microscopy, and medical imaging.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig4_cross_domain.pdf}
-\caption{Cross-domain performance overview across 10 representative
-datasets spanning 5 domains. Same architecture (global MLP+R) used
-throughout.}
+\caption{Performance overview across 10 representative datasets from
+five domains (text, FunCat, Gene Ontology, genomic, and cross-domain
+ARFF); the four ARFF cross-domain datasets of
+Table~\ref{tab:others} are enron, diatoms, imclef07a, and imclef07d.
+Same architecture (global MLP+R) used throughout.}
 \label{fig:cross}
 \end{figure}
 
@@ -1220,6 +1187,7 @@ the sparse R formulation, reconciled at inference, under the FunCat
 protocol (dropout 0.7, batch 4, early stopping on validation, refit on
 training + validation).  Published baselines from their papers.}
 \label{tab:go_sota}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccc}
 \toprule
 \textbf{Dataset} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
@@ -1244,6 +1212,7 @@ released; see Section~\ref{sec:surj}); excluded from the bold marks.
 Pheno\_GO has no published baselines.  Previous recipe (20 epochs, dropout 0.3,
 batch 64, identity R): avg 0.282.} \\
 \end{tabular}
+}
 \end{table}
 
 \textbf{Closing the gap to C-HMCNN.} With the earlier recipe our GO
@@ -1316,6 +1285,7 @@ mean $\pm$ std over 10 seeds).  ``One-hot'' is the same network without
 ontology learning (Surj's Table~5).  All our runs have zero hierarchy
 violations.}
 \label{tab:surj_repro}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccccc}
 \toprule
 & \multicolumn{2}{c}{\textbf{Surj}} & \multicolumn{2}{c}{\textbf{One-hot}} & \textbf{C-HMCNN} \\
@@ -1333,6 +1303,7 @@ spo       & 0.241 & 0.194 $\pm$ 0.004 & 0.209 & 0.157 $\pm$ 0.002 & 0.215 \\
 \textit{Avg} & 0.312 & 0.232 & 0.227 & 0.156 & 0.264 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \textbf{Outcome.}  Our reimplementation averages 0.232 on FunCat,
@@ -1407,6 +1378,7 @@ test never scored), against the baseline rerun in the same code path.
 baseline (MLP + MCLoss + rec.) and difference of each variant.}
 \label{tab:autoenc}
 \small
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccccccc}
 \toprule
 & & \multicolumn{2}{c}{\textbf{GAE hybrid}} & \multicolumn{2}{c}{\textbf{Feature DAE}} & \multicolumn{2}{c}{\textbf{Label AE}} \\
@@ -1427,6 +1399,7 @@ spo       & 0.1881 & $-$0.0013 & $-$0.0017 & $-$0.0129 & $-$0.0167 & $-$0.0040 &
 \textit{Wins} & -- & 6/10 & 7/10 & 4/10 & 2/10 & 3/10 & 1/10 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \textbf{Screening.}  Only the GAE hybrid improves on the baseline on
@@ -1676,90 +1649,38 @@ and installable via \texttt{pip install hmc-torch}
 % Bibliography
 % ═══════════════════════════════════════════════════════════════════════
 
-\begin{thebibliography}{20}
+% ═══════════════════════════════════════════════════════════════════════
+% Declarations (Elsevier)
+% ═══════════════════════════════════════════════════════════════════════
 
-\bibitem{silla2011hmc}
-C.~N.~Silla~Jr. and A.~A.~Freitas.
-\newblock A survey of hierarchical classification across different application
-  domains.
-\newblock {\em Data Mining and Knowledge Discovery}, 22(1):31--72, 2011.
+\section*{CRediT authorship contribution statement}
+\textbf{Bruno Sette:} Conceptualization, Methodology, Software, Validation,
+Formal analysis, Investigation, Data curation, Writing -- original draft,
+Writing -- review \& editing, Visualization.
+\textbf{[Orientador]:} Supervision, Project administration, Funding
+acquisition, Writing -- review \& editing. % TODO: confirm the advisor's roles.
 
-\bibitem{cerri2014hmc}
-R.~Cerri, R.~C.~Barros, and A.~C.~P.~L.~F.~de Carvalho.
-\newblock Hierarchical multi-label classification using local neural networks.
-\newblock {\em Journal of Computer and System Sciences}, 80(1):39--56, 2014.
+\section*{Declaration of competing interest}
+The authors declare that they have no known competing financial interests or
+personal relationships that could have appeared to influence the work reported
+in this paper.
 
-\bibitem{weihs2018hmc}
-J.~Wehrmann, R.~Cerri, and R.~C.~Barros.
-\newblock Hierarchical multi-label classification networks.
-\newblock In {\em Proceedings of ICML}, pages 5225--5234, 2018.
+\section*{Data and code availability}
+The \texttt{hmc-torch} code is available at
+\url{https://github.com/Sette/hmc-torch} and
+\url{https://pypi.org/project/hmc-torch/}. The experiment artifacts
+(configuration files, per-seed results, and test scores) are released with the
+repository; the datasets follow the licenses of their original sources.
 
-\bibitem{zhou2020hiagm}
-J.~Zhou, C.~Ma, D.~Long, G.~Xu, J.~Ding, H.~Zhang, P.~Xie, and G.~Liu.
-\newblock Hierarchy-aware global model for hierarchical text classification.
-\newblock In {\em Proceedings of ACL}, pages 1106--1117, 2020.
+\section*{Acknowledgments}
+% TODO: add the funding agency and grant number.
+This study was financed in part by the Coordenação de Aperfeiçoamento de
+Pessoal de Nível Superior -- Brasil (CAPES) -- Finance Code 001.
 
-\bibitem{htcinfomax}
-Z.~Deng, H.~Peng, D.~He, J.~Li, and P.~Yu.
-\newblock HTCInfoMax: A global model for hierarchical text classification via
-  information maximization.
-\newblock In {\em Proceedings of NAACL}, pages 3259--3265, 2021.
+% \section*{Declaration of generative AI and AI-assisted technologies}
+% TODO: add if required by the journal policy.
 
-\bibitem{hgclr}
-Z.~Wang, P.~Wang, L.~Huang, X.~Sun, and H.~Wang.
-\newblock Incorporating hierarchy into text encoder: A contrastive learning
-  approach for hierarchical text classification.
-\newblock In {\em Proceedings of ACL}, pages 7109--7119, 2022.
-
-\bibitem{hpt}
-Z.~Wang, P.~Wang, T.~Liu, B.~Lin, Y.~Cao, Z.~Sui, and H.~Wang.
-\newblock HPT: Hierarchy-aware prompt tuning for hierarchical text
-  classification.
-\newblock In {\em Proceedings of EMNLP}, pages 3740--3751, 2022.
-
-\bibitem{www2022ontology}
-S.~T.~Yang and B.~Howe.
-\newblock Surj: Ontological learning for fast, accurate, and robust
-  hierarchical multi-label classification.
-\newblock In {\em Companion Proceedings of the Web Conference (WWW)}, 2022.
-
-\bibitem{kipf2016vgae}
-T.~N.~Kipf and M.~Welling.
-\newblock Variational graph auto-encoders.
-\newblock In {\em NIPS Workshop on Bayesian Deep Learning}, 2016.
-
-\bibitem{chmcnn}
-E.~Giunchiglia and T.~Lukasiewicz.
-\newblock Coherent hierarchical multi-label classification neural networks.
-\newblock In {\em NeurIPS}, 2020.
-
-\bibitem{clus}
-C.~Vens, J.~Struyf, L.~Schietgat, S.~D{\v z}eroski, and H.~Blockeel.
-\newblock Decision trees for hierarchical multi-label classification.
-\newblock {\em Machine Learning}, 73(2):185--214, 2008.
-
-\bibitem{himatch}
-H.~Chen, Q.~Ma, Z.~Lin, and J.~Yan.
-\newblock Hierarchy-aware label semantics matching network for
-  hierarchical text classification.
-\newblock In {\em Proceedings of ACL-IJCNLP}, pages 4376--4385, 2021.
-
-\bibitem{eurlex57k}
-I.~Chalkidis, E.~Fergadiotis, P.~Malakasiotis, and I.~Androutsopoulos.
-\newblock Large-scale multi-label text classification on EU legislation.
-\newblock In {\em Proceedings of ACL}, pages 6314--6322, 2019.
-
-\bibitem{aapd}
-P.~Yang, X.~Sun, W.~Li, S.~Ma, W.~Wu, and H.~Wang.
-\newblock SGM: Sequence generation model for multi-label classification.
-\newblock In {\em Proceedings of COLING}, pages 3915--3926, 2018.
-
-\bibitem{specter2}
-A.~Singh, M.~D'Arcy, A.~Cohan, D.~Downey, and S.~Feldman.
-\newblock SciRepEval: A multi-format benchmark for scientific document
-  representations.
-\newblock In {\em Proceedings of EMNLP}, pages 5548--5566, 2023.
-
-\end{thebibliography}
+\bibliographystyle{elsarticle-num}
+\bibliography{refs}
 
 \end{document}

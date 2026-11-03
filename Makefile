@@ -15,25 +15,32 @@ SUDO    ?= sudo
 
 # Packages main.tex loads (directly or through another package): tlmgr names,
 # plus cm-super so the T1 EC fonts are embedded as vectors instead of bitmaps.
-TEX_PKGS = microtype booktabs enumitem geometry xcolor multirow caption \
-           pgf tools amsmath amsfonts hyperref cm-super
+TEX_PKGS = microtype booktabs enumitem xcolor multirow caption \
+           pgf tools amsmath amsfonts hyperref cm-super elsarticle
 
 # Fedora counterparts (texlive-<package>).  dnf skips whatever is already
 # installed, so on a machine with a partial texlive this pulls only the gaps;
 # on a bare machine use texlive-scheme-medium instead.  latexmk requires
 # perl(File::Find), which is what latexmk and tlmgr both need to run at all.
 FEDORA_PKGS = texlive-latex texlive-tools texlive-amsmath texlive-amsfonts \
-              texlive-graphics texlive-hyperref texlive-xcolor texlive-geometry \
+              texlive-graphics texlive-hyperref texlive-xcolor \
               texlive-microtype texlive-booktabs texlive-enumitem \
               texlive-multirow texlive-caption texlive-pgf texlive-cm-super \
-              latexmk
+              texlive-publishers latexmk
+
+# Arch Linux counterparts (TeX Live collections).  latexmk ships in
+# texlive-binextra; cm-super is part of texlive-fontsrecommended.
+ARCH_PKGS = texlive-basic texlive-latex texlive-latexrecommended \
+            texlive-latexextra texlive-fontsrecommended texlive-pictures \
+            texlive-publishers texlive-binextra
 
 # Files check-deps looks for; one per functional package above.
-TEX_FILES = microtype.sty booktabs.sty enumitem.sty geometry.sty xcolor.sty \
+TEX_FILES = microtype.sty booktabs.sty enumitem.sty xcolor.sty \
             multirow.sty caption.sty tikz.sty array.sty amsmath.sty \
-            amssymb.sty hyperref.sty
+            amssymb.sty hyperref.sty elsarticle.cls elsarticle-num.bst \
+            natbib.sty
 
-.PHONY: all pdf check watch deps check-deps clean distclean
+.PHONY: all pdf check submission watch deps check-deps clean distclean
 
 all: pdf
 
@@ -52,6 +59,13 @@ check: pdf
 	fi
 	@echo "--> No undefined references"
 
+# Build the submission package (PDF + cover letter + highlights).
+submission: pdf
+	@mkdir -p submission
+	@cp $(MAIN).pdf submission/
+	@cp cover_letter.md highlights.md submission/
+	@echo "--> submission/ ready"
+
 # Rebuild on every source change (Ctrl-C to stop).
 watch: check-deps
 	@echo "--> Watching $(MAIN).tex (Ctrl-C to stop)"
@@ -62,7 +76,7 @@ watch: check-deps
 # Installs the toolchain with whichever TeX installer is available, then
 # verifies it.  Fedora's latexmk package pulls the Perl modules it needs
 # (File::Find, used by latexmk and tlmgr); a TinyTeX without them fails
-# `tlmgr --version` and falls through to dnf/apt/brew below.
+# `tlmgr --version` and falls through to dnf/pacman/apt/brew below.
 deps:
 	@echo "--> Installing LaTeX dependencies for $(MAIN).tex"
 	@tlmgr_bin=$$(command -v tlmgr 2>/dev/null || true); \
@@ -74,6 +88,9 @@ deps:
 	elif command -v dnf >/dev/null 2>&1; then \
 		echo "    using dnf (Fedora); tlmgr here belongs to the system TeX Live"; \
 		$(SUDO) dnf install -y $(FEDORA_PKGS); \
+	elif command -v pacman >/dev/null 2>&1; then \
+		echo "    using pacman (Arch Linux)"; \
+		$(SUDO) pacman -S --needed --noconfirm $(ARCH_PKGS); \
 	elif command -v apt-get >/dev/null 2>&1; then \
 		echo "    using apt-get (Debian/Ubuntu)"; \
 		$(SUDO) apt-get update && $(SUDO) apt-get install -y --no-install-recommends \
@@ -85,7 +102,7 @@ deps:
 		echo "    NOTE: open a new shell so tlmgr is on PATH, then re-run make deps"; \
 		$(SUDO) tlmgr install $(TEX_PKGS) latexmk; \
 	else \
-		echo "!! no supported TeX installer found (need tlmgr, dnf, apt-get or brew)"; \
+		echo "!! no supported TeX installer found (need tlmgr, dnf, pacman, apt-get or brew)"; \
 		exit 1; \
 	fi
 	@$(MAKE) --no-print-directory check-deps
@@ -97,7 +114,7 @@ check-deps:
 	problems=""; for f in $(TEX_FILES); do \
 		kpsewhich $$f >/dev/null 2>&1 || problems="$$problems $$f"; \
 	done; \
-	for exe in $(LATEXMK) pdflatex; do \
+	for exe in $(LATEXMK) pdflatex bibtex; do \
 		command -v $$exe >/dev/null 2>&1 && $$exe --version >/dev/null 2>&1 \
 			|| problems="$$problems $$exe"; \
 	done; \
