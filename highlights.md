@@ -1,5 +1,5 @@
-- A modular platform exposes the R-matrix as a reusable HMC component.
-- Systematic study of BCE, hinge, and MCLoss with and without reconciliation.
+- Controlled 3x2 study of BCE, hinge, and MCLoss across 27 HMC benchmarks.
 - Inference-time reconciliation, not the training loss, drives the gains.
 - Sparse O(C+E) R-matrix scales to Gene Ontology DAGs with 4,134 classes.
-- Reported Surj results are not reproducible from the published description.
+- Constraint gain correlates with internal-node score raise (rho = 0.49).
+- SR-GAE, H-MLCL+KNN, and depth calibration resolve sibling collapse and lift F1.

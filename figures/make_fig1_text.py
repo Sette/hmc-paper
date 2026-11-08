@@ -26,14 +26,14 @@ PANELS = {
     "ArXiv (156 classes, not like-for-like)": [
         ("HiAGM", 0.5950, False),
         ("HTC-infoMAX", 0.6130, False),
-        ("Ours (frozen)", 0.7295, True),
+        ("Ours (frozen)", 0.7234, True),
     ],
     "WOS (142 classes)": [
         ("HiAGM", 0.8604, False),
         ("HTC-infoMAX", 0.8630, False),
         ("HGCLR", 0.8711, False),
         ("HPT", 0.8716, False),
-        ("Ours (fine-tuned)", 0.8671, True),
+        ("Ours (fine-tuned)", 0.8704, True),
     ],
 }
 LIMITS = {"ArXiv (156 classes, not like-for-like)": (0.55, 0.78),

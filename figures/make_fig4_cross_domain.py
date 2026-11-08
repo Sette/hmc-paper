@@ -33,8 +33,8 @@ COLORS = {
 # ARFF values: run_protocol.py, BCE + reconciliation, mean of seeds 0/42/123
 # (2026-10-19); text values from the paper's tables.
 SERIES = [
-    ("ArXiv", "", "Scientific Text", 0.730),
-    ("WOS", "", "Scientific Text", 0.867),
+    ("ArXiv", "", "Scientific Text", 0.7234),
+    ("WOS", "", "Scientific Text", 0.8704),
     ("enron", "", "Email", 0.674),
     ("imclef07a", "", "Medical Images", 0.899),
     ("imclef07d", "", "Medical Images", 0.848),

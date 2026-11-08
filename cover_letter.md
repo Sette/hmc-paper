@@ -1,7 +1,7 @@
 # Cover letter — Knowledge-Based Systems
 
-**Manuscript:** *When Do Hierarchical Constraints Help? A Systematic Study of R-Matrix
-Consistency and Reconciliation in Hierarchical Multi-Label Classification*
+**Manuscript:** *Scalable R-Matrix Reconciliation, Sibling-Repulsive Ontology Graphs, and
+Contrastive Learning for Hierarchical Multi-Label Classification*
 
 **Authors:** Bruno Sette, [Orientador] (Federal University of São Carlos, UFSCar, Brazil)
 **Corresponding author:** Bruno Sette — brunosilvasette@gmail.com
@@ -15,23 +15,33 @@ the hierarchy is the structured knowledge, and the R-matrix is the mechanism tha
 consistency between an ancestor and its descendants.
 
 **What the paper contributes.**
-1. A **sparse O(C+E) formulation of the R-matrix** that preserves the hierarchical
-   consistency constraint on large DAGs without materializing the dense C×C matrix,
-   enabling batch sizes that do not fit in GPU memory with the dense form (up to 4,134
-   classes in Gene Ontology).
-2. A **controlled study of three training objectives** (BCE, hinge, and the MCLoss of
-   C-HMCNN) with and without inference-time reconciliation, on 27 datasets spanning text,
-   FunCat, Gene Ontology, and cross-domain ARFF benchmarks, under a validation-only
-   protocol.
-3. A clear empirical answer: **the gain comes from reconciliation at inference time, not
-   from the consistency loss during training**. BCE with reconciliation is competitive with
-   MCLoss, and MCLoss raw scores can collapse before reconciliation. The paper is therefore
-   as useful for what it rules out as for what it recommends.
-4. A **reproducibility study** showing that the reported Surj results cannot be reproduced
-   from the published description, with the reimplementation, recipes, and per-seed scores
-   released.
-5. An open-source, modular implementation (`hmc-torch`) that makes the study reproducible
-   and extensible.
+1. A **controlled $3 \times 2$ factorial decomposition of three training objectives** (BCE,
+   hierarchical hinge, and the MCLoss of C-HMCNN) crossed with raw versus reconciled
+   inference across **27 benchmarks** spanning four domain families (scientific/legal text,
+   FunCat, Gene Ontology, and cross-domain ARFF) under a strict validation-only protocol.
+2. A clear empirical answer to when hierarchical constraints help: **the gain comes from
+   reconciliation at inference time (Wilcoxon $p = 2.1 \times 10^{-7}$ on Micro-AUPRC across
+   26/27 datasets; $p = 1.3 \times 10^{-6}$ on Micro-F1 across 25/27 datasets), not from the
+   consistency loss during training**. Unconstrained BCE with reconciliation matches MCLoss,
+   whereas raw MCLoss scores collapse on internal nodes prior to reconciliation.
+3. A **structural explanation of constraint utility**: reconciliation gain across the 27
+   datasets is not predicted by static positive-label density on internal nodes (Spearman
+   $\rho = -0.07$, $p = 0.721$), but correlates significantly with the average score raise
+   induced on internal nodes during bottom-up propagation ($\rho = 0.49$, $p = 0.009$).
+4. A **sparse $O(C+E)$ formulation of the R-matrix (`BlockDiagonalR`)** that enforces exact
+   ancestor-closure consistency on large DAGs without materializing the dense $C \times C$
+   matrix ($>1{,}400\times$ structural memory reduction), enabling batch sizes that exhaust
+   GPU memory under the dense formulation (up to 4,134 classes in Gene Ontology).
+5. An **independent reproducibility audit** showing that the reported Surj ontology
+   autoencoder results cannot be reproduced from the published specification, proving a
+   spherical Parseval bound explaining why standard ontology graph autoencoders collapse
+   sibling classes ($\cos \ge 0.9997$), and introducing the **Sibling-Repulsive Graph
+   Autoencoder (`SR-GAE`)**, **Hierarchical Multi-Label Contrastive Learning with $k$-NN
+   retrieval (`H-MLCL+KNN`)**, and **Consistency-Preserving Depth Calibration (`DepthCal`)**,
+   which eliminate sibling collapse ($\cos \to 0.012$), improve global test Micro-AUPRC on
+   24/27 benchmarks (Wilcoxon $p = 2.8 \times 10^{-6}$, including 9/9 Gene Ontology datasets),
+   and lift deep-level F1 by $+13.0\%$ on FunCat and $+24.1\%$ on Gene Ontology Level 5 with
+   zero hierarchy violations.
 
 **Why KBS.** The work is about knowledge injection from taxonomies and ontologies into
 learning systems, evaluated on text, genomic, and cross-domain hierarchies. It does not
