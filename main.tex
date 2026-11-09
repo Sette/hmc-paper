@@ -625,11 +625,13 @@ hierarchy violations ($\text{GHV}=0$):
     up-weights inactive sibling prototypes $\mathcal{S}(\mathcal{Y}_b^+)$ by
     $\gamma_{\text{sib}} = 2.0$:
     \begin{equation}
-    \mathcal{L}_{\text{proto-cl}}(\hat{\mathbf{u}}_b, \mathbf{y}_b) =
-    -\frac{1}{|\mathcal{Y}_b^+|} \sum_{i \in \mathcal{Y}_b^+} \log
+    \begin{split}
+    \mathcal{L}_{\text{proto-cl}}(\hat{\mathbf{u}}_b, \mathbf{y}_b)
+    &= -\frac{1}{|\mathcal{Y}_b^+|} \sum_{i \in \mathcal{Y}_b^+} \log
     \frac{\exp(\langle \hat{\mathbf{u}}_b, \hat{\mathbf{z}}_i \rangle / \tau)}
-    {\sum_{c=1}^{C} \omega_{b,c}\,\exp(\langle \hat{\mathbf{u}}_b, \hat{\mathbf{z}}_c \rangle / \tau)},
-    \quad \omega_{b,c} = 1 + (\gamma_{\text{sib}}-1)\mathbb{I}\bigl[c \in \mathcal{S}(\mathcal{Y}_b^+)\bigr],
+    {\sum_{c=1}^{C} \omega_{b,c}\,\exp(\langle \hat{\mathbf{u}}_b, \hat{\mathbf{z}}_c \rangle / \tau)},\\
+    \omega_{b,c} &= 1 + (\gamma_{\text{sib}}-1)\mathbb{I}\bigl[c \in \mathcal{S}(\mathcal{Y}_b^+)\bigr],
+    \end{split}
     \label{eq:proto_cl}
     \end{equation}
     and (b) an \emph{R-Matrix Jaccard Instance Contrastive loss} over a
@@ -639,13 +641,14 @@ hierarchy violations ($\text{GHV}=0$):
     avoiding the $O(B^2)$ batch-size bottleneck of in-batch multi-label InfoNCE at
     small batch sizes ($B \ge 4$):
     \begin{equation}
-    w_{b,m} = \frac{\langle \mathbf{y}_b, \mathbf{y}_m \rangle}
-    {\|\mathbf{y}_b\|_1 + \|\mathbf{y}_m\|_1 - \langle \mathbf{y}_b, \mathbf{y}_m \rangle},
-    \qquad
-    \mathcal{L}_{\text{inst-cl}}(\hat{\mathbf{u}}_b, \mathbf{y}_b) =
-    -\sum_{m:\, w_{b,m} > 0} \tilde{w}_{b,m} \log
+    \begin{split}
+    w_{b,m} &= \frac{\langle \mathbf{y}_b, \mathbf{y}_m \rangle}
+    {\|\mathbf{y}_b\|_1 + \|\mathbf{y}_m\|_1 - \langle \mathbf{y}_b, \mathbf{y}_m \rangle},\\
+    \mathcal{L}_{\text{inst-cl}}(\hat{\mathbf{u}}_b, \mathbf{y}_b)
+    &= -\sum_{m:\, w_{b,m} > 0} \tilde{w}_{b,m} \log
     \frac{\exp(\langle \hat{\mathbf{u}}_b, \hat{\mathbf{u}}_m \rangle / \tau)}
     {\sum_{r \in \mathcal{Q}} \exp(\langle \hat{\mathbf{u}}_b, \hat{\mathbf{u}}_r \rangle / \tau)},
+    \end{split}
     \label{eq:inst_cl}
     \end{equation}
     where $\tilde{w}_{b,m} = w_{b,m} / \sum_{m' > 0} w_{b,m'}$. The normalized
@@ -850,6 +853,7 @@ re-executions reported by HPT~\cite{hpt}; HGCLR, HPT, HTC-CLIP, HILL, and
 MLCL-KNN are as reported in their papers.}
 \label{tab:text}
 \small
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcc}
 \toprule
 \textbf{Method} & \textbf{ArXiv}\textsuperscript{\S} & \textbf{WOS} \\
@@ -872,6 +876,7 @@ $\Delta$ vs.\ HPT published        & --            & $-$0.0012 \\
 $\Delta$ vs.\ HPT re-executed      & --            & $+$0.0013 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \begin{figure}[t]
@@ -956,6 +961,7 @@ validation), so the comparison is \emph{not} like-for-like and we report no
 $\Delta$. EUR-Lex uses the standard 45{,}000/6{,}000/6{,}000 split.}
 \label{tab:new_text}
 \small
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcc}
 \toprule
 \textbf{Method} & \textbf{AAPD} & \textbf{EUR-Lex 57K} \\
@@ -969,6 +975,7 @@ Ours global (frozen SPECTER2 + R)     & \textbf{0.8232} $\pm$ 0.0003 & 0.7888 $\
 Ours global (w/o R)                   & 0.8229 $\pm$ 0.0003 & 0.7812 $\pm$ 0.0005 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 \textbf{AAPD.} With frozen SPECTER2 + MLP + R-matrix (44,672 train,
@@ -1247,6 +1254,7 @@ global MLP trades precision for recall relative to the tree ensemble.
 protocol, threshold chosen on validation).}
 \label{tab:pr}
 \small
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccc}
 \toprule
 \textbf{Method} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
@@ -1256,6 +1264,7 @@ global (MLP + R)                      & 0.25 & \textbf{0.36} & 0.296 \\
 tabular\_gbdt                         & \textbf{0.27} & 0.31 & 0.285 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
 The global MLP trades precision for recall relative to GBDT (+5 and
@@ -1715,18 +1724,30 @@ Eq.~\ref{eq:inst_cl}), feed $\hat{\mathbf{u}}_b$ into the gated cosine residual
 $s \cdot \hat{\mathbf{u}}_b\hat{\mathbf{Z}}^\top$ ($s$ initialized at $0$), and
 at inference time apply validation-selected \textbf{Contrastive $k$-NN Retrieval
 (\texttt{MLCL-KNN})} prior to \texttt{BlockDiagonalR} reconciliation.
+Table~\ref{tab:sr_gae} is an internal ablation: every column is one of our
+own models, trained in the same code path.
 
 \begin{table}[htbp]
 \centering
-\caption{Geometric and test-split classification comparison of Standard GAE
-(\texttt{loss="full"}), our Sibling-Repulsive GAE (\texttt{SR-GAE}, $D{=}64$),
-R-Matrix Multi-Label Contrastive Learning + $k$-NN (\texttt{H-MLCL+KNN}), and
-Consistency-Preserving Depth Calibration (\texttt{DepthCal}) across all 10
-FunCat, 4 cross-domain, 9 Gene Ontology, and text benchmarks (seed 0).
-\textbf{SibCos med / p90}: median and 90th-percentile sibling cosine similarity.
-\textbf{Cosine Test AUPRC}: test Micro-AUPRC of a pure cosine head.
-\textbf{Global Test AUPRC}: baseline MLP+R vs.\ \texttt{SR-GAE+H-MLCL+KNN}.
-\textbf{Deep F1}: test Micro-F1 on deep levels ($\ell \ge 4$ on FunCat/Cross-Domain, $\ell{=}5$ on GO, $\ell{=}2$ on ArXiv/WOS/AAPD).}
+\caption{Ablation of our own pipeline on all 27 benchmarks (seed 0). Every
+column is one of our variants, trained in the same code path: \textbf{Std-GAE}
+is our reimplementation of the standard full-adjacency GAE (the encoder
+Surj~\cite{www2022ontology} adopts), and \textbf{MLP+R} is our baseline global model (the ``Ours
+Global'' column of Table~\ref{tab:funcat}). \textbf{SR-GAE},
+\textbf{H-MLCL+KNN} and \textbf{DepthCal} are the components introduced in
+Section~\ref{sec:method_sr_gae_depth}. This table isolates the contribution
+of each component and is \emph{not} a comparison against published methods;
+those are in Tables~\ref{tab:text}, \ref{tab:funcat}, \ref{tab:others}
+and~\ref{tab:go_sota} (with the Surj reproduction in
+Table~\ref{tab:surj_repro}).
+\textbf{SibCos med / p90}: median and 90th-percentile sibling cosine
+similarity. \textbf{Cosine Test AUPRC}: test Micro-AUPRC of a pure cosine
+head. \textbf{Global Test AUPRC}: our baseline MLP+R vs.\ our
+\texttt{SR-GAE+H-MLCL+KNN}. \textbf{Global Test F1}: test Micro-F1 of our
+baseline MLP+R vs.\ the full pipeline
+(\texttt{SR-GAE+H-MLCL+KNN+DepthCal}). \textbf{Deep F1}: test Micro-F1 on
+deep levels ($\ell \ge 4$ on FunCat/Cross-Domain, $\ell{=}5$ on GO,
+$\ell{=}2$ on ArXiv/WOS/AAPD).}
 \label{tab:sr_gae}
 \small
 \resizebox{\textwidth}{!}{%
@@ -1734,7 +1755,7 @@ FunCat, 4 cross-domain, 9 Gene Ontology, and text benchmarks (seed 0).
 \toprule
 & \multicolumn{2}{c}{\textbf{Sibling Cosine (med / p90)}} & \multicolumn{3}{c}{\textbf{Cosine Head Test AUPRC}} & \multicolumn{2}{c}{\textbf{Global Test AUPRC}} & \multicolumn{2}{c}{\textbf{Global Test F1 (Deep F1)}} \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}
-\textbf{Dataset} & \textbf{Std-GAE} & \textbf{SR-GAE} & \textbf{Std-GAE} & \textbf{SR-GAE} & $\Delta_{\text{cos}}$ & \textbf{MLP+R} & \textbf{+H-MLCL} & \textbf{MLP+R} & \textbf{Ours (+DepthCal)} \\
+\textbf{Dataset} & \textbf{Std-GAE$^{\ddagger}$} & \textbf{SR-GAE} & \textbf{Std-GAE$^{\ddagger}$} & \textbf{SR-GAE} & $\Delta_{\text{cos}}$ & \textbf{MLP+R$^{\ddagger}$} & \textbf{+H-MLCL} & \textbf{MLP+R$^{\ddagger}$} & \textbf{Ours (full)} \\
 \midrule
 cellcycle\_FUN   & 0.9204 / 0.9997 & \textbf{0.0124 / 0.0211} & 0.2015 & \textbf{0.2086} & $+$0.0071 ($+$3.5\%) & 0.2411 & \textbf{0.2420} & 0.2962 (0.1392) & \textbf{0.3036 (0.1589)} \\
 church\_FUN      & 0.9204 / 0.9997 & \textbf{0.0124 / 0.0191} & 0.1749 & \textbf{0.1796} & $+$0.0046 ($+$2.7\%) & \textbf{0.1794} & \textbf{0.1794} & 0.2572 (0.0587) & \textbf{0.2604 (0.0845)} \\
@@ -1773,12 +1794,12 @@ eurlex            & 0.9978 / 1.0000 & \textbf{0.0274 / 0.0849} & \textbf{0.1719}
 \midrule
 \textit{Mean (4 Text)} & 0.9054 / 0.9956 & \textbf{0.0267 / 0.0636} & 0.5447 & \textbf{0.6105} & \textbf{$+$0.0658 (3/4 wins)} & 0.8355 & \textbf{0.8367} & 0.7615 (0.6404) & \textbf{0.7635 (0.6414)} \\
 \bottomrule
-\multicolumn{10}{l}{\footnotesize All columns report test-split metrics under the validation-only protocol with zero hierarchy violations ($\text{GHV}=0$). $^\dagger$Rankin--Welch packing regime ($K_{\max} > D=64$).}
+\multicolumn{10}{p{0.97\textwidth}}{\footnotesize All columns report test-split metrics under the validation-only protocol with zero hierarchy violations ($\text{GHV}=0$). $^{\ddagger}$Our own reimplementation (Std-GAE) or our baseline (MLP+R), trained in the same code path; no published number appears in this table. $^\dagger$Rankin--Welch packing regime ($K_{\max} > D=64$).}
 \end{tabular}%
 }
 \end{table}
 
-Table~\ref{tab:sr_gae} confirms our theoretical analysis across all 27
+The internal ablation in Table~\ref{tab:sr_gae} confirms our theoretical analysis across all 27
 FunCat, cross-domain, Gene Ontology, and text benchmarks: \texttt{SR-GAE}
 reduces the median sibling cosine similarity from $0.7390$--$0.9995$ (90th
 percentile $0.9858$--$1.0000$) to $-0.0243$--$0.0384$ (90th percentile $\le
@@ -1860,7 +1881,7 @@ Because Eq.~\eqref{eq:depth_cal} pools all validation instances across all nodes
 at depth $\ell$ ($L \le 6$ parameters instead of $2C = 1{,}000$) and applies
 \texttt{BlockDiagonalR} propagation afterward, it guarantees zero hierarchy
 violations for any offset vector $\boldsymbol{\delta}$. Across all 10 FunCat
-benchmarks (Table~\ref{tab:sr_gae}), combining \texttt{SR-GAE}/\texttt{H-MLCL} and
+benchmarks in the ablation of Table~\ref{tab:sr_gae}, combining \texttt{SR-GAE}/\texttt{H-MLCL} and
 depth-level logit calibration improves deep-level test F1 ($\ell \ge 4$) on
 \textbf{10 out of 10 datasets} (mean $0.1212 \to 0.1370$, $+13.0\%$ relative),
 lifting \texttt{spo\_FUN} from $0.0574 \to 0.1009$ ($+75.8\%$),
