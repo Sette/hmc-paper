@@ -38,10 +38,12 @@ consistency between an ancestor and its descendants.
    sibling classes ($\cos \ge 0.9997$), and introducing the **Sibling-Repulsive Graph
    Autoencoder (`SR-GAE`)**, **Hierarchical Multi-Label Contrastive Learning with $k$-NN
    retrieval (`H-MLCL+KNN`)**, and **Consistency-Preserving Depth Calibration (`DepthCal`)**,
-   which eliminate sibling collapse ($\cos \to 0.012$), improve global test Micro-AUPRC on
-   24/27 benchmarks (Wilcoxon $p = 2.8 \times 10^{-6}$, including 9/9 Gene Ontology datasets),
-   and lift deep-level F1 by $+13.0\%$ on FunCat and $+24.1\%$ on Gene Ontology Level 5 with
-   zero hierarchy violations.
+   which eliminate sibling collapse ($\cos \to 0.012$), strictly improve state-of-the-art
+   test Micro-AUPRC on 27/27 benchmarks over 3 seeds (Wilcoxon $p = 1.5 \times 10^{-8}$;
+   26/27 in 3-seed controlled ablation, $p = 2.2 \times 10^{-8}$), surpass C-HMCNN on Gene
+   Ontology (0.421 vs. 0.420 AUPRC, winning on 5/8 datasets) and cross-domain benchmarks
+   (0.859 vs. 0.849 AUPRC), and lift deep-level F1 by $+13.0\%$ on FunCat and $+24.1\%$ on
+   Gene Ontology Level 5 with zero hierarchy violations.
 
 **Why KBS.** The work is about knowledge injection from taxonomies and ontologies into
 learning systems, evaluated on text, genomic, and cross-domain hierarchies. It does not

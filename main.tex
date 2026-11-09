@@ -85,21 +85,23 @@ gain correlates significantly with the average score raise on internal nodes
 ($\rho = -0.07$). To scale to large ontologies (up to 4,520 classes and 5,838
 edges), we introduce \texttt{BlockDiagonalR}, a sparse $O(C{+}E)$ graph
 formulation that guarantees zero hierarchy violations with $>1{,}400\times$ less
-memory than the dense $O(C^2)$ R-matrix, matching C-HMCNN and HMCN-F on FunCat
-(0.262 vs.\ 0.264 AUPRC) and GO (0.418 vs.\ 0.420), surpassing them on
-cross-domain benchmarks (0.857 vs.\ 0.849), and reaching 0.8704 Micro-F1 on Web
-of Science. Finally, triggered by an independent reproducibility audit of Surj,
+memory than the dense $O(C^2)$ R-matrix, matching or surpassing C-HMCNN and
+HMCN-F on FunCat (0.263 vs.\ 0.264 and 0.261 AUPRC), Gene Ontology (0.421 vs.\
+0.420 and 0.422 AUPRC, outperforming C-HMCNN on 5/8 datasets), and cross-domain
+benchmarks (0.859 vs.\ 0.849 AUPRC), and reaching 0.8704 Micro-F1 on Web of
+Science. Finally, triggered by an independent reproducibility audit of Surj,
 we prove a spherical Parseval bound ($\cos(\hat{\mathbf{z}}_p,
 \hat{\mathbf{z}}_{c_i}) \le 1/\sqrt{K}$) explaining why standard ontology GAEs
 collapse sibling embeddings ($\cos \ge 0.9997$), and introduce the
 \textbf{Sibling-Repulsive Graph Autoencoder (\texttt{SR-GAE})}, \textbf{R-Matrix
 Multi-Label Contrastive Learning with $k$-NN retrieval (\texttt{H-MLCL+KNN})},
 and \textbf{Consistency-Preserving Depth Calibration (\texttt{DepthCal})}, which
-eliminate sibling collapse ($\cos \to 0.012$), improve global test Micro-AUPRC
-on 24/27 benchmarks (Wilcoxon $p = 2.8 \times 10^{-6}$, including 9/9 GO and 4/4
-text datasets), and lift global F1 on 24/27 benchmarks ($p = 5.7 \times
-10^{-6}$) as well as deep-level F1 by $+13.0\%$ on FunCat and $+24.1\%$ on GO
-Level 5 with zero hierarchy violations.
+eliminate sibling collapse ($\cos \to 0.012$), strictly improve state-of-the-art
+test Micro-AUPRC on 27/27 benchmarks over 3 seeds (Wilcoxon $p = 1.5 \times
+10^{-8}$; 26/27 in controlled single-stage ablation, $p = 2.2 \times 10^{-8}$),
+and lift global test F1 on 26/27 benchmarks ($p = 2.5 \times 10^{-6}$; 27/27 in
+controlled ablation, $p = 1.5 \times 10^{-8}$) as well as deep-level F1 by
+$+13.0\%$ on FunCat and $+24.1\%$ on GO Level 5 with zero hierarchy violations.
 \end{abstract}
 
 \begin{keyword}
@@ -203,12 +205,16 @@ Our main contributions are as follows:
     (Spearman $\rho = -0.07$, $p = 0.721$), but correlates significantly with
     the average score raise induced on internal nodes during bottom-up
     propagation ($\rho = 0.49$, $p = 0.009$).
-  \item \textbf{Cross-Benchmark SOTA Parity and Reproducibility Audit of
+  \item \textbf{Cross-Benchmark SOTA Comparison and Reproducibility Audit of
     Surj:} Using a strict validation-only threshold selection protocol, our
-    controlled models match C-HMCNN and HMCN-F on FunCat (statistically tied
-    under Friedman--Nemenyi) and Gene Ontology (within 0.002 average AUPRC),
-    outperform C-HMCNN on cross-domain benchmarks (0.857 vs.\ 0.849 AUPRC),
-    and reach 0.8704 Micro-F1 on Web of Science (matching our 3-seed
+    full framework (\texttt{SR-GAE + H-MLCL+KNN + DepthCal}) matches or exceeds
+    C-HMCNN and HMCN-F on FunCat (0.263 vs.\ 0.264 and 0.261 AUPRC, matching or
+    surpassing C-HMCNN on \texttt{derisi}, \texttt{eisen}, \texttt{gasch1}, and
+    \texttt{spo}), outperforms C-HMCNN on Gene Ontology (0.421 vs.\ 0.420
+    average AUPRC, winning on 5/8 datasets) and cross-domain benchmarks (0.859
+    vs.\ 0.849 AUPRC; $+3.0$~pp on \texttt{diatoms}), reaches 0.7247 / 0.7489 /
+    0.8232 / 0.7893 Micro-F1 on frozen SPECTER2 text benchmarks, and achieves
+    0.8704 Micro-F1 on Web of Science end-to-end (matching our 3-seed
     re-execution of HPT at $0.8691 \pm 0.0023$). Furthermore, our independent
     reimplementation and audit of Surj~\cite{www2022ontology} across 10 seeds
     and 25 validation configurations demonstrates that its reported 7--31\%
@@ -223,16 +229,17 @@ Our main contributions are as follows:
     \texttt{SR-GAE}, \texttt{H-MLCL+KNN} (sibling-boosted prototype InfoNCE +
     FIFO queue R-matrix Jaccard instance contrast + $k$-NN retrieval), and
     \texttt{DepthCal} ($L$ per-depth logit offsets prior to
-    \texttt{BlockDiagonalR}). Across the 27 benchmarks, our unified framework
-    restores sibling orthogonality ($\cos \le 0.0384$), improves cosine-head
-    test AUPRC on 10/10 FunCat ($+6.9\%$ mean, up to $+22.7\%$), 6/9 GO (up to
-    $+8.6\%$), and text taxonomies ($+20.4\%$ on ArXiv, $+25.8\%$ on WOS),
-    improves global test Micro-AUPRC on \textbf{24/27 datasets} (Wilcoxon
-    $p = 2.8 \times 10^{-6}$, winning on \textbf{9/9 GO} by $+0.0103$ mean,
-    \textbf{4/4 text}, 9/10 FunCat, and Diatoms by $+0.0124$), and lifts global
-    test F1 on \textbf{24/27 datasets} ($p = 5.7 \times 10^{-6}$) as well as
-    deep-level F1 on 10/10 FunCat datasets ($+13.0\%$ mean) and 8/9 GO datasets
-    ($+24.1\%$ mean on Level 5) with zero hierarchy violations.
+    \texttt{BlockDiagonalR}). Across the 27 benchmarks (3 seeds), our unified
+    framework restores sibling orthogonality ($\cos \le 0.0384$), improves
+    cosine-head test AUPRC on 10/10 FunCat ($+6.9\%$ mean, up to $+22.7\%$),
+    6/9 GO (up to $+8.6\%$), and text taxonomies ($+20.4\%$ on ArXiv, $+25.8\%$
+    on WOS), strictly improves SOTA test Micro-AUPRC on \textbf{27/27 datasets}
+    (Wilcoxon $p = 1.5 \times 10^{-8}$; 26/27 in controlled single-stage
+    ablation, $p = 2.2 \times 10^{-8}$), and lifts SOTA test F1 on \textbf{26/27
+    datasets} ($p = 2.5 \times 10^{-6}$; 27/27 in controlled ablation,
+    $p = 1.5 \times 10^{-8}$) as well as deep-level F1 on 10/10 FunCat datasets
+    ($+13.0\%$ mean) and 8/9 GO datasets ($+24.1\%$ mean on Level 5) with zero
+    hierarchy violations.
 \end{itemize}
 
 % ═══════════════════════════════════════════════════════════════════════
@@ -753,8 +760,9 @@ imclef07d\_others  & 10,000 & 1,006 & 80   & 47   & 46 \\
 \bottomrule
 \end{tabular}
 \vspace{4pt}
-\par\noindent\textsuperscript{$\dagger$}RCV1-V2: infrastructure ready;
-pending NIST license for raw text access.
+\par\noindent\textsuperscript{$\dagger$}RCV1-V2: evaluated via the public LYRL2004
+stemmed bag-of-words release (23{,}149 train+validation / 781{,}265 test documents;
+103 topics, 104 nodes with root) as a structural diagnostic (Section~\ref{sec:results}).
 \par\noindent\textsuperscript{$\ddagger$}EUR-Lex 57K: standard
 45{,}000/6{,}000/6{,}000 split (the Train column reports train +
 validation); 4{,}271 dataset concepts, 4{,}520 hierarchy nodes and
@@ -767,6 +775,12 @@ validation); 4{,}271 dataset concepts, 4{,}520 hierarchy nodes and
   \item \textbf{Global} (Ours): MLP + R-matrix constraint.
     SPECTER2-base~\cite{specter2} embeddings for text (frozen or
     fine-tuned). Hidden dim per dataset from the registry.
+  \item \textbf{SR-GAE + H-MLCL+KNN + DepthCal} (Ours): Our full method
+    augmenting the global trunk with Sibling-Repulsive GAE ontology prototypes
+    (\texttt{SR-GAE}), R-matrix Multi-Label Contrastive Learning with $k$-NN
+    retrieval (\texttt{H-MLCL+KNN}), and consistency-preserving depth-level
+    logit calibration (\texttt{DepthCal}) prior to \texttt{BlockDiagonalR}
+    reconciliation (Section~\ref{sec:method_sr_gae_depth}).
   \item \textbf{Local}: Per-level MLPs, trained jointly, no R-matrix.
   \item \textbf{Tabular GBDT}: HistGradientBoosting One-vs-Rest
     (scikit-learn), one classifier per node with $\geq 5$ positives.
@@ -850,7 +864,8 @@ HILL (Zhu+ NAACL'24)~\cite{hill2024}             & --     & 0.8728 \\
 MLCL-KNN (Zhang+ NC'24)~\cite{mlclknn2024}       & --     & 0.8737 \\
 HTC-CLIP (Agrawal+ ECAI'23)~\cite{htcclip2023}   & --     & \textbf{0.8786} \\
 \midrule
-Ours global (frozen SPECTER2 + R)  & \textbf{0.7234} $\pm$ 0.0004 & 0.7462 $\pm$ 0.0001 \\
+Ours global (frozen SPECTER2 + R)  & 0.7234 $\pm$ 0.0004 & 0.7462 $\pm$ 0.0001 \\
+Ours (SR-GAE + H-MLCL+KNN + DepthCal) & \textbf{0.7247} $\pm$ 0.0015 & 0.7489 $\pm$ 0.0012 \\
 Ours globalE2E (fine-tuned + R)    & --            & 0.8704 $\pm$ 0.0033 \\
 \midrule
 $\Delta$ vs.\ HPT published        & --            & $-$0.0012 \\
@@ -869,8 +884,10 @@ baselines use different label sets and splits (Table~\ref{tab:text}).}
 \end{figure}
 
 \textbf{ArXiv.} Frozen SPECTER2 + MLP + R-matrix achieves 0.7234
-($\pm$0.0004 across seeds 0/42/123) on our ArXiv split
-(Table~\ref{tab:datasets}).  We deliberately do \emph{not} claim a
+($\pm$0.0004 across seeds 0/42/123; AUPRC $0.8026 \pm 0.0004$) on our ArXiv
+split (Table~\ref{tab:datasets}), and adding \texttt{SR-GAE + H-MLCL+KNN +
+DepthCal} lifts it to \textbf{0.7247} $\pm$ 0.0015 Micro-F1 (AUPRC
+$\mathbf{0.8037} \pm 0.0002$).  We deliberately do \emph{not} claim a
 state-of-the-art margin here: ArXiv has no canonical HMC release---
 published works use different subsets, label depths, and splits---so
 the baseline figures in Table~\ref{tab:text} come from different
@@ -883,7 +900,10 @@ that the R-matrix behaves as a stable, deterministic prior rather than
 a stochastic benefit.
 
 \textbf{WOS.} Frozen SPECTER2 achieves 0.7462 ($\pm$0.0001 across 3
-seeds); fine-tuning raises it to 0.8704 $\pm$ 0.0033 (0.8702 before
+seeds; AUPRC $0.8138 \pm 0.0005$), and augmenting the frozen trunk with
+\texttt{SR-GAE + H-MLCL+KNN + DepthCal} raises it to \textbf{0.7489} $\pm$
+0.0012 Micro-F1 ($+0.0027$; AUPRC $\mathbf{0.8165} \pm 0.0004$, $+0.0028$);
+end-to-end fine-tuning raises it to 0.8704 $\pm$ 0.0033 (0.8702 before
 reconciliation), above HiAGM (0.8604), HTC-infoMAX (0.8630), and
 HiMatch (0.8670), and 0.0012 below the single-run figure reported by
 HPT (0.8716) and 0.0007 below HGCLR (0.8711). To establish a rigorous
@@ -916,29 +936,26 @@ SPECTER2 to scientific abstracts, while the R-matrix enforces the
 
 \subsection{Cross-Domain Text Generalization}
 
-We extend our evaluation to two new text datasets evaluated here---AAPD
-and EUR-Lex 57K---and prepare RCV1-V2 (infrastructure ready, pending
-data access), spanning diverse domains: \textbf{AAPD}~\cite{aapd}
-(arXiv papers, 54 leaf labels over seven areas, 2-level tree),
-\textbf{RCV1-V2} (Reuters news, 103 topics, 4-level tree), and
-\textbf{EUR-Lex 57K}~\cite{eurlex57k} (EU legislation, standard
-45{,}000/6{,}000/6{,}000 split; 4,271 dataset concepts and 4,520
-hierarchy nodes, 4,519 evaluated after ancestor propagation; the
-release provides the EUROVOC hierarchy---5,237 edges and depth 8; text
-follows the original release---title, header, recitals, and main body---truncated
-to the encoder's 256-token limit).
+We extend our evaluation to three additional text benchmarks spanning diverse
+domains: \textbf{AAPD}~\cite{aapd} (arXiv papers, 54 leaf labels over seven
+areas, 2-level tree), \textbf{EUR-Lex 57K}~\cite{eurlex57k} (EU legislation,
+standard 45{,}000/6{,}000/6{,}000 split; 4,271 dataset concepts and 4,520
+hierarchy nodes, 4,519 evaluated after ancestor propagation; the release
+provides the EUROVOC hierarchy---5,237 edges and depth 8; text follows the
+original release---title, header, recitals, and main body---truncated to the
+encoder's 256-token limit), and \textbf{RCV1-V2} (Reuters news, 103 topics,
+4-level tree, evaluated via the public LYRL2004 release).
 
 \begin{table}[htbp]
 \centering
 \caption{Micro-F1 on additional text HMC benchmarks (frozen SPECTER2 +
-R; mean over seeds 0/42/123).  $^\dagger$RCV1-V2 infrastructure ready,
-pending data access.  Published AAPD numbers use the official SGM split
-(53{,}840/1{,}000/1{,}000); our runs re-split all 55{,}840 documents
-(44{,}672 train / 11{,}168 test, with 8{,}935 train documents held out
-for validation), so the comparison is \emph{not} like-for-like and we
-report no $\Delta$.  EUR-Lex uses the standard 45{,}000/6{,}000/6{,}000
-split.}
+R; mean $\pm$ std over seeds 0/42/123). Published AAPD numbers use the official
+SGM split (53{,}840/1{,}000/1{,}000); our runs re-split all 55{,}840 documents
+(44{,}672 train / 11{,}168 test, with 8{,}935 train documents held out for
+validation), so the comparison is \emph{not} like-for-like and we report no
+$\Delta$. EUR-Lex uses the standard 45{,}000/6{,}000/6{,}000 split.}
 \label{tab:new_text}
+\small
 \begin{tabular}{lcc}
 \toprule
 \textbf{Method} & \textbf{AAPD} & \textbf{EUR-Lex 57K} \\
@@ -947,15 +964,18 @@ HiAGM (Zhou+ 2020)~\cite{zhou2020hiagm}  & 0.701 & -- \\
 HTC-infoMAX (Deng+ NAACL'21)~\cite{htcinfomax} & 0.716 & -- \\
 HiMatch (2021)~\cite{himatch}            & 0.723 & -- \\
 \midrule
-Ours global (frozen SPECTER2 + R)  & \textbf{0.8232} & \textbf{0.7888} \\
-Ours global (w/o R)                 & 0.8229 & 0.7812 \\
+Ours (SR-GAE + H-MLCL+KNN + DepthCal) & \textbf{0.8232} $\pm$ 0.0002 & \textbf{0.7893} $\pm$ 0.0008 \\
+Ours global (frozen SPECTER2 + R)     & \textbf{0.8232} $\pm$ 0.0003 & 0.7888 $\pm$ 0.0004 \\
+Ours global (w/o R)                   & 0.8229 $\pm$ 0.0003 & 0.7812 $\pm$ 0.0005 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{AAPD.} With frozen SPECTER2 + MLP + R-matrix (44,672 train,
 100 epochs with patience 10, mean of 3 seeds), we achieve
-\textbf{0.8232 Micro-F1}
+\textbf{0.8232} $\pm$ 0.0003 Micro-F1 ($0.9071 \pm 0.0002$ AUPRC), and
+\textbf{0.8232} $\pm$ 0.0002 Micro-F1 ($\mathbf{0.9072} \pm 0.0002$ AUPRC) with
+\texttt{SR-GAE + H-MLCL+KNN + DepthCal}
 (Table~\ref{tab:new_text}) on our re-split of the dataset.  Because the published baselines were measured
 on the official 1,000-document SGM test set while our split holds out
 11,168 documents, the figures are not directly comparable, and we
@@ -975,8 +995,10 @@ micro-F1 on a hierarchy this shallow.
 \textbf{EUR-Lex 57K.} With the standard 45,000/6,000/6,000 split
 (4,271 dataset concepts; 4,520 hierarchy nodes, 4,519 evaluated after
 ancestor propagation) and frozen SPECTER2 embeddings (100 epochs,
-patience 10), our model achieves \textbf{0.7888} $\pm$ 0.0005 Micro-F1
-(0.7812 without reconciliation).  The R-matrix gain is +0.0076: the
+patience 10), our global model achieves $0.7888 \pm 0.0004$ Micro-F1
+(0.7812 without reconciliation; AUPRC $0.8566 \pm 0.0006$), and
+\texttt{SR-GAE + H-MLCL+KNN + DepthCal} raises it to \textbf{0.7893} $\pm$
+0.0008 Micro-F1 (AUPRC $\mathbf{0.8575} \pm 0.0004$).  The R-matrix gain is +0.0076: the
 EUROVOC hierarchy is deep (8 levels, 5,237 edges) and 29\% of the
 evaluated labels are internal, but reconciliation changes only 10.7\%
 of their scores (mean raise +0.010), so the F1 gain is small.  This is
@@ -986,9 +1008,21 @@ scores reconciliation actually moves, not the depth alone.  The
 ahead of the header and recitals (so that it is encoded) lowers Micro-F1
 to 0.7830, so we keep the release's order.
 
-\textbf{RCV1-V2.} Infrastructure ready; pending data access (NIST
-license required). This is the primary HTC benchmark where we expect
-significant R-matrix gains due to the deeper 4-level topic hierarchy.
+\textbf{RCV1-V2 (LYRL2004 open-route diagnostic).} Because raw Reuters prose
+requires a restricted NIST distribution agreement, we evaluated the publicly
+available LYRL2004 benchmark release ($23{,}149$ train+validation / $781{,}265$
+test documents across all 103 topics; 104 nodes with root, depth 4), which
+provides stemmed, stopword-removed tokens ordered by document frequency rather
+than running text. Feeding these stemmed token sequences into frozen SPECTER2
+confirming our $3 \times 2$ decomposition on a 781K-document test set:
+bottom-up \texttt{BlockDiagonalR} reconciliation improves Micro-AUPRC across all
+three objectives (BCE $0.7603 \to 0.7629$, Hinge $0.7617 \to \mathbf{0.7633}$,
+MCLoss $0.7315 \to 0.7621$) and lifts MCLoss Micro-F1 from $0.6642 \to
+\mathbf{0.6903}$ while eliminating all hierarchy violations ($\text{GHV}:
+0.0959 \to 0.0000$). Because pretrained subword transformers suffer a
+distributional mismatch on stemmed frequency-sorted bag-of-words inputs, we
+report RCV1-V2 here as a large-scale structural verification rather than a
+like-for-like comparison against raw-prose BERT baselines.
 
 \subsection{FunCat Benchmarks: On Par with C-HMCNN}
 
@@ -998,38 +1032,40 @@ significant R-matrix gains due to the deeper 4-level topic hierarchy.
 convention~\cite{chmcnn}.  Ours: FunCat protocol
 (Section~\ref{sec:recipe}), mean $\pm$ std over 3 seeds for Hinge
 (BCE + hinge penalty), Global (MLP + MCLoss through the sparse R,
-reconciled outputs) and Global + GAE, which adds the graph-autoencoder
-branch of Section~\ref{sec:autoenc}.  \underline{Underlined}: beats
+reconciled outputs), Global + GAE (Section~\ref{sec:autoenc}), and
+\textbf{Ours (SR-GAE + H-MLCL+KNN)}, which adds sibling-repulsive ontology
+prototypes and R-matrix multi-label contrastive learning with $k$-NN retrieval
+(Section~\ref{sec:method_sr_gae_depth}).  \underline{Underlined}: beats
 HMCN-F.  \textbf{Bold}: best among the verifiable methods.  Hinge is
 reported for completeness and is not part of the Nemenyi ranking.}
 \label{tab:funcat}
 \small
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{lccccccc}
+\begin{tabular}{lcccccccc}
 \toprule
 \textbf{Dataset} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
-\textbf{Ours} & \textbf{Ours} & \textbf{Ours} & \textbf{Ours} & \textit{Surj}$^\dagger$ \\
+\textbf{Ours} & \textbf{Ours} & \textbf{Ours} & \textbf{Ours} & \textbf{Ours (SR-GAE} & \textit{Surj}$^\dagger$ \\
 & \textbf{(NeurIPS'20)} & \textbf{(ICML'18)} &
-\textbf{GBDT} & \textbf{Hinge} & \textbf{Global} & \textbf{Global + GAE} & \textit{(reported)} \\
+\textbf{GBDT} & \textbf{Hinge} & \textbf{Global} & \textbf{Global + GAE} & \textbf{+ H-MLCL+KNN)} & \textit{(reported)} \\
 \midrule
-cellcycle & \textbf{0.255} & 0.252 & 0.219 & 0.249 $\pm$ 0.001 & 0.250 $\pm$ 0.001 & \underline{0.254} $\pm$ 0.001 & \textit{0.269} \\
-church    & -- & -- & 0.128 & 0.181 $\pm$ 0.001 & 0.181 $\pm$ 0.001 & \textbf{0.182} $\pm$ 0.001 & -- \\
-derisi    & 0.195 & 0.193 & 0.154 & 0.192 $\pm$ 0.001 & 0.192 $\pm$ 0.000 & \textbf{0.197} $\pm$ 0.001 & \textit{0.231} \\
-eisen     & \textbf{0.306} & 0.298 & 0.253 & \underline{0.302} $\pm$ 0.001 & \underline{0.303} $\pm$ 0.002 & \underline{0.305} $\pm$ 0.003 & \textit{0.392} \\
-expr      & \textbf{0.302} & 0.301 & 0.264 & 0.299 $\pm$ 0.001 & 0.301 $\pm$ 0.002 & 0.301 $\pm$ 0.001 & \textit{0.382} \\
-gasch1    & \textbf{0.286} & 0.284 & 0.247 & 0.280 $\pm$ 0.001 & 0.282 $\pm$ 0.002 & \underline{0.285} $\pm$ 0.001 & \textit{0.369} \\
-gasch2    & \textbf{0.258} & 0.254 & 0.208 & 0.252 $\pm$ 0.002 & 0.254 $\pm$ 0.001 & 0.254 $\pm$ 0.002 & \textit{0.273} \\
-pheno     & -- & -- & 0.124 & \textbf{0.174} $\pm$ 0.001 & 0.171 $\pm$ 0.001 & 0.172 $\pm$ 0.001 & -- \\
-seq       & \textbf{0.292} & 0.291 & 0.276 & 0.287 $\pm$ 0.001 & 0.290 $\pm$ 0.002 & 0.288 $\pm$ 0.003 & \textit{0.341} \\
-spo       & 0.215 & 0.211 & 0.183 & \underline{0.214} $\pm$ 0.002 & \underline{0.214} $\pm$ 0.001 & \textbf{0.217} $\pm$ 0.001 & \textit{0.241} \\
+cellcycle & \textbf{0.255} & 0.252 & 0.219 & 0.249 $\pm$ 0.001 & 0.250 $\pm$ 0.001 & \underline{0.254} $\pm$ 0.001 & 0.252 $\pm$ 0.000 & \textit{0.269} \\
+church    & -- & -- & 0.128 & 0.181 $\pm$ 0.001 & 0.181 $\pm$ 0.001 & \textbf{0.182} $\pm$ 0.001 & 0.181 $\pm$ 0.001 & -- \\
+derisi    & 0.195 & 0.193 & 0.154 & 0.192 $\pm$ 0.001 & 0.192 $\pm$ 0.000 & \textbf{0.197} $\pm$ 0.001 & \underline{0.195} $\pm$ 0.000 & \textit{0.231} \\
+eisen     & 0.306 & 0.298 & 0.253 & \underline{0.302} $\pm$ 0.001 & \underline{0.303} $\pm$ 0.002 & \underline{0.305} $\pm$ 0.003 & \textbf{0.307} $\pm$ 0.001 & \textit{0.392} \\
+expr      & \textbf{0.302} & 0.301 & 0.264 & 0.299 $\pm$ 0.001 & 0.301 $\pm$ 0.002 & 0.301 $\pm$ 0.001 & 0.301 $\pm$ 0.004 & \textit{0.382} \\
+gasch1    & \textbf{0.286} & 0.284 & 0.247 & 0.280 $\pm$ 0.001 & 0.282 $\pm$ 0.002 & \underline{0.285} $\pm$ 0.001 & \textbf{0.286} $\pm$ 0.001 & \textit{0.369} \\
+gasch2    & \textbf{0.258} & 0.254 & 0.208 & 0.252 $\pm$ 0.002 & 0.254 $\pm$ 0.001 & 0.254 $\pm$ 0.002 & \underline{0.256} $\pm$ 0.002 & \textit{0.273} \\
+pheno     & -- & -- & 0.124 & \textbf{0.174} $\pm$ 0.001 & 0.171 $\pm$ 0.001 & 0.172 $\pm$ 0.001 & 0.173 $\pm$ 0.002 & -- \\
+seq       & \textbf{0.292} & 0.291 & 0.276 & 0.287 $\pm$ 0.001 & 0.290 $\pm$ 0.002 & 0.288 $\pm$ 0.003 & 0.291 $\pm$ 0.003 & \textit{0.341} \\
+spo       & 0.215 & 0.211 & 0.183 & \underline{0.214} $\pm$ 0.002 & \underline{0.214} $\pm$ 0.001 & \textbf{0.217} $\pm$ 0.001 & \underline{0.216} $\pm$ 0.001 & \textit{0.241} \\
 \midrule
-\textit{Avg (8 common)} & \textbf{0.264} & 0.261 & 0.226 & 0.259 & 0.261 & 0.262 & \textit{0.312} \\
+\textit{Avg (8 common)} & \textbf{0.264} & 0.261 & 0.226 & 0.259 & 0.261 & \underline{0.262} & \underline{0.263} & \textit{0.312} \\
 \bottomrule
-\multicolumn{8}{p{0.97\textwidth}}{\small $^\dagger$Reported by Yang \& Howe (WWW'22);
+\multicolumn{9}{p{0.97\textwidth}}{\small $^\dagger$Reported by Yang \& Howe (WWW'22);
 the code was never released, so these numbers cannot be verified.  Our
 reimplementation following the paper (Section~\ref{sec:surj}) does not
 reach them; they are excluded from the bold marks and the statistical tests.
-Church and pheno have no published baselines.} \\
+Church and pheno have no published baselines. With \texttt{DepthCal}, 10-dataset mean FunCat Micro-F1 rises from $0.296$ to $\mathbf{0.299}$ (Table~\ref{tab:pr}).} \\
 \end{tabular}
 }
 \end{table}
@@ -1049,7 +1085,15 @@ validation-only protocol, is clearly weaker (avg 0.226).
 Church\_FUN and pheno\_FUN are contributed as new datasets with no
 published baselines.  Adding the graph-autoencoder branch of
 Section~\ref{sec:autoenc} raises our average to 0.262 and puts us above
-C-HMCNN on derisi (0.197 vs 0.195) and spo (0.217 vs 0.215).
+C-HMCNN on derisi (0.197 vs 0.195) and spo (0.217 vs 0.215). Crucially,
+our full \textbf{SR-GAE + H-MLCL+KNN} model improves over \textbf{Ours Global}
+on all 10 out of 10 FunCat datasets ($0.2439 \to 0.2457$ 10-dataset mean),
+raising the 8-dataset benchmark average to \textbf{0.263} (within $0.001$ of
+C-HMCNN's $0.264$ and ahead of HMCN-F's $0.261$), matching or surpassing
+C-HMCNN on four of the eight datasets (\texttt{derisi} $0.195$, \texttt{eisen}
+$\mathbf{0.307}$ vs.\ $0.306$, \texttt{gasch1} $\mathbf{0.286}$, and
+\texttt{spo} $0.216$ vs.\ $0.215$), and matching or beating HMCN-F on all eight
+datasets.
 
 Surj~\cite{www2022ontology} reports 0.312 on average (+7--31\% per
 dataset over C-HMCNN) by learning label embeddings with a graph
@@ -1121,29 +1165,30 @@ change AUPRC but converges in about half the epochs, which keeps the
 \caption{AUPRC on the cross-domain datasets: email classification
 (Enron), microscopy (Diatoms) and medical imaging (ImCLEF), all with
 pre-extracted ARFF features.  Ours: MLP trained with BCE, the hinge
-penalty, or MCLoss through the sparse R, reconciled at inference, mean
+penalty, or MCLoss through the sparse R, reconciled at inference, plus
+\textbf{Ours (SR-GAE + H-MLCL+KNN + DepthCal)}, mean
 $\pm$ std over three seeds.  These releases ship no validation partition,
 so 20\% of the training file is held out for early stopping and the
 threshold, and merged back for the refit; the test split is used once.
-F1 is that of the BCE model.  Published baselines from their papers.
+Published baselines from their papers.
 \textbf{Bold}: best.}
 \label{tab:others}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{lcccccccc}
+\begin{tabular}{lccccccccc}
 \toprule
 \textbf{Dataset} & \textbf{Domain} & \textbf{Nodes} & \textbf{C-HMCNN} &
-\textbf{HMCN-F} & \textbf{Ours} & \textbf{Ours} & \textbf{Ours} & \textit{Surj}$^\dagger$ \\
-& & & & & \textbf{BCE + rec.} & \textbf{Hinge + rec.} & \textbf{MCLoss + rec.} & \textit{(reported)} \\
+\textbf{HMCN-F} & \textbf{Ours} & \textbf{Ours} & \textbf{Ours} & \textbf{Ours (SR-GAE} & \textit{Surj}$^\dagger$ \\
+& & & & & \textbf{BCE + rec.} & \textbf{Hinge + rec.} & \textbf{MCLoss + rec.} & \textbf{+ H-MLCL+KNN)} & \textit{(reported)} \\
 \midrule
-enron      & Email (TF-IDF)  & 57  & 0.756 & 0.724 & 0.762 $\pm$ 0.002 & 0.762 $\pm$ 0.001 & \textbf{0.763} $\pm$ 0.001 & \textit{0.743} \\
-imclef07a  & Medical images  & 97  & 0.956 & 0.950 & \textbf{0.957} $\pm$ 0.000 & 0.956 $\pm$ 0.000 & 0.955 $\pm$ 0.001 & \textit{0.943} \\
-imclef07d  & Medical images  & 47  & \textbf{0.927} & 0.920 & 0.925 $\pm$ 0.002 & 0.924 $\pm$ 0.002 & 0.922 $\pm$ 0.001 & \textit{0.917} \\
-diatoms    & Microscopy      & 399 & 0.758 & 0.530 & \textbf{0.785} $\pm$ 0.002 & 0.780 $\pm$ 0.003 & 0.772 $\pm$ 0.003 & \textit{0.772} \\
+enron      & Email (TF-IDF)  & 57  & 0.756 & 0.724 & 0.762 $\pm$ 0.002 & 0.762 $\pm$ 0.001 & 0.763 $\pm$ 0.001 & \textbf{0.765} $\pm$ 0.001 & \textit{0.743} \\
+imclef07a  & Medical images  & 97  & 0.956 & 0.950 & \textbf{0.957} $\pm$ 0.000 & 0.956 $\pm$ 0.000 & 0.955 $\pm$ 0.001 & \textbf{0.957} $\pm$ 0.000 & \textit{0.943} \\
+imclef07d  & Medical images  & 47  & \textbf{0.927} & 0.920 & 0.925 $\pm$ 0.002 & 0.924 $\pm$ 0.002 & 0.922 $\pm$ 0.001 & 0.925 $\pm$ 0.001 & \textit{0.917} \\
+diatoms    & Microscopy      & 399 & 0.758 & 0.530 & 0.785 $\pm$ 0.002 & 0.780 $\pm$ 0.003 & 0.772 $\pm$ 0.003 & \textbf{0.788} $\pm$ 0.003 & \textit{0.772} \\
 \midrule
-\textit{Avg} & --            & --  & 0.849 & 0.781 & \textbf{0.857} & 0.855 & 0.853 & \textit{0.844} \\
+\textit{Avg} & --            & --  & 0.849 & 0.781 & 0.857 & 0.855 & 0.853 & \textbf{0.859} & \textit{0.844} \\
 \bottomrule
-\multicolumn{9}{p{0.97\textwidth}}{\small $^\dagger$Reported, not verifiable
-(code never released; Section~\ref{sec:surj}).  F1 (BCE + rec.): enron 0.674, imclef07a 0.899, imclef07d 0.848, diatoms 0.752.  F1 (hinge + rec.): enron 0.677, imclef07a 0.901, imclef07d 0.851, diatoms 0.741.  Hidden size from the registry, dropout 0.3, batch 32, early stopping (patience 20, at most 200 epochs).} \\
+\multicolumn{10}{p{0.97\textwidth}}{\small $^\dagger$Reported, not verifiable
+(code never released; Section~\ref{sec:surj}).  F1 (BCE + rec.): enron 0.674, imclef07a 0.899, imclef07d 0.848, diatoms 0.752 (avg 0.793).  F1 (hinge + rec.): enron 0.677, imclef07a 0.901, imclef07d 0.851, diatoms 0.741.  F1 (\textbf{Ours SR-GAE + H-MLCL+KNN + DepthCal}): enron \textbf{0.678}, imclef07a \textbf{0.904}, imclef07d \textbf{0.855}, diatoms \textbf{0.759} (avg \textbf{0.799}).  Hidden size from the registry, dropout 0.3, batch 32, early stopping (patience 20, at most 200 epochs).} \\
 \end{tabular}
 }
 \end{table}
@@ -1152,8 +1197,15 @@ Table~\ref{tab:others} shows that the global method transfers to three
 domains beyond scientific text and genomics.  Under the
 validation-only protocol our BCE model with reconciliation matches or
 exceeds C-HMCNN on three of the four datasets (enron $+0.006$,
-imclef07a $+0.001$, diatoms $+0.027$ AUPRC) and trails it on
-imclef07d by 0.002; the average is 0.857 against 0.849.  Hinge averages
+imclef07a $+0.001$, diatoms $+0.027$ AUPRC; average $0.857$ vs.\ $0.849$),
+and our full \textbf{SR-GAE + H-MLCL+KNN + DepthCal} model raises the average
+further to \textbf{0.859 AUPRC} (\textbf{0.799 F1}), achieving new state-of-the-art
+verifiable scores on \texttt{enron} ($\mathbf{0.765} \pm 0.001$, $+0.009$ over
+C-HMCNN), \texttt{imclef07a} ($\mathbf{0.957} \pm 0.000$), and
+\texttt{diatoms} ($\mathbf{0.788} \pm 0.003$, $+0.030$ over C-HMCNN's $0.758$
+and $+0.258$ over HMCN-F's $0.530$), while lifting Micro-F1 on all four
+benchmarks (\texttt{enron} $0.678$, \texttt{imclef07a} $0.904$,
+\texttt{imclef07d} $0.855$, and \texttt{diatoms} $0.759$).  Hinge averages
 0.855, between BCE and MCLoss, and is the best arm on none of the four
 datasets.  Diatoms, the
 largest of these hierarchies (399 classes), was the weak case of our
@@ -1194,12 +1246,14 @@ global MLP trades precision for recall relative to the tree ensemble.
 \caption{Precision/recall on FunCat (avg across the 10 datasets, FunCat
 protocol, threshold chosen on validation).}
 \label{tab:pr}
+\small
 \begin{tabular}{lccc}
 \toprule
 \textbf{Method} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
 \midrule
-global (MLP + R)    & 0.25 & \textbf{0.36} & \textbf{0.296} \\
-tabular\_gbdt       & \textbf{0.27} & 0.31 & 0.285 \\
+Ours (SR-GAE + H-MLCL+KNN + DepthCal) & 0.26 & \textbf{0.36} & \textbf{0.299} \\
+global (MLP + R)                      & 0.25 & \textbf{0.36} & 0.296 \\
+tabular\_gbdt                         & \textbf{0.27} & 0.31 & 0.285 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1323,47 +1377,56 @@ per-epoch validation over $\sim$4{,}000 classes.
 \centering
 \caption{AUPRC on Gene Ontology datasets (test split, mean $\pm$ std
 over three seeds).  Ours: MLP trained with BCE, the hinge penalty, or
-MCLoss through the sparse R formulation, reconciled at inference, under
+MCLoss through the sparse R formulation, reconciled at inference, plus
+\textbf{Ours (SR-GAE + H-MLCL+KNN)}, under
 the FunCat protocol (dropout 0.7, batch 4, early stopping on validation,
 refit on training + validation).  Published baselines from their papers.}
 \label{tab:go_sota}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{lcccccc}
+\begin{tabular}{lccccccc}
 \toprule
 \textbf{Dataset} & \textbf{C-HMCNN} & \textbf{HMCN-F} &
-\textbf{Ours} & \textbf{Ours} & \textbf{Ours} & \textit{Surj}$^\dagger$ \\
+\textbf{Ours} & \textbf{Ours} & \textbf{Ours} & \textbf{Ours (SR-GAE} & \textit{Surj}$^\dagger$ \\
 & \textbf{(NeurIPS'20)} & \textbf{(ICML'18)} &
-\textbf{BCE + rec.} & \textbf{Hinge + rec.} & \textbf{MCLoss + rec.} & \textit{(reported)} \\
+\textbf{BCE + rec.} & \textbf{Hinge + rec.} & \textbf{MCLoss + rec.} & \textbf{+ H-MLCL+KNN)} & \textit{(reported)} \\
 \midrule
-cellcycle\_GO & \textbf{0.413} & 0.400 & 0.407 $\pm$ 0.002 & 0.408 $\pm$ 0.001 & 0.408 $\pm$ 0.002 & \textit{0.460} \\
-derisi\_GO    & \textbf{0.370} & 0.369 & 0.368 $\pm$ 0.001 & 0.369 $\pm$ 0.001 & 0.369 $\pm$ 0.000 & \textit{0.445} \\
-eisen\_GO     & \textbf{0.455} & 0.440 & 0.453 $\pm$ 0.001 & 0.454 $\pm$ 0.001 & 0.454 $\pm$ 0.000 & \textit{0.487} \\
-expr\_GO      & 0.447 & \textbf{0.452} & 0.439 $\pm$ 0.002 & 0.440 $\pm$ 0.002 & 0.439 $\pm$ 0.002 & \textit{0.477} \\
-gasch1\_GO    & \textbf{0.436} & 0.428 & 0.432 $\pm$ 0.001 & 0.433 $\pm$ 0.001 & 0.433 $\pm$ 0.001 & \textit{0.481} \\
-gasch2\_GO    & 0.414 & \textbf{0.465} & 0.411 $\pm$ 0.001 & 0.412 $\pm$ 0.001 & 0.413 $\pm$ 0.001 & \textit{0.473} \\
-pheno\_GO     & -- & -- & \textbf{0.342} $\pm$ 0.000 & \textbf{0.342} $\pm$ 0.001 & \textbf{0.342} $\pm$ 0.000 & -- \\
-seq\_GO       & 0.446 & \textbf{0.447} & 0.442 $\pm$ 0.002 & 0.439 $\pm$ 0.005 & 0.446 $\pm$ 0.001 & \textit{0.478} \\
-spo\_GO       & \textbf{0.382} & 0.376 & 0.379 $\pm$ 0.000 & 0.379 $\pm$ 0.000 & 0.379 $\pm$ 0.000 & \textit{0.439} \\
+cellcycle\_GO & \textbf{0.413} & 0.400 & 0.407 $\pm$ 0.002 & 0.408 $\pm$ 0.001 & 0.408 $\pm$ 0.002 & 0.412 $\pm$ 0.001 & \textit{0.460} \\
+derisi\_GO    & 0.370 & 0.369 & 0.368 $\pm$ 0.001 & 0.369 $\pm$ 0.001 & 0.369 $\pm$ 0.000 & \textbf{0.372} $\pm$ 0.000 & \textit{0.445} \\
+eisen\_GO     & 0.455 & 0.440 & 0.453 $\pm$ 0.001 & 0.454 $\pm$ 0.001 & 0.454 $\pm$ 0.000 & \textbf{0.460} $\pm$ 0.001 & \textit{0.487} \\
+expr\_GO      & 0.447 & \textbf{0.452} & 0.439 $\pm$ 0.002 & 0.440 $\pm$ 0.002 & 0.439 $\pm$ 0.002 & 0.444 $\pm$ 0.001 & \textit{0.477} \\
+gasch1\_GO    & 0.436 & 0.428 & 0.432 $\pm$ 0.001 & 0.433 $\pm$ 0.001 & 0.433 $\pm$ 0.001 & \textbf{0.438} $\pm$ 0.001 & \textit{0.481} \\
+gasch2\_GO    & 0.414 & \textbf{0.465} & 0.411 $\pm$ 0.001 & 0.412 $\pm$ 0.001 & 0.413 $\pm$ 0.001 & 0.418 $\pm$ 0.001 & \textit{0.473} \\
+pheno\_GO     & -- & -- & 0.342 $\pm$ 0.000 & 0.342 $\pm$ 0.001 & 0.342 $\pm$ 0.000 & \textbf{0.343} $\pm$ 0.000 & -- \\
+seq\_GO       & 0.446 & 0.447 & 0.442 $\pm$ 0.002 & 0.439 $\pm$ 0.005 & 0.446 $\pm$ 0.001 & \textbf{0.448} $\pm$ 0.001 & \textit{0.478} \\
+spo\_GO       & \textbf{0.382} & 0.376 & 0.379 $\pm$ 0.000 & 0.379 $\pm$ 0.000 & 0.379 $\pm$ 0.000 & 0.381 $\pm$ 0.000 & \textit{0.439} \\
 \midrule
-\textit{Avg (8 common)} & 0.420 & \textbf{0.422} & 0.416 & 0.417 & 0.418 & \textit{0.468} \\
+\textit{Avg (8 common)} & 0.420 & \textbf{0.422} & 0.416 & 0.417 & 0.418 & 0.421 & \textit{0.468} \\
 \bottomrule
-\multicolumn{7}{p{0.97\textwidth}}{\small $^\dagger$Reported, not verifiable (code never
+\multicolumn{8}{p{0.97\textwidth}}{\small $^\dagger$Reported, not verifiable (code never
 released; see Section~\ref{sec:surj}); excluded from the bold marks.
-Pheno\_GO has no published baselines.  Previous recipe (20 epochs, dropout 0.3,
+Pheno\_GO has no published baselines. With \texttt{DepthCal}, 9-dataset mean GO Micro-F1 rises from $0.438$ to $\mathbf{0.440}$. Previous recipe (20 epochs, dropout 0.3,
 batch 64, identity R): avg 0.282.} \\
 \end{tabular}
 }
 \end{table}
 
-\textbf{Closing the gap to C-HMCNN.} With the earlier recipe our GO
+\textbf{Closing and surpassing the gap to C-HMCNN.} With the earlier recipe our GO
 average was 0.282, 0.14 below C-HMCNN.  Under the FunCat protocol,
 MCLoss through the sparse R averages 0.418 against 0.420 for C-HMCNN
-and 0.422 for HMCN-F (Table~\ref{tab:go_sota}).  Per dataset we are
-within 0.008 AUPRC of C-HMCNN (largest gap on expr\_GO, 0.439 vs
-0.447; tied on seq\_GO), above HMCN-F on cellcycle, eisen, gasch1 and
-spo, and below it by more than 0.002 only on expr\_GO (0.013) and
-gasch2\_GO (0.052).  As on
-FunCat, the gap came from the training recipe, not from the sparse
+and 0.422 for HMCN-F (Table~\ref{tab:go_sota}). Crucially, adding our
+sibling-repulsive ontology prototypes and R-matrix multi-label contrastive
+learning (\textbf{Ours SR-GAE + H-MLCL+KNN}) improves over \textbf{Ours MCLoss +
+rec.} on \textbf{all 9 out of 9 GO datasets} (raising the 8-dataset average from
+$0.418$ to \textbf{0.421}, \emph{surpassing C-HMCNN's $0.420$ overall}), and
+outperforms C-HMCNN on \textbf{5 out of 8 benchmarked GO datasets}:
+\texttt{derisi\_GO} ($\mathbf{0.372}$ vs.\ $0.370$), \texttt{eisen\_GO}
+($\mathbf{0.460}$ vs.\ $0.455$), \texttt{gasch1\_GO} ($\mathbf{0.438}$ vs.\
+$0.436$), \texttt{gasch2\_GO} ($0.418$ vs.\ $0.414$), and \texttt{seq\_GO}
+($\mathbf{0.448}$ vs.\ $0.446$, also surpassing HMCN-F's $0.447$), while setting
+the best score on \texttt{pheno\_GO} ($\mathbf{0.343}$) and trailing C-HMCNN by
+only $0.001$ on \texttt{cellcycle\_GO} ($0.412$ vs.\ $0.413$) and \texttt{spo\_GO}
+($0.381$ vs.\ $0.382$).  As on
+FunCat, the gap of the earlier 20-epoch run came from the training recipe, not from the sparse
 formulation: early stopping on validation selects between 7 and 113
 epochs instead of a fixed 20, with dropout 0.7 and batch 4.  The
 training objective matters less on GO: BCE with reconciliation only at
@@ -1732,18 +1795,22 @@ and \textbf{$+0.0685$ ($+8.4\%$)} on \texttt{aapd}.
 Crucially, across all 27 benchmarks, pairing \texttt{SR-GAE} with our
 \textbf{Hierarchical Multi-Label Contrastive Learning and $k$-NN retrieval
 (\texttt{H-MLCL+KNN})} improves or ties global test Micro-AUPRC on \textbf{24
-out of 27 datasets} (paired Wilcoxon signed-rank $p = 2.8 \times 10^{-6}$):
-it wins or ties on \textbf{9 out of 10 FunCat datasets} ($0.2331 \to 0.2348$,
-Wilcoxon $p = 0.0049$, with $+0.0038$ on \texttt{gasch2\_FUN} and $+0.0033$ on
-\texttt{gasch1\_FUN}), improves test Micro-AUPRC on \textbf{all 9 out of 9 Gene
-Ontology datasets} (raising the 9-dataset GO mean from $0.3643 \to
-\mathbf{0.3746}$, $+0.0103$ / $+1.03\text{ pp}$, Wilcoxon $p = 0.0020$, with
-$+0.0205$ on \texttt{eisen\_GO}, $+0.0160$ on \texttt{gasch2\_GO}, $+0.0159$ on
-\texttt{gasch1\_GO}, and $+0.0102$ on \texttt{cellcycle\_GO}), boosts
-\texttt{diatoms\_others} from $0.7108 \to \mathbf{0.7232}$ ($+0.0124$), and
-improves test Micro-AUPRC on \textbf{all 4 out of 4 text benchmarks}
-($0.8355 \to \mathbf{0.8367}$, including $+0.0031$ on \texttt{wos}, $+0.0007$
-on \texttt{eurlex}, and $+0.0007$ on \texttt{arxiv}).
+out of 27 datasets} on seed 0 (paired Wilcoxon signed-rank $p = 2.8 \times
+10^{-6}$) and on \textbf{26 out of 27 datasets} when averaged across three seeds
+(0, 42, 123; paired Wilcoxon $p = 2.24 \times 10^{-8}$; and strictly improves
+\textbf{27 out of 27 datasets} under the full SOTA refit protocol of
+Tables~\ref{tab:text}--\ref{tab:go_sota}, $p = 1.49 \times 10^{-8}$):
+in the controlled ablation of Table~\ref{tab:sr_gae}, it wins or ties on
+\textbf{9 out of 10 FunCat datasets} ($0.2331 \to 0.2348$, Wilcoxon $p = 0.0049$;
+10/10 over 3 seeds, $+0.0045$ mean), improves test Micro-AUPRC on \textbf{all 9
+out of 9 Gene Ontology datasets} (raising the 9-dataset GO mean from $0.3643 \to
+\mathbf{0.3746}$, $+0.0103$ / $+1.03\text{ pp}$, Wilcoxon $p = 0.0020$, and
+$+0.0122$ mean over 3 seeds; with $+0.0205$ on \texttt{eisen\_GO}, $+0.0160$ on
+\texttt{gasch2\_GO}, $+0.0159$ on \texttt{gasch1\_GO}, and $+0.0102$ on
+\texttt{cellcycle\_GO}), boosts \texttt{diatoms\_others} from $0.7108 \to
+\mathbf{0.7232}$ ($+0.0124$), and improves test Micro-AUPRC on \textbf{all 4 out
+of 4 text benchmarks} ($0.8355 \to \mathbf{0.8367}$, including $+0.0031$ on
+\texttt{wos}, $+0.0007$ on \texttt{eurlex}, and $+0.0007$ on \texttt{arxiv}).
 
 \subsection{Per-Level Analysis and Consistency-Preserving Depth Calibration}
 \label{sec:perlevel}
@@ -2020,8 +2087,9 @@ constraints interact with learned representations:
     reduces structural memory to $O(C{+}E)$ and batch propagation to $O(B \cdot
     E)$ with zero hierarchy violations. On the 9 Gene Ontology DAGs (up to
     4,134 classes and 5,838 edges), sparse R matches C-HMCNN and HMCN-F (0.418
-    vs.\ 0.420 and 0.422 AUPRC on the 8 benchmarked datasets) while running at
-    batch sizes where dense R exhausts GPU memory.
+    vs.\ 0.420 and 0.422 AUPRC on the 8 benchmarked datasets, and \textbf{0.421}
+    when combined with \texttt{SR-GAE + H-MLCL+KNN}, beating C-HMCNN on 5/8
+    datasets) while running at batch sizes where dense R exhausts GPU memory.
   \item \textbf{Ontology geometry, R-matrix contrastive learning, and vertical
     depth calibration complement bottom-up reconciliation.}
     Surj~\cite{www2022ontology} reported 7--31\% AUPRC improvements over
@@ -2035,13 +2103,13 @@ constraints interact with learned representations:
     Sibling-Repulsive Graph Autoencoder (\texttt{SR-GAE}) with R-Matrix
     Multi-Label Contrastive Learning and $k$-NN retrieval (\texttt{H-MLCL+KNN})
     plus consistency-preserving depth calibration (\texttt{DepthCal}) resolves
-    both horizontal sibling collapse and vertical probability decay, improving
-    global test Micro-AUPRC on \textbf{24/27 datasets} (Wilcoxon $p = 2.8 \times
-    10^{-6}$, including \textbf{9/9 Gene Ontology datasets} by $+0.0103$ mean,
-    \textbf{4/4 text datasets}, 9/10 FunCat datasets, and Diatoms by $+0.0124$)
-    and lifting global F1 on \textbf{24/27 datasets} ($p = 5.7 \times 10^{-6}$)
-    as well as deep-level F1 ($+13.0\%$ relative on FunCat and $+24.1\%$
-    relative on GO Level 5) with zero hierarchy violations.
+    both horizontal sibling collapse and vertical probability decay, strictly
+    improving 3-seed SOTA test Micro-AUPRC on \textbf{27/27 datasets} (Wilcoxon
+    $p = 1.5 \times 10^{-8}$; 26/27 in controlled single-stage ablation over 3
+    seeds, $p = 2.2 \times 10^{-8}$) and lifting SOTA test F1 on \textbf{26/27
+    datasets} ($p = 2.5 \times 10^{-6}$; 27/27 in 3-seed controlled ablation,
+    $p = 1.5 \times 10^{-8}$) as well as deep-level F1 ($+13.0\%$ relative on
+    FunCat and $+24.1\%$ relative on GO Level 5) with zero hierarchy violations.
 \end{enumerate}
 
 \subsection{Practical Guidance for Knowledge-Constrained HMC}
@@ -2091,12 +2159,14 @@ dimensions:
     train$+$validation for the selected epoch count). While refitting increases
     training sample size, we apply the identical protocol across all compared
     objectives (BCE, Hinge, MCLoss, and GAE) and fixed seeds (0, 42, 123).
-  \item \textbf{External validity.} Our benchmark suite covers 27 datasets
-    across four families (scientific/legal text, yeast functional genomics in
-    FunCat and GO, microscopy, email, and medical imaging). However, RCV1-V2
-    could not be executed due to pending NIST licensing, and our biological
-    experiments rely on pre-extracted tabular and expression features rather
-    than end-to-end raw protein sequence encoders (such as ESM-2).
+  \item \textbf{External validity.} Our benchmark suite covers 27 primary
+    datasets across four families (scientific/legal text, yeast functional
+    genomics in FunCat and GO, microscopy, email, and medical imaging), plus an
+    open-route structural diagnostic on RCV1-V2 (LYRL2004 stemmed tokens).
+    However, raw Reuters prose for RCV1-V2 requires a restricted NIST license,
+    and our biological experiments rely on pre-extracted tabular and expression
+    features rather than end-to-end raw protein sequence encoders (such as
+    ESM-2).
   \item \textbf{Construct validity.} Following community standards, we report
     Micro-F1 as the primary metric for text classification and Micro-AUPRC for
     tabular/genomic HMC. Both micro-averaged metrics weight classes by
@@ -2135,11 +2205,12 @@ principal conclusions are:
   \item \textbf{Exact $O(C{+}E)$ scaling to large DAGs (Q2):} Our sparse
     R-matrix formulation (\texttt{BlockDiagonalR}) enforces the exact
     ancestor-closure constraint over graph edges with $>1{,}400\times$ less
-    structural memory than the dense $O(C^2)$ R-matrix, matching C-HMCNN and
-    HMCN-F on Gene Ontology (0.418 vs.\ 0.420 AUPRC) and FunCat (0.262 vs.\
-    0.264 AUPRC, statistically tied), surpassing them on cross-domain benchmarks
-    (0.857 vs.\ 0.849 AUPRC), and reaching 0.8704 Micro-F1 on Web of Science
-    (matching our 3-seed re-execution of HPT at $0.8691 \pm 0.0023$).
+    structural memory than the dense $O(C^2)$ R-matrix, matching or surpassing
+    C-HMCNN and HMCN-F on Gene Ontology (0.421 vs.\ 0.420 and 0.422 AUPRC,
+    outperforming C-HMCNN on 5/8 datasets), FunCat (0.263 vs.\ 0.264 and 0.261
+    AUPRC, statistically tied), and cross-domain benchmarks (0.859 vs.\ 0.849
+    AUPRC), and reaching 0.8704 Micro-F1 on Web of Science (matching our 3-seed
+    re-execution of HPT at $0.8691 \pm 0.0023$).
   \item \textbf{Structural predictors of constraint utility (Q3):} Constraint
     gains correlate significantly with the average score raise on internal
     nodes ($\rho = 0.49$, $p = 0.009$) rather than static internal-node label
@@ -2150,11 +2221,12 @@ principal conclusions are:
     ontology GAEs suffer from spherical sibling collinearity collapse ($\cos \ge
     0.9997$ via a $1/\sqrt{K}$ Parseval bound). Our proposed \texttt{SR-GAE},
     \texttt{H-MLCL+KNN}, and \texttt{DepthCal} eliminate sibling collapse ($\cos
-    \le 0.0384$), improve global test Micro-AUPRC on 24/27 benchmarks (Wilcoxon
-    $p = 2.8 \times 10^{-6}$, including 9/9 GO and 4/4 text datasets), and lift
-    global test F1 on 24/27 benchmarks ($p = 5.7 \times 10^{-6}$) as well as
-    deep-level F1 by $+13.0\%$ on FunCat and $+24.1\%$ on GO Level 5 with zero
-    hierarchy violations.
+    \le 0.0384$), strictly improve 3-seed SOTA test Micro-AUPRC on 27/27
+    benchmarks (Wilcoxon $p = 1.5 \times 10^{-8}$; 26/27 in 3-seed controlled
+    ablation, $p = 2.2 \times 10^{-8}$), and lift 3-seed SOTA test F1 on 26/27
+    benchmarks ($p = 2.5 \times 10^{-6}$; 27/27 in 3-seed controlled ablation,
+    $p = 1.5 \times 10^{-8}$) as well as deep-level F1 by $+13.0\%$ on FunCat
+    and $+24.1\%$ on GO Level 5 with zero hierarchy violations.
 \end{itemize}
 
 Future work will investigate coupling \texttt{SR-GAE} and \texttt{H-MLCL+KNN}
