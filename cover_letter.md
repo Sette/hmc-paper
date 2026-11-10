@@ -3,8 +3,8 @@
 **Manuscript:** *Scalable R-Matrix Reconciliation, Sibling-Repulsive Ontology Graphs, and
 Contrastive Learning for Hierarchical Multi-Label Classification*
 
-**Authors:** Bruno Sette, [Orientador] (Federal University of São Carlos, UFSCar, Brazil)
-**Corresponding author:** Bruno Sette — brunosilvasette@gmail.com
+**Authors:** Bruno Silva Sette, Diego Furtado Silva (Federal University of São Carlos, UFSCar, Brazil)
+**Corresponding author:** Bruno Silva Sette — bruno.sette@ufscar.br
 
 Dear Editor,
 
@@ -64,5 +64,5 @@ We suggest the following reviewers (no conflicts of interest): [TODO: 4--6 names
 Thank you for your consideration.
 
 Sincerely,
-Bruno Sette
+Bruno Silva Sette
 Federal University of São Carlos (UFSCar), Brazil
