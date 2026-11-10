@@ -33,17 +33,18 @@ consistency between an ancestor and its descendants.
    matrix ($>1{,}400\times$ structural memory reduction), enabling batch sizes that exhaust
    GPU memory under the dense formulation (up to 4,134 classes in Gene Ontology).
 5. An **independent reproducibility audit** showing that the reported Surj ontology
-   autoencoder results cannot be reproduced from the published specification, proving a
-   spherical Parseval bound explaining why standard ontology graph autoencoders collapse
-   sibling classes ($\cos \ge 0.9997$), and introducing the **Sibling-Repulsive Graph
+   autoencoder results cannot be verified from the published specification, deriving a
+   Bessel-type bound explaining why standard ontology graph autoencoders collapse
+   sibling classes (median cosine up to 0.9995), and introducing the **Sibling-Repulsive Graph
    Autoencoder (`SR-GAE`)**, **Hierarchical Multi-Label Contrastive Learning with $k$-NN
-   retrieval (`H-MLCL+KNN`)**, and **Consistency-Preserving Depth Calibration (`DepthCal`)**,
-   which eliminate sibling collapse ($\cos \to 0.012$), strictly improve state-of-the-art
-   test Micro-AUPRC on 27/27 benchmarks over 3 seeds (Wilcoxon $p = 1.5 \times 10^{-8}$;
-   26/27 in 3-seed controlled ablation, $p = 2.2 \times 10^{-8}$), surpass C-HMCNN on Gene
-   Ontology (0.421 vs. 0.420 AUPRC, winning on 5/8 datasets) and cross-domain benchmarks
-   (0.859 vs. 0.849 AUPRC), and lift deep-level F1 by $+13.0\%$ on FunCat and $+24.1\%$ on
-   Gene Ontology Level 5 with zero hierarchy violations.
+   retrieval (`H-MLCL+H-KNN`)**, and **Consistency-Preserving Depth Calibration (`DepthCal`)**.
+   `SR-GAE`+`H-MLCL+H-KNN` reduces the median sibling cosine to $\le 0.038$ and strictly
+   improves test Micro-AUPRC over the matched baseline on 27/27 benchmarks over 3 seeds
+   (Wilcoxon $p = 1.5 \times 10^{-8}$; 26/27 strict wins in 3-seed controlled ablation,
+   $p = 4.5 \times 10^{-8}$); the method matches C-HMCNN on Gene Ontology (0.421 vs. 0.420
+   AUPRC, winning on 5/8 datasets) while 0.001 below HMCN-F (0.422), and improves cross-domain
+   benchmarks (0.859 vs. 0.849 AUPRC). Adding `DepthCal` lifts deep-level F1 by $+13.0\%$ on
+   FunCat and $+24.1\%$ on Gene Ontology level 5 with zero hierarchy violations.
 
 **Why KBS.** The work is about knowledge injection from taxonomies and ontologies into
 learning systems, evaluated on text, genomic, and cross-domain hierarchies. It does not

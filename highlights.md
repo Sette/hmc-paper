@@ -2,4 +2,4 @@
 - Inference-time reconciliation, not the training loss, drives the gains.
 - Sparse O(C+E) R-matrix scales to Gene Ontology DAGs with 4,134 classes.
 - Constraint gain correlates with internal-node score raise (rho = 0.49).
-- SR-GAE, H-MLCL+KNN, and depth calibration resolve sibling collapse and lift F1.
+- SR-GAE, H-MLCL+H-KNN, and depth calibration resolve sibling collapse and lift F1.
