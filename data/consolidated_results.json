@@ -1,9 +1,9 @@
 {
-  "_note": "Headline numbers of main.tex (2026-11-05). Validation-only protocol: epoch and threshold chosen on validation, test used once. Sources: hmc-torch output/protocol/, output/hpt/, output/autoencoder/final/, output/surj/.",
+  "_note": "Headline numbers of main.tex (2026-11-10), plus the RCV1 structural diagnostic. Validation-only protocol: epoch and threshold chosen on validation, test used once. Sources: hmc-torch output/protocol/, output/protocol_rcv1/, output/hpt/, output/autoencoder/final/, output/surj/.",
   "text": {
     "wos": {
       "micro_f1": 0.8704,
-      "std": 0.0033,
+      "std": 0.0040,
       "seeds": [
         0,
         42,
@@ -26,7 +26,7 @@
         ],
         "note": "HPT bert/none/down, hpt_raw selection (raw validation macro-F1 at logit 0, patience 5, cap 30), raw/thr0; source output/hpt/final/wos/summary.json"
       },
-      "note": "globalE2E, run_wos_e2e.py --epochs 10, best epochs 5/5/10; mean of 3 seeds"
+      "note": "globalE2E, run_wos_e2e.py --epochs 10, best epochs 5/5/10; mean and sample std (ddof=1) of 3 seeds"
     },
     "wos_frozen": {
       "micro_f1": 0.7462,
@@ -48,6 +48,48 @@
       "std": 0.0005,
       "raw_micro_f1": 0.7812,
       "note": "standard 45k/6k/6k split, 4,271 dataset concepts, 4,519 evaluated nodes; text=title+header+recitals+main_body, truncated to 256 tokens (main_body falls outside the window); source output/protocol_eurlex_fixedtext/eurlex.json"
+    },
+    "rcv1": {
+      "status": "structural diagnostic (LYRL2004 stemmed bag-of-words; outside the 27)",
+      "micro_auprc": {
+        "bce_raw": 0.7634,
+        "bce_rec": 0.7673,
+        "hinge_raw": 0.7656,
+        "hinge_rec": 0.7682,
+        "mc_raw": 0.7133,
+        "mc_rec": 0.7629
+      },
+      "micro_f1": {
+        "bce_raw": 0.6938,
+        "bce_rec": 0.6967,
+        "hinge_raw": 0.6954,
+        "hinge_rec": 0.6973,
+        "mc_raw": 0.6537,
+        "mc_rec": 0.6924
+      },
+      "seeds": [
+        0,
+        42,
+        123
+      ],
+      "source": "output/protocol_rcv1/rcv1.json",
+      "note": "3 seeds; sample std (ddof=1) per cell; GHV=0 by construction; best reconciled Micro-F1 0.6973 < 0.70, kept as diagnostic outside the main text table."
+    }
+  },
+  "depthcal": {
+    "full_pipeline": {
+      "auprc_wins": 27,
+      "auprc_p": 1.49e-8,
+      "f1_wins": 26,
+      "f1_p": 2.5e-6,
+      "of": 27,
+      "source": "output/sr_gae_sota/*.json (base_auprc vs mlcl_auprc; base_f1 vs ours_f1)"
+    },
+    "isolated_within_mlcl": {
+      "auprc_wins": 11,
+      "f1_wins": 18,
+      "of": 27,
+      "source": "output/sr_gae_depth/*.json (sr_gae_mlcl.rec vs sr_gae_mlcl.depth_rec; mean over seeds 0/42/123)"
     }
   },
   "funcat": {

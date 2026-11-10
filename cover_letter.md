@@ -43,8 +43,10 @@ consistency between an ancestor and its descendants.
    (Wilcoxon $p = 1.5 \times 10^{-8}$; 26/27 strict wins in 3-seed controlled ablation,
    $p = 4.5 \times 10^{-8}$); the method matches C-HMCNN on Gene Ontology (0.421 vs. 0.420
    AUPRC, winning on 5/8 datasets) while 0.001 below HMCN-F (0.422), and improves cross-domain
-   benchmarks (0.859 vs. 0.849 AUPRC). Adding `DepthCal` lifts deep-level F1 by $+13.0\%$ on
-   FunCat and $+24.1\%$ on Gene Ontology level 5 with zero hierarchy violations.
+   benchmarks (0.859 vs. 0.849 AUPRC). The full pipeline with `DepthCal` lifts deep-level F1
+   by $+13.0\%$ on FunCat and $+24.1\%$ on Gene Ontology level 5 with zero hierarchy
+   violations; `DepthCal` alone trades AUPRC for F1 (11/27 vs. 18/27), so it is a calibration
+   choice for F1 rather than a uniform gain.
 
 **Why KBS.** The work is about knowledge injection from taxonomies and ontologies into
 learning systems, evaluated on text, genomic, and cross-domain hierarchies. It does not

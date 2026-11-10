@@ -101,11 +101,13 @@ $k$-NN retrieval (\texttt{H-MLCL+H-KNN})}, and
 \texttt{SR-GAE}+\texttt{H-MLCL+H-KNN} reduces the median sibling cosine to
 $\le 0.038$ and strictly improves test Micro-AUPRC over the matched baseline on
 27/27 benchmarks over 3 seeds (Wilcoxon $p = 1.5 \times 10^{-8}$; 26/27 strict
-wins in controlled single-stage ablation, $p = 4.5 \times 10^{-8}$); adding
-\texttt{DepthCal} lifts global test F1 on 26/27 benchmarks ($p = 2.5 \times
-10^{-6}$; 26/27 strict, 27/27 non-decreasing, $p = 3.0 \times 10^{-8}$ in
-controlled ablation) and deep-level F1 by $+13.0\%$ on FunCat and $+24.1\%$ on
-GO Level 5, with zero hierarchy violations.
+wins in controlled single-stage ablation, $p = 4.5 \times 10^{-8}$); the full
+pipeline with \texttt{DepthCal} improves global test F1 over the matched
+baseline on 26/27 benchmarks ($p = 2.5 \times 10^{-6}$; 27/27 non-decreasing in
+the controlled single-stage ablation, $p = 3.0 \times 10^{-8}$), while
+\texttt{DepthCal} alone trades AUPRC for F1 (11/27 vs.\ 18/27); the pipeline
+also improves deep-level F1 by $+13.0\%$ on FunCat and $+24.1\%$ on GO Level 5,
+with zero hierarchy violations.
 \end{abstract}
 
 \begin{keyword}
@@ -241,11 +243,13 @@ Our main contributions are as follows:
     ArXiv, $+25.8\%$ on WOS), and strictly improves test Micro-AUPRC over the
     matched baseline on \textbf{27/27 datasets} (Wilcoxon $p = 1.5 \times
     10^{-8}$; 26/27 strict wins in controlled single-stage ablation, $p = 4.5
-    \times 10^{-8}$); adding \texttt{DepthCal} lifts test F1 on \textbf{26/27
-    datasets} ($p = 2.5 \times 10^{-6}$; 26/27 strict, 27/27 non-decreasing,
-    $p = 3.0 \times 10^{-8}$ in controlled ablation) as well as deep-level F1 on
-    10/10 FunCat datasets ($+13.0\%$ mean) and 8/9 GO datasets ($+24.1\%$ mean
-    on Level 5) with zero hierarchy violations.
+    \times 10^{-8}$); the full pipeline with \texttt{DepthCal} improves test F1
+    over the matched baseline on \textbf{26/27 datasets} ($p = 2.5 \times
+    10^{-6}$; 27/27 non-decreasing in controlled ablation, $p = 3.0 \times
+    10^{-8}$), while \texttt{DepthCal} alone trades AUPRC for F1 (11/27 vs.\
+    18/27); it also improves deep-level F1 on 10/10 FunCat datasets ($+13.0\%$
+    mean) and 8/9 GO datasets ($+24.1\%$ mean on Level 5) with zero hierarchy
+    violations.
 \end{itemize}
 
 % ═══════════════════════════════════════════════════════════════════════
@@ -718,15 +722,12 @@ cross-domain text generalization:
 \centering
 \caption{Dataset statistics. ArXiv and AAPD use a 64/16/20 split; the
 other text datasets follow their released partitions; FunCat and GO
-datasets use the train/validation/test files shipped with the benchmark
-ARFFs.  The \textbf{Train} column reports train$+$validation, the
-partition actually optimized in our runs: where a release ships a
-validation file it is merged back in, and where it does not (the four
-cross-domain datasets), 20\% of the training file is held out for
-validation and merged back, so the counts here are the benchmark's
-training partitions and no test document is ever optimized on. RCV1-V2
-(dagger) is a separate structural diagnostic and is not counted among the 27
-primary datasets.}
+use the benchmark ARFF partitions. The \textbf{Train} column reports
+train$+$validation, the partition optimized in our runs: validation
+files are merged back, and the four cross-domain datasets hold out 20\%
+of training for validation and merge it back, so no test document is
+ever optimized on. RCV1-V2$^\dagger$ is a separate structural diagnostic
+and is not counted among the 27 primary datasets.}
 \label{tab:datasets}
 \footnotesize
 \renewcommand{\arraystretch}{0.85}
@@ -899,8 +900,8 @@ baselines use different label sets and splits (Table~\ref{tab:text}).}
 
 \textbf{ArXiv.} Frozen SPECTER2 + MLP + R-matrix achieves 0.7234
 ($\pm$0.0004 across seeds 0/42/123; AUPRC $0.8026 \pm 0.0004$) on our ArXiv
-split (Table~\ref{tab:datasets}), and adding \texttt{SR-GAE + H-MLCL+H-KNN +
-DepthCal} lifts it to \textbf{0.7247} $\pm$ 0.0015 Micro-F1 (AUPRC
+split (Table~\ref{tab:datasets}), and the full pipeline \texttt{SR-GAE +
+H-MLCL+H-KNN + DepthCal} lifts it to \textbf{0.7247} $\pm$ 0.0015 Micro-F1 (AUPRC
 $\mathbf{0.8037} \pm 0.0002$).  We deliberately do \emph{not} claim a
 state-of-the-art margin here: ArXiv has no canonical HMC release---
 published works use different subsets, label depths, and splits---so
@@ -1029,12 +1030,13 @@ available LYRL2004 benchmark release ($23{,}149$ train+validation / $781{,}265$
 test documents across all 103 topics; 104 nodes with root, depth 4), which
 provides stemmed, stopword-removed tokens ordered by document frequency rather
 than running text. Feeding these stemmed token sequences into frozen SPECTER2
-confirming our $3 \times 2$ decomposition on a 781K-document test set:
-bottom-up \texttt{BlockDiagonalR} reconciliation improves Micro-AUPRC across all
-three objectives (BCE $0.7603 \to 0.7629$, Hinge $0.7617 \to \mathbf{0.7633}$,
-MCLoss $0.7315 \to 0.7621$) and lifts MCLoss Micro-F1 from $0.6642 \to
-\mathbf{0.6903}$ while eliminating all hierarchy violations ($\text{GHV}:
-0.0959 \to 0.0000$). Because pretrained subword transformers suffer a
+and training the global MLP confirms our $3 \times 2$ decomposition on a
+781K-document test set: bottom-up \texttt{BlockDiagonalR} reconciliation
+improves Micro-AUPRC across all three objectives (BCE $0.7634 \to 0.7673$,
+Hinge $0.7656 \to \mathbf{0.7682}$, MCLoss $0.7133 \to 0.7629$) and lifts
+MCLoss Micro-F1 from $0.6537 \to \mathbf{0.6924}$, while the reconciled scores
+satisfy the true-path rule by construction ($\text{GHV}=0$). Because
+pretrained subword transformers suffer a
 distributional mismatch on stemmed frequency-sorted bag-of-words inputs, we
 report RCV1-V2 here as a large-scale structural verification rather than a
 like-for-like comparison against raw-prose BERT baselines.
@@ -1215,7 +1217,7 @@ validation-only protocol our BCE model with reconciliation matches or
 exceeds C-HMCNN on three of the four datasets (enron $+0.006$,
 imclef07a $+0.001$, diatoms $+0.027$ AUPRC; average $0.857$ vs.\ $0.849$),
 and our \textbf{SR-GAE + H-MLCL+H-KNN} model raises the AUPRC average
-further to \textbf{0.859}; adding \texttt{DepthCal} reaches \textbf{0.799 F1}, achieving new state-of-the-art
+further to \textbf{0.859}; the full pipeline with \texttt{DepthCal} reaches \textbf{0.799 F1}, achieving new state-of-the-art
 verifiable scores on \texttt{enron} ($\mathbf{0.765} \pm 0.001$, $+0.009$ over
 C-HMCNN), \texttt{imclef07a} ($\mathbf{0.957} \pm 0.000$), and
 \texttt{diatoms} ($\mathbf{0.788} \pm 0.003$, $+0.030$ over C-HMCNN's $0.758$
@@ -1914,6 +1916,16 @@ datasets, including $+121.5\%$ on \texttt{spo\_GO}, $+76.0\%$ on
 \texttt{imclef07d} ($0.8370 \to 0.8461$), \texttt{diatoms} ($0.7003 \to 0.7039$),
 \texttt{arxiv} ($0.7221 \to 0.7248$), and \texttt{wos} ($0.7411 \to 0.7455$).
 
+\textbf{\texttt{DepthCal} is a calibration choice, not a free lunch.} The
+26/27 global-F1 figure above compares the full pipeline
+(\texttt{H-MLCL+H-KNN} plus \texttt{DepthCal}) with the matched baseline; it
+does not isolate \texttt{DepthCal}. Within the \texttt{H-MLCL} model,
+\texttt{DepthCal} improves AUPRC on 11/27 datasets but Micro-F1 on 18/27, so it
+should be enabled when F1 is the target and omitted when AUPRC is the target.
+The deep-level gains in Table~\ref{tab:sr_gae} are consistent with this
+calibration role: the offsets shift all logits at a level, which helps
+level-wise F1 but can move cross-level ranking in either direction.
+
 \subsection{Factorial Decomposition and Structural Predictors of Constraint Gain}
 \label{sec:ablation}
 
@@ -2141,11 +2153,13 @@ constraints interact with learned representations:
     strictly improving 3-seed test Micro-AUPRC over the matched baseline on
     \textbf{27/27 datasets} (Wilcoxon $p = 1.5 \times 10^{-8}$; 26/27 strict wins
     in controlled single-stage ablation over 3 seeds, $p = 4.5 \times 10^{-8}$);
-    adding consistency-preserving depth calibration (\texttt{DepthCal}) lifts
-    test F1 on \textbf{26/27 datasets} ($p = 2.5 \times 10^{-6}$; 26/27 strict,
-    27/27 non-decreasing, $p = 3.0 \times 10^{-8}$ in 3-seed controlled ablation)
-    as well as deep-level F1 ($+13.0\%$ relative on FunCat and $+24.1\%$ relative
-    on GO Level 5) with zero hierarchy violations.
+    the full pipeline with consistency-preserving depth calibration
+    (\texttt{DepthCal}) improves test F1 over the matched baseline on
+    \textbf{26/27 datasets} ($p = 2.5 \times 10^{-6}$; 27/27 non-decreasing in
+    3-seed controlled ablation, $p = 3.0 \times 10^{-8}$), while \texttt{DepthCal}
+    alone trades AUPRC for F1 (11/27 vs.\ 18/27); it also improves deep-level F1
+    ($+13.0\%$ relative on FunCat and $+24.1\%$ relative on GO Level 5) with zero
+    hierarchy violations.
 \end{enumerate}
 
 \subsection{Practical Guidance for Knowledge-Constrained HMC}
@@ -2219,7 +2233,11 @@ dimensions:
     2.16$ at $\alpha = 0.05$). Conversely, our primary decomposition test pools
     all $N{=}27$ datasets, providing high statistical power for the paired
     Wilcoxon signed-rank test ($p = 2.1 \times 10^{-7}$ for AUPRC and
-    $p = 1.3 \times 10^{-6}$ for Micro-F1).
+    $p = 1.3 \times 10^{-6}$ for Micro-F1). Because datasets within a family
+    share preprocessing and label structure, the 27 units are not independent;
+    the pooled $p$-values should therefore be read as descriptive evidence
+    across a broad suite rather than as independent-sample inference, and the
+    per-family means are reported alongside them.
 \end{itemize}
 
 % ═══════════════════════════════════════════════════════════════════════
@@ -2261,11 +2279,13 @@ principal conclusions are:
     \texttt{SR-GAE} and \texttt{H-MLCL+H-KNN} reduce the median sibling cosine
     to $\le 0.038$ and strictly improve 3-seed test Micro-AUPRC over the matched
     baseline on 27/27 benchmarks (Wilcoxon $p = 1.5 \times 10^{-8}$; 26/27 strict
-    wins in 3-seed controlled ablation, $p = 4.5 \times 10^{-8}$); adding
-    \texttt{DepthCal} lifts 3-seed test F1 on 26/27 benchmarks ($p = 2.5 \times
-    10^{-6}$; 26/27 strict, 27/27 non-decreasing, $p = 3.0 \times 10^{-8}$ in
-    controlled ablation) as well as deep-level F1 by $+13.0\%$ on FunCat and
-    $+24.1\%$ on GO Level 5 with zero hierarchy violations.
+    wins in 3-seed controlled ablation, $p = 4.5 \times 10^{-8}$); the full
+    pipeline with \texttt{DepthCal} improves 3-seed test F1 over the matched
+    baseline on 26/27 benchmarks ($p = 2.5 \times 10^{-6}$; 27/27 non-decreasing
+    in controlled ablation, $p = 3.0 \times 10^{-8}$), while \texttt{DepthCal}
+    alone trades AUPRC for F1 (11/27 vs.\ 18/27); it also improves deep-level F1
+    by $+13.0\%$ on FunCat and $+24.1\%$ on GO Level 5 with zero hierarchy
+    violations.
 \end{itemize}
 
 Future work will investigate coupling \texttt{SR-GAE} and \texttt{H-MLCL+H-KNN}
