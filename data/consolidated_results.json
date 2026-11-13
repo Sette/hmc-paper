@@ -24,7 +24,7 @@
           6,
           4
         ],
-        "note": "HPT bert/none/down, hpt_raw selection (raw validation macro-F1 at logit 0, patience 5, cap 30), raw/thr0; source output/hpt/final/wos/summary.json"
+        "note": "HPT bert/none/down, hpt_raw selection (raw validation macro-F1 at logit 0, patience 5, cap 30), raw/thr0; in-repo reimplementation (not the released code); rec/val (reconciled, validation threshold) = 0.8712 +- 0.0029; source output/hpt/final/wos/summary.json"
       },
       "note": "globalE2E, run_wos_e2e.py --epochs 10, best epochs 5/5/10; mean and sample std (ddof=1) of 3 seeds"
     },

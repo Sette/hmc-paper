@@ -193,7 +193,7 @@ Our main contributions are as follows:
     Gene Ontology (0.418 vs.\ 0.420), and above it on cross-domain benchmarks
     (0.857 vs.\ 0.849 AUPRC; $+0.027$ on \texttt{diatoms}). A fine-tuned
     SPECTER2 (globalE2E) reaches $0.8704 \pm 0.0040$ Micro-F1 on Web of
-    Science, against $0.8691 \pm 0.0023$ for our 3-seed re-execution of HPT.
+    Science, against $0.8691 \pm 0.0023$ for our 3-seed reimplementation of HPT.
     Our reimplementation and audit of Surj~\cite{www2022ontology} across 10
     seeds and 25 validation configurations does not reproduce its reported
     5.5--29\% gains over C-HMCNN (up to 31\% over the stronger baseline) from
@@ -482,34 +482,36 @@ violations regardless of the training objective or encoder architecture.
 
 A major scalability bottleneck of the dense R-matrix is its $O(C^2)$ storage
 footprint and $O(B \cdot C^2)$ broadcast tensor product $(B, 1, C) \times
-(1, C, C)$ during batch reconciliation and MCLoss computation. On Gene Ontology
-DAGs with $C > 4{,}100$ classes, materializing the intermediate $(B, C, C)$
-tensor requires $4.3$~GB of GPU memory at batch size $B{=}64$ and triggers
-out-of-memory failures at larger batch sizes.
+(1, C, C)$ during batch reconciliation and MCLoss computation. On
+\texttt{seq\_GO} ($C{=}4{,}134$), the reference implementation, which
+broadcasts in float64, peaks at 8.2~GiB of GPU memory for one reconciliation
+step at batch size $B{=}64$ (4.1~GiB in float32) and runs out of memory on a
+12~GB GPU when gradients are back-propagated through it
+(Table~\ref{tab:sparse_mem}).
 
 We overcome this bottleneck with \texttt{BlockDiagonalR}, a sparse graph-based
 formulation that operates directly on the $E$ directed child$\rightarrow$parent
-edges $\mathcal{E} = \{(c_e, p_e)\}_{e=1}^{E}$ of the hierarchy
+edges $\mathcal{E} = \{(s_e, t_e)\}_{e=1}^{E}$ of the hierarchy
 (Figures~\ref{fig:sparse_graph} and~\ref{fig:sparse_flow}). Instead of storing
 $R \in \{0,1\}^{C \times C}$, \texttt{BlockDiagonalR} stores only two flat
-integer index vectors $\mathbf{c}, \mathbf{p} \in \{1,\ldots,C\}^E$ requiring
+integer index vectors $\mathbf{s}, \mathbf{t} \in \{1,\ldots,C\}^E$ requiring
 $O(C{+}E)$ space ($2E \times 4$ bytes). Given a batch of raw scores
 $\mathbf{P}^{(0)} = \mathbf{P} \in [0,1]^{B \times C}$ and hierarchy depth $D$,
 we iterate $d = 1, \ldots, D$:
 \begin{equation}
 \mathbf{P}^{(d)}_{b, i} = \max\Big(\mathbf{P}^{(d-1)}_{b, i},\;
-\max_{e:\, p_e = i} \mathbf{P}^{(d-1)}_{b, c_e}\Big),
+\max_{e:\, t_e = i} \mathbf{P}^{(d-1)}_{b, s_e}\Big),
 \label{eq:sparse_prop}
 \end{equation}
 implemented on GPU via vectorized parallel \texttt{scatter\_reduce} with
-\texttt{amax} reduction over the edge index vectors $\mathbf{c}$ and
-$\mathbf{p}$, terminating early at step $d \leq D$ as soon as
+\texttt{amax} reduction over the edge index vectors $\mathbf{s}$ and
+$\mathbf{t}$, terminating early at step $d \leq D$ as soon as
 $\mathbf{P}^{(d)} = \mathbf{P}^{(d-1)}$. By the transitivity of $\max$ over
 directed paths of length at most $D$, $\mathbf{P}^{(D)}$ is mathematically
 identical to the dense closure $\max_{j: R_{ij}=1} P_{b,j}$, with zero hierarchy violations, in $O(B \cdot E)$ time and memory per pass
 and at most $D$ passes. Similarly,
 because any ancestor--descendant violation along a path implies at least one
-violation on a direct edge $(c_e, p_e) \in \mathcal{E}$, the sparse hinge
+violation on a direct edge $(s_e, t_e) \in \mathcal{E}$, the sparse hinge
 penalty evaluates Eq.~\eqref{eq:hierloss} directly over $\mathcal{P} =
 \mathcal{E}$ in $O(B \cdot E)$ time. For \texttt{cellcycle\_GO}
 ($C{=}4{,}126$, $E{=}5{,}827$), \texttt{BlockDiagonalR} reduces structural
@@ -793,15 +795,12 @@ validation); 4{,}271 dataset concepts, 4{,}520 hierarchy nodes and
 
 \subsection{Training Details}
 
-Text, FunCat and GO results are means over three seeds (0, 42, 123);
-the inference-only GO ablation (Table~\ref{tab:sparse}) is a single
-run. Optimizer: AdamW ($\beta_1=0.9, \beta_2=0.999$)
+Text, FunCat and GO results are means over three seeds (0, 42, 123).
+Optimizer: AdamW ($\beta_1=0.9, \beta_2=0.999$)
 with weight decay $10^{-5}$. Text: SPECTER2-base (768-dim CLS-pooled,
 256-token limit).
 E2E fine-tuning: transformer LR $2\times10^{-5}$, classifier LR
-$10^{-4}$, batch 8, up to 10 epochs with the epoch chosen on validation (WOS). GO: the FunCat protocol below;
-the inference-only ablation uses LR $10^{-4}$, 20 epochs at batch 64
-and dropout 0.3. GBDT: CPU-only (scikit-learn
+$10^{-4}$, batch 8, up to 10 epochs with the epoch chosen on validation (WOS). GO: the FunCat protocol below. GBDT: CPU-only (scikit-learn
 HistGradientBoosting, max\_iter=100, no early stopping, one classifier
 per node with $\geq 5$ positives). NVIDIA RTX 3060 (12~GB).
 
@@ -851,7 +850,8 @@ HTCInfoMax (Deng+ NAACL'21)~\cite{htcinfomax}   & --     & 0.8630 \\
 HiMatch (Chen+ ACL'21)~\cite{himatch}            & --     & 0.8670 \\
 HGCLR (Wang+ ACL'22)~\cite{hgclr}                & --     & 0.8711 \\
 HPT (Wang+ EMNLP'22, published)~\cite{hpt}       & --     & 0.8716 \\
-HPT (re-executed, 3 seeds, raw@0)                & --     & 0.8691 $\pm$ 0.0023 \\
+HPT (our reimplementation, 3 seeds, raw@0)       & --     & 0.8691 $\pm$ 0.0023 \\
+HPT (our reimplementation, + rec., val.\ threshold) & --  & 0.8712 $\pm$ 0.0029 \\
 HILL (Zhu+ NAACL'24)~\cite{hill2024}             & --     & 0.8728 \\
 MLCL-KNN (Zhang+ NC'24)~\cite{mlclknn2024}       & --     & 0.8737 \\
 HTC-CLIP (Agrawal+ ECAI'23)~\cite{htcclip2023}   & --     & \textbf{0.8786} \\
@@ -861,7 +861,8 @@ Ours global + H-MLCL+H-KNN (frozen)  & \textbf{0.7262} $\pm$ 0.0011 & 0.7485 $\p
 Ours globalE2E (fine-tuned + R)    & --            & 0.8704 $\pm$ 0.0040 \\
 \midrule
 $\Delta$ vs.\ HPT published        & --            & $-$0.0012 \\
-$\Delta$ vs.\ HPT re-executed      & --            & $+$0.0013 \\
+$\Delta$ vs.\ HPT reimplemented (raw@0)      & --  & $+$0.0013 \\
+$\Delta$ vs.\ HPT reimplemented (+ rec., val.\ threshold) & -- & $-$0.0008 \\
 \bottomrule
 \end{tabular}
 }
@@ -894,12 +895,21 @@ reconciliation), above HiAGM (0.8604), HTCInfoMax (0.8630), and
 HiMatch (0.8670), and 0.0012 below the single-run figure reported by
 HPT (0.8716) and 0.0007 below HGCLR (0.8711). To obtain a
 multi-seed comparison on the identical split and hardware, we
-re-executed HPT's official code across the same three seeds (0, 42,
-123), obtaining $0.8691 \pm 0.0023$ Micro-F1 at HPT's native logit-0
-threshold (per-seed scores: $0.8672$, $0.8685$, and $0.8716$---matching
-the published number on seed 123). Our \texttt{globalE2E} model ($0.8704 \pm 0.0040$,
-per-seed $0.8671$, $0.8693$, $0.8749$) is thus nominally above the 3-seed
-HPT mean ($+0.0013$ F1) and is statistically indistinguishable from both
+reimplemented HPT, since its released code depends on library versions
+that are incompatible with our environment. The reimplementation follows
+the published configuration and selection rule, with four deviations:
+label tokens are initialized without \texttt{[CLS]}/\texttt{[SEP]}, the
+masked-language-model loss covers the original vocabulary only, a batch
+of 8 is accumulated over 2 steps, and Micro/Macro-F1 use the standard
+definitions instead of HPT's evaluation loop. Across the same three
+seeds (0, 42, 123) it obtains $0.8691 \pm 0.0023$ Micro-F1 at HPT's
+native logit-0 threshold (per-seed scores: $0.8672$, $0.8685$, and
+$0.8716$---matching the published number on seed 123), and
+$0.8712 \pm 0.0029$ with reconciliation and the validation threshold.
+Our \texttt{globalE2E} model ($0.8704 \pm 0.0040$,
+per-seed $0.8671$, $0.8693$, $0.8749$) is thus within seed noise of the
+reimplemented HPT ($+0.0013$ F1 against its raw score, $-0.0008$ against
+its reconciled one) and is statistically indistinguishable from both
 HPT and HGCLR while guaranteeing zero hierarchy violations. Recent
 contrastive HTC models---HILL~\cite{hill2024} ($0.8728$),
 MLCL-KNN~\cite{mlclknn2024} ($0.8737$), and HTC-CLIP~\cite{htcclip2023}
@@ -1062,8 +1072,10 @@ residual gap is within what the training recipe moves
 validation-only protocol, is weaker (avg 0.226).
 Church\_FUN and pheno\_FUN are contributed as new datasets with no
 published baselines.  Adding the graph-autoencoder branch of
-Section~\ref{sec:autoenc} raises our average to 0.262 and puts us above
-C-HMCNN on derisi (0.197 vs.\ 0.195) and spo (0.217 vs.\ 0.215). The
+Section~\ref{sec:autoenc} moves our average by $+0.002$ (to 0.262): it is
+above C-HMCNN on derisi (0.197 vs.\ 0.195) and spo (0.217 vs.\ 0.215), by
+about two seed standard deviations, and below our MCLoss model on three of
+the eight datasets. The
 \textbf{H-MLCL+H-KNN} blend, evaluated in the paired rerun of
 Section~\ref{sec:sr_gae}, is above its own baseline on all 10 FunCat
 datasets ($0.2438 \to 0.2464$ 10-dataset mean) and brings the 8-dataset
@@ -1271,81 +1283,102 @@ WOS globalE2E (10 ep) & -- & 15,790s & -- \\
 \label{sec:go_results}
 
 We evaluate the sparse formulation on all nine Gene Ontology datasets
-in two settings.  Table~\ref{tab:sparse} is an inference-only ablation
-in an earlier configuration (20 epochs, batch 64, dropout 0.3, seed
-42): each run trains with an identity R-matrix and applies sparse
-reconciliation only at inference, so the deltas isolate the
-inference-time constraint rather than the training-time loss.
-Table~\ref{tab:go_sota} then reports the full protocol of the FunCat
-experiments (MCLoss through the sparse R, dropout 0.7, batch 4, early
+in three ways.  Table~\ref{tab:sparse_mem} measures the GPU memory of
+one reconciliation step for the dense and sparse operators.
+Table~\ref{tab:sparse} reports, per dataset, what sparse reconciliation
+adds to the BCE-trained model under the full protocol of the FunCat
+experiments (dropout 0.7, batch 4, early
 stopping and threshold on validation, refit on training + validation,
-three seeds) against the published baselines.
+three seeds).  Table~\ref{tab:go_sota} then compares the three
+objectives against the published baselines under the same protocol.
 
 \begin{table}[!ht]
 \centering
-\caption{Sparse R-matrix on Gene Ontology datasets (9 datasets,
-3,128--4,134 nodes).  At batch 64 the dense baseline does not fit
-in GPU memory at this scale, whereas the sparse formulation remains
-tractable and improves AUPRC on all datasets.}
-\label{tab:sparse}
-\begin{tabular}{lccccc}
+\caption{Peak allocated GPU memory of one reconciliation step on
+\texttt{seq\_GO} ($C{=}4{,}134$, $E{=}5{,}839$) on an RTX 3060 (12~GB),
+without and with a backward pass through the operator.  ``Dense
+float64'' is the reference C-HMCNN operator; OOM = out of memory.  The
+dense and sparse outputs are identical (maximum absolute difference
+0).}
+\label{tab:sparse_mem}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccc}
 \toprule
-\textbf{Dataset} & \textbf{Nodes} & \textbf{Raw F1} & \textbf{Sparse F1} &
-\textbf{$\Delta$F1} & \textbf{$\Delta$AUPRC} \\
+\textbf{Operator} & \textbf{Mode} & $B{=}4$ & $B{=}32$ & $B{=}64$ & $B{=}128$ & $B{=}256$ \\
 \midrule
-cellcycle\_GO & 4{,}126 & 0.3629 & 0.3534 & $-$0.0095 & +0.0046 \\
-derisi\_GO    & 4{,}120 & 0.3331 & 0.3189 & $-$0.0142 & +0.0012 \\
-eisen\_GO     & 3{,}574 & 0.3414 & 0.3404 & $-$0.0010 & +\textbf{0.0193} \\
-expr\_GO      & 4{,}132 & 0.4073 & 0.4083 & \textbf{+0.0010} & +0.0008 \\
-gasch1\_GO    & 4{,}126 & 0.3888 & 0.3833 & $-$0.0055 & +0.0080 \\
-gasch2\_GO    & 4{,}132 & 0.3275 & 0.3240 & $-$0.0035 & +0.0041 \\
-pheno\_GO     & 3{,}128 & 0.3812 & 0.3780 & $-$0.0032 & +0.0055 \\
-seq\_GO       & 4{,}134 & 0.4356 & 0.4310 & $-$0.0046 & +0.0023 \\
-spo\_GO       & 4{,}120 & 0.3687 & 0.3632 & $-$0.0055 & +0.0039 \\
-\midrule
-\textit{Avg}  & --   & 0.3718 & 0.3667 & $-$0.0051 & +0.0055 \\
+Dense float64 & forward  & 0.51~GiB & 4.08~GiB & 8.16~GiB & OOM & OOM \\
+Dense float64 & backward & 1.02~GiB & 8.15~GiB & OOM & OOM & OOM \\
+Dense float32 & forward  & 0.25~GiB & 2.04~GiB & 4.08~GiB & 8.16~GiB & OOM \\
+Dense float32 & backward & 0.51~GiB & 4.08~GiB & 8.15~GiB & OOM & OOM \\
+Sparse        & forward  & 0.3~MB & 2~MB & 4~MB & 9~MB & 17~MB \\
+Sparse        & backward & 3~MB & 21~MB & 43~MB & 85~MB & 171~MB \\
 \bottomrule
-\multicolumn{6}{p{0.97\textwidth}}{\small Training: 20 epochs, batch 64, identity R-matrix + sparse reconciliation at inference.} \\
-\multicolumn{6}{p{0.97\textwidth}}{\small Dense R would OOM at batch 64: the batched $C\times C$ float64 step peaks at $\approx$8.8\,GB for the largest hierarchy ($C{=}4{,}134$).} \\
-\multicolumn{6}{p{0.97\textwidth}}{\small AUPRC improves on \textbf{all 9 datasets} (avg +0.0055).} \\
 \end{tabular}
+}
+\end{table}
+
+\begin{table}[!ht]
+\centering
+\caption{Sparse reconciliation on the 9 Gene Ontology datasets
+(3,128--4,134 nodes): BCE-trained model before and after
+\texttt{BlockDiagonalR} reconciliation, full protocol, mean of three
+seeds.  $\Delta$ is the mean paired difference (reconciled minus raw).}
+\label{tab:sparse}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccc}
+\toprule
+\textbf{Dataset} & \textbf{Nodes} & \textbf{Raw AUPRC} & \textbf{Rec.\ AUPRC} &
+\textbf{$\Delta$AUPRC} & \textbf{Raw F1} & \textbf{Rec.\ F1} & \textbf{$\Delta$F1} \\
+\midrule
+cellcycle\_GO & 4{,}126 & 0.4052 & 0.4066 & +0.0013 & 0.4333 & 0.4332 & $-$0.0001 \\
+derisi\_GO    & 4{,}120 & 0.3682 & 0.3684 & +0.0003 & 0.4073 & 0.4076 & +0.0003 \\
+eisen\_GO     & 3{,}574 & 0.4512 & 0.4526 & +0.0014 & 0.4669 & 0.4670 & +0.0001 \\
+expr\_GO      & 4{,}132 & 0.4360 & 0.4390 & +0.0029 & 0.4530 & 0.4545 & +0.0015 \\
+gasch1\_GO    & 4{,}126 & 0.4303 & 0.4319 & +0.0016 & 0.4501 & 0.4504 & +0.0003 \\
+gasch2\_GO    & 4{,}132 & 0.4093 & 0.4113 & +0.0019 & 0.4375 & 0.4378 & +0.0003 \\
+pheno\_GO     & 3{,}128 & 0.3421 & 0.3418 & $-$0.0003 & 0.3913 & 0.3910 & $-$0.0003 \\
+seq\_GO       & 4{,}134 & 0.4370 & 0.4417 & \textbf{+0.0046} & 0.4576 & 0.4607 & \textbf{+0.0031} \\
+spo\_GO       & 4{,}120 & 0.3780 & 0.3788 & +0.0008 & 0.4147 & 0.4149 & +0.0002 \\
+\midrule
+\textit{Avg}  & --   & 0.4064 & 0.4080 & +0.0016 & 0.4346 & 0.4352 & +0.0006 \\
+\bottomrule
+\end{tabular}
+}
 \end{table}
 
 The sparse R-matrix achieves \textbf{zero hierarchy violations}
 on all GO datasets while using $O(C{+}E)$ memory.  Key findings:
 
-\textbf{1. Feasibility.} The sparse formulation makes
-R-matrix-constrained inference practical on the full Gene Ontology
-benchmark suite: prior work applies hierarchy constraints to these
-datasets with small batches or recurrent architectures, whereas the
-dense matrix cannot be materialized at the batch size used here.  The
-dense R-matrix costs $C^2 \times 4$ bytes
-($\approx$65~MB for $C{=}4{,}126$) to store, and applying it to a
-batch materializes a batch$\times C\times C$ float64 tensor
-($\approx$8.7\,GB at batch 64 for $C{=}4{,}126$), which cannot fit in GPU memory
-alongside model parameters and activations; the sparse formulation
-uses only graph edges ($\sim$46~KB, $>1{,}400\times$ reduction).
+\textbf{1. Memory.} The dense R-matrix itself is small: $C^2 \times 4$
+bytes ($\approx$65~MB for $C{=}4{,}126$).  The cost is the
+batch$\times C\times C$ tensor that the dense operator materializes
+(Table~\ref{tab:sparse_mem}).  With the float64 broadcast of the
+reference implementation, one reconciliation step at batch 64 peaks at
+8.2~GiB and fits in a 12~GB GPU, but back-propagating through it, as
+MCLoss requires, runs out of memory at batch 64; in float32 the same
+happens at batch 128.  The sparse operator needs 4~MB for the forward
+step and 43~MB with the backward pass at batch 64 (171~MB at batch
+256), and stores only the graph edges ($\sim$46~KB, $>1{,}400\times$
+less than the dense matrix).
 At C-HMCNN's batch size of 4 the dense step does fit
-($\approx$0.55\,GB per reconciliation), so on these benchmarks the
+(0.5~GiB per reconciliation, 1.0~GiB with the backward pass), so on
+these benchmarks the
 sparse formulation removes the batch-size ceiling rather than being the
 only way to train; its cost grows with $B\cdot E$ instead of
 $B\cdot C^2$.
 
 \textbf{2. AUPRC improvement.} Sparse reconciliation improves AUPRC on
-all nine datasets (avg +0.0055), driven by the recall gain of bottom-up
-max propagation (Table~\ref{tab:pr}, Figure~\ref{fig:go}).  The largest
-gain is
-on eisen\_GO (+0.0193 AUPRC).
+eight of the nine datasets (avg +0.0016), driven by the recall gain of
+bottom-up max propagation (Table~\ref{tab:pr}, Figure~\ref{fig:go}).
+The largest gain is on seq\_GO (+0.0046 AUPRC); pheno\_GO loses
+0.0003.
 
-\textbf{3. F1 trade-off.} Raw F1 decreases slightly (avg $-$0.0051)
-due to the precision-recall trade-off inherent in bottom-up max
-propagation: parent scores are raised to match children, which boosts
-recall at the cost of precision.  The optimal operating point depends
-on the application (threshold tuning can recover F1).
+\textbf{3. Micro-F1.} With the threshold chosen on validation,
+reconciliation changes Micro-F1 little: it rises on seven of the nine
+datasets, by +0.0006 on average and at most +0.0031 (seq\_GO), and
+falls by 0.0001 on cellcycle\_GO and 0.0003 on pheno\_GO.
 
-\textbf{4. Training time.} In this configuration (20 epochs at batch
-64) experiments complete in seconds per dataset (RTX 3060),
-demonstrating that the sparse R-matrix adds negligible overhead.  Under
+\textbf{4. Training time.} Under
 the full protocol of Table~\ref{tab:go_sota} (batch 4, early stopping,
 refit) a seed takes 3--14 minutes per dataset, including the
 per-epoch validation over $\sim$4{,}000 classes.
@@ -1420,10 +1453,11 @@ Ontology suite in $O(C{+}E)$ memory.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/fig3_go_sparse.pdf}
-\caption{Sparse R-matrix on 9 Gene Ontology datasets, inference-only
-ablation of Table~\ref{tab:sparse} (20 epochs, batch 64). AUPRC improves
-on all datasets (avg +0.0055).}
+\includegraphics[width=0.9\textwidth]{figures/fig3_go_reconciliation.pdf}
+\caption{Effect of sparse reconciliation on the BCE-trained model across
+the 9 Gene Ontology datasets (reconciled minus raw $\Delta$AUPRC and
+$\Delta$Micro-F1, mean $\pm$ std over three seeds; full protocol of
+Table~\ref{tab:sparse}). AUPRC improves on 8 of 9 datasets (avg +0.0016).}
 \label{fig:go}
 \end{figure}
 
@@ -2176,7 +2210,7 @@ families. Our principal conclusions are:
     within 0.003 on FunCat (0.261 vs.\ 0.264), and is above C-HMCNN on
     cross-domain benchmarks (0.857 vs.\ 0.849 AUPRC); a fine-tuned SPECTER2
     (globalE2E) reaches $0.8704 \pm 0.0040$ Micro-F1 on Web of Science,
-    against $0.8691 \pm 0.0023$ for our 3-seed re-execution of HPT.
+    against $0.8691 \pm 0.0023$ for our 3-seed reimplementation of HPT.
   \item \textbf{No static structural predictor of constraint utility (Q3):}
     The gain is uncorrelated with internal-node label density ($\rho =
     -0.07$, $p = 0.721$) and follows the average score raise that
