@@ -60,10 +60,10 @@ and Contrastive Learning for Hierarchical Multi-Label Classification}
 \begin{abstract}
 Hierarchical multi-label classification (HMC) requires predictions that are
 consistent with a class hierarchy: an ancestor must not score lower than its
-descendants. Constraint-based methods such as C-HMCNN bundle a training loss
-(MCLoss) with an inference-time max-propagation step, so it is unclear which of
-the two produces the reported gains, and the dense ancestor matrix they rely on
-grows quadratically with the number of classes. We separate the two effects
+descendants. Constraint-based methods such as C-HMCNN combine a training loss
+(MCLoss) with an inference-time max-propagation step; the two have been
+compared only on the validation splits of eight FunCat datasets, and the dense
+ancestor matrix they rely on grows quadratically with the number of classes. We separate the two effects
 with a $3 \times 2$ factorial study---three training objectives (BCE,
 hierarchical hinge, MCLoss) crossed with raw versus reconciled inference---on
 27 benchmarks from four families (scientific and legal text, FunCat, Gene
@@ -73,9 +73,10 @@ datasets by a small margin (median $+0.0016$) and guarantees zero hierarchy
 violations at no training cost; training with a consistency loss gives no
 consistent gain over plain BCE, and MCLoss degrades the raw scores of internal
 nodes. To apply the constraint to large DAGs we give an exact edge-indexed
-formulation with $O(C{+}E)$ memory, with which a plain MLP is within 0.002
-AUPRC of C-HMCNN on Gene Ontology (0.418 vs.\ 0.420) and above it on
-cross-domain data (0.857 vs.\ 0.849). A reimplementation of Surj does not
+formulation with $O(C{+}E)$ memory, with which an MLP trained with MCLoss is
+within 0.002 AUPRC of C-HMCNN on Gene Ontology (0.418 vs.\ 0.420; 0.416 with
+BCE) and one trained with BCE is above it on cross-domain data (0.857 vs.\
+0.849). A reimplementation of Surj does not
 reproduce its reported gains, and we show that its graph-autoencoder label
 embeddings place sibling classes on nearly parallel directions. A
 sibling-repulsive autoencoder removes this collapse, but in a paired three-seed
@@ -118,12 +119,17 @@ convolutional networks or hierarchy-aware transformers in text classification
 (HiAGM~\cite{zhou2020hiagm}, HTCInfoMax~\cite{htcinfomax},
 HGCLR~\cite{hgclr}, HPT~\cite{hpt}) to neuro-symbolic constraint layers such
 as the \textbf{R-matrix} (ancestor-closure matrix) in C-HMCNN~\cite{chmcnn}
-and ontology graph autoencoders in Surj~\cite{www2022ontology}. However, in
-nearly all prior studies, the hierarchical constraint is evaluated as an
-indivisible package bundling a specific backbone architecture, a training-time
-consistency objective (such as max-constraint loss, MCLoss), and an
-inference-time max-propagation step. Consequently, four
-questions remain unanswered:
+and ontology graph autoencoders in Surj~\cite{www2022ontology}. In most prior
+studies, the hierarchical constraint is evaluated together with a specific
+backbone architecture, a training-time consistency objective (such as
+max-constraint loss, MCLoss), and an inference-time max-propagation step. The
+exception is the ablation in the C-HMCNN paper~\cite{chmcnn}, which compares
+post-processing, the max module trained with BCE, and the max module trained
+with MCLoss on the validation splits of eight FunCat datasets and finds that
+MCLoss adds to the max module on all eight (average AUPRC 0.241 vs.\ 0.237).
+Whether that holds on the test splits, on DAG ontologies, on text, and under a
+protocol that selects every choice on validation has not been examined.
+Four questions therefore remain open:
 \begin{enumerate}[leftmargin=*,nosep,label=\textbf{Q\arabic*.}]
   \item \textbf{Training vs.\ Inference Decomposition:} Does the empirical
     benefit of the R-matrix constraint stem from shaping gradient updates via
@@ -162,8 +168,9 @@ Our main contributions are as follows:
     Gene Ontology, and cross-domain ARFF), we evaluate a $3 \times 2$
     factorial design crossing three training objectives---unconstrained binary
     cross-entropy (BCE), BCE with a hierarchical hinge penalty, and
-    MCLoss---with raw versus reconciled inference. We demonstrate that
-    inference-time reconciliation is the primary driver of performance gains
+    MCLoss---with raw versus reconciled inference. We show that
+    inference-time reconciliation accounts for the measured gain, which is
+    small (median $+0.0016$ Micro-AUPRC)
     (Wilcoxon signed-rank $p = 2.1\times 10^{-7}$ on Micro-AUPRC across 26/27
     datasets; $p = 1.3\times 10^{-6}$ on Micro-F1 across 25/27 datasets),
     whereas training-time consistency penalties alone do not reliably improve
@@ -187,10 +194,11 @@ Our main contributions are as follows:
     after the classifier has been trained, so it describes the mechanism
     rather than predicting it from the hierarchy.
   \item \textbf{Cross-Benchmark Comparison and Reproducibility Audit of
-    Surj:} Under validation-only threshold selection, our global model is
-    within 0.003 AUPRC of C-HMCNN on FunCat (0.261 vs.\ 0.264; the
-    Friedman--Nemenyi test does not separate the methods), within 0.002 on
-    Gene Ontology (0.418 vs.\ 0.420), and above it on cross-domain benchmarks
+    Surj:} Under validation-only threshold selection, our global model
+    trained with MCLoss is within 0.003 AUPRC of C-HMCNN on FunCat (0.261
+    vs.\ 0.264; the Friedman--Nemenyi test does not separate the two) and
+    within 0.002 on Gene Ontology (0.418 vs.\ 0.420); trained with BCE it is
+    within 0.005 and 0.004, and above C-HMCNN on cross-domain benchmarks
     (0.857 vs.\ 0.849 AUPRC; $+0.027$ on \texttt{diatoms}). A fine-tuned
     SPECTER2 (globalE2E) reaches $0.8704 \pm 0.0040$ Micro-F1 on Web of
     Science, against $0.8691 \pm 0.0023$ for our 3-seed reimplementation of HPT.
@@ -338,10 +346,11 @@ Every benchmark in our study is represented as a self-contained
     backbone fine-tuning.
 \end{enumerate}
 
-By standardizing all 27 datasets behind the \texttt{Split} and
-\texttt{Hierarchy} contracts, any combination of feature encoder,
-classification head, training objective, and reconciliation operator can be
-evaluated under identical experimental conditions.
+These contracts are the library's public interface. The experiments of this
+paper are run by standalone scripts (\texttt{experiments/} in the repository)
+that load the same datasets and hierarchies and share one training loop, so
+that every objective and reconciliation mode is evaluated under identical
+conditions.
 
 \subsection{Feature Encoders and Classification Heads}
 
@@ -352,8 +361,7 @@ leakage:
 \begin{itemize}[leftmargin=*,nosep]
   \item \textbf{Tabular and Biological Encoders
     (\texttt{TabularFeatureEncoder}):} Applies training-split mean imputation
-    and z-score standardization, with optional variance-threshold filtering for
-    high-dimensional tabular inputs ($>500$ features).
+    and z-score standardization.
   \item \textbf{Text Encoders (\texttt{TextFeatureEncoder} and E2E Backbones):}
     Extracts 768-dimensional document representations from a pretrained
     scientific language model (\texttt{SPECTER2-base}~\cite{specter2} with CLS
@@ -364,9 +372,8 @@ leakage:
 Downstream of the encoder, we evaluate a shared global multi-layer perceptron
 (\textbf{GlobalSigmoidHead}), $\text{MLP}(\mathbf{x}) \rightarrow \sigma(\cdot)
 \rightarrow [0,1]^C$, which predicts unconstrained scores for all $C$ classes
-jointly, alongside a \textbf{LocalLevelHead} baseline that trains independent
-per-level MLPs ($\text{MLP}_\ell(\mathbf{x}) \rightarrow [0,1]^{C_\ell}$)
-assembled via depth indexing.
+jointly. The library also provides a \textbf{LocalLevelHead} with independent
+per-level MLPs; it is not part of the experiments reported here.
 
 \subsection{The R-Matrix Constraint: Training vs.\ Inference Modes}
 \label{sec:rmatrix}
@@ -403,9 +410,10 @@ $j$ scores higher than its ancestor $i$:
 \label{eq:hierloss}
 \end{equation}
 where $\mathcal{P} = \{(i,j) : R_{ij}=1,\, i \neq j\}$ is the set of
-ancestor--descendant pairs (or the direct edge set $\mathcal{E}$ in the sparse
-formulation below) and $\gamma \geq 0$ is an optional margin ($\gamma=0$ in all
-experiments).
+ancestor--descendant pairs and $\gamma \geq 0$ is an optional margin
+($\gamma=0$ in all experiments). All experiments use the full closure
+$\mathcal{P}$; restricting the sum to the direct edges $\mathcal{E}$ is a
+cheaper variant with the same zero-violation optimum.
 
 \textbf{Mode 2: Inference-time bottom-up reconciliation.} At evaluation time,
 hard taxonomic consistency is guaranteed by propagating maxima bottom-up from
@@ -525,12 +533,10 @@ paired with either raw ($\mathbf{P}$) or reconciled ($\mathbf{P}^{\text{rec}}$)
 inference scores:
 \begin{enumerate}[leftmargin=*,nosep]
   \item \textbf{Unconstrained Binary Cross-Entropy (BCE):} Trains each class
-    with standard binary cross-entropy (optionally weighted by class prevalence
-    $w_i = N_{\text{neg}}^{(i)} / N_{\text{pos}}^{(i)}$ on imbalanced text
-    corpora):
+    with standard, unweighted binary cross-entropy:
     \begin{equation}
     \mathcal{L}_{\text{BCE}}(\mathbf{P}, \mathbf{Y}) = -\frac{1}{B \cdot C}
-    \sum_{b=1}^{B} \sum_{i=1}^{C} w_i \left[
+    \sum_{b=1}^{B} \sum_{i=1}^{C} \left[
     y_{b,i} \log p_{b,i} + (1-y_{b,i}) \log(1-p_{b,i})
     \right].
     \label{eq:bce}
@@ -548,7 +554,7 @@ inference scores:
     \label{eq:total}
     \end{equation}
     where $\lambda > 0$ penalizes parent--child reversals on the raw outputs
-    during training ($\lambda = 0.1$ in our protocol).
+    during training ($\lambda = 1$ in our protocol).
   \item \textbf{Max-Constraint Loss (MCLoss)~\cite{chmcnn}:} Applies binary
     cross-entropy to the \emph{reconciled} scores for negative targets ($y_{b,i}=0$)
     and to the positive-masked descendant maximum
@@ -669,25 +675,26 @@ To attribute any gain to the right component, the evaluation is paired: for
 each dataset and seed, the baseline and the blend share one trunk, trained
 with the protocol of Section~\ref{sec:results}, and we add a control in which
 the \texttt{SR-GAE} prototypes are replaced by random Gaussian vectors that
-carry no information about the hierarchy.
+carry no information about the hierarchy. To bound the cost on the large text
+corpora, the projector is trained on at most 16{,}000 training rows, the
+retrieval index holds at most 10{,}000 training rows, and the blend weights
+are selected on at most 2{,}000 validation rows.
 
 \subsection{Reproducibility Protocol and Terminology}
 
-Every experiment run produces a self-contained artifact directory storing raw
-pre-reconciliation scores (\texttt{scores\_before\_postprocess.npz}),
-reconciled scores (\texttt{scores\_final.npz}), evaluation metrics
-(\texttt{metrics.json}), and full hyperparameter configurations
-(\texttt{run-config.json}). Python, NumPy, and PyTorch random number generators
-and deterministic cuDNN kernels are seeded explicitly (averaging seeds 0, 42,
-and 123 across all main benchmark suites). Throughout the paper, we use
+Each protocol script writes one JSON file per dataset with, for every seed
+and objective, the selected epoch, the validation-selected threshold, and the
+raw and reconciled test metrics, together with the hyperparameters used. The
+NumPy and PyTorch random number generators are seeded explicitly (seeds 0, 42,
+and 123 across all main benchmark suites); GPU kernels are not forced to be
+deterministic, so reruns agree to within the reported seed variance rather
+than bit for bit. Throughout the paper, we use
 \textbf{path} for a directed child$\rightarrow$parent chain in $A$,
 \textbf{dense R-matrix} for the explicit $C \times C$ closure matrix,
 \textbf{R-matrix constraint} for the true-path consistency property,
 \textbf{sparse R-matrix formulation} (\texttt{BlockDiagonalR}) for our
 $O(C{+}E)$ graph-based layer, and \textbf{BFS levels} for breadth-first depth
-from the root. We also evaluate post-hoc Platt scaling on validation data in
-Section~\ref{sec:calib}, showing why raw probabilities with validation
-threshold selection are preferable under extreme multi-label imbalance.
+from the root.
 
 % ═══════════════════════════════════════════════════════════════════════
 \section{Experiments}
@@ -703,10 +710,12 @@ primary datasets plus RCV1-V2 as a separate structural diagnostic.
 \caption{Dataset statistics. ArXiv and AAPD use a 64/16/20 split; the
 other text datasets follow their released partitions; FunCat and GO
 use the benchmark ARFF partitions. The \textbf{Train} column reports
-train$+$validation, the partition optimized in our runs: validation
-files are merged back, and the four cross-domain datasets hold out 20\%
-of training for validation and merge it back, so no test document is
-ever optimized on. RCV1-V2$^\dagger$ is a separate structural diagnostic
+train$+$validation. On the ARFF datasets this is the partition of the final
+refit: validation files are merged back, and the four cross-domain datasets
+hold out 20\% of training for validation and merge it back. The text models
+are not refit and are trained on the training part only (ArXiv 32{,}000, WOS
+30{,}070, AAPD 35{,}737, EUR-Lex 45{,}000 documents), with the validation
+part used for model selection. No test document is ever optimized on. RCV1-V2$^\dagger$ is a separate structural diagnostic
 and is not counted among the 27 primary datasets.}
 \label{tab:datasets}
 \footnotesize
@@ -775,11 +784,8 @@ validation); 4{,}271 dataset concepts, 4{,}520 hierarchy nodes and
     Micro-F1 favors it, depth-level logit offsets (\texttt{DepthCal}), all
     applied before \texttt{BlockDiagonalR} reconciliation
     (Section~\ref{sec:method_sr_gae_depth}).
-  \item \textbf{Local}: Per-level MLPs, trained jointly, no R-matrix.
   \item \textbf{Tabular GBDT}: HistGradientBoosting One-vs-Rest
     (scikit-learn), one classifier per node with $\geq 5$ positives.
-  \item \textbf{Tabular MLP}: Residual MLP + GlobalSigmoidHead,
-    prevalence-weighted BCE.
   \item \textbf{HiAGM}~\cite{zhou2020hiagm}: Text encoder + label GCN.
   \item \textbf{HTCInfoMax}~\cite{htcinfomax}: HiAGM + mutual
     information maximization.
@@ -798,9 +804,12 @@ validation); 4{,}271 dataset concepts, 4{,}520 hierarchy nodes and
 Text, FunCat and GO results are means over three seeds (0, 42, 123).
 Optimizer: AdamW ($\beta_1=0.9, \beta_2=0.999$)
 with weight decay $10^{-5}$. Text: SPECTER2-base (768-dim CLS-pooled,
-256-token limit).
-E2E fine-tuning: transformer LR $2\times10^{-5}$, classifier LR
-$10^{-4}$, batch 8, up to 10 epochs with the epoch chosen on validation (WOS). GO: the FunCat protocol below. GBDT: CPU-only (scikit-learn
+256-token limit for the frozen features); the frozen-encoder MLP uses hidden
+size 512, dropout 0.3, batch 64, patience 10, and at most 100 epochs, without
+refit.
+E2E fine-tuning: 512-token limit, transformer LR $2\times10^{-5}$, classifier LR
+$10^{-4}$, dropout 0.3, batch 8, up to 10 epochs with the epoch chosen by
+reconciled validation Micro-F1 (WOS). GO: the FunCat protocol below. GBDT: CPU-only (scikit-learn
 HistGradientBoosting, max\_iter=100, no early stopping, one classifier
 per node with $\geq 5$ positives). NVIDIA RTX 3060 (12~GB).
 
@@ -811,9 +820,22 @@ MCLoss through the sparse R formulation, LR $10^{-4}$, batch 4.  The
 number of epochs is chosen by early stopping on validation AUPRC
 (patience 20, at most 200 epochs), and the model is then refit on
 training + validation for that many epochs, the convention of HMCN and
-C-HMCNN.  The decision threshold is chosen on validation and the test
+C-HMCNN.  The decision threshold is chosen on the validation scores of the
+early-stopped model, applied to the refit model, and the test
 split is used once.  The Gene Ontology runs of Table~\ref{tab:go_sota}
-follow the same protocol.
+follow the same protocol. Unlike C-HMCNN, which tunes the hidden size and
+learning rate per dataset and averages 10 runs, we keep the learning rate
+fixed and average three seeds.
+
+\textbf{Epoch selection.} For every objective, the stopping epoch maximizes
+the validation AUPRC of the \emph{reconciled} scores, and the raw scores are
+evaluated at that same epoch; the raw arms are therefore not given an epoch of
+their own, which can only favor the reconciled arm in the raw-versus-reconciled
+comparison. On EUR-Lex and RCV1-V2, where scoring the full validation split at
+every epoch is costly, early stopping uses the first 1{,}500 validation
+documents every fourth epoch (the threshold is still selected on the full
+validation split), and all EUR-Lex runs stop at epochs 96--100 of the
+100-epoch budget, so those models may be slightly under-trained.
 
 \textbf{Metrics.} \textbf{Micro-F1} (primary for text) and
 \textbf{Micro-AUPRC} (primary for FunCat, following literature
@@ -1063,8 +1085,8 @@ datasets.  Our global model is within 0.001--0.005 AUPRC of C-HMCNN on
 every dataset with a published baseline (avg 0.261 vs.\ 0.264) and matches
 HMCN-F on average
 (0.261), beating it on eisen and spo.  The hinge objective averages
-0.259, between GBDT (0.226) and MCLoss (0.261), so the training-time
-consistency penalty does not close the gap to the autoencoder branch.
+0.259, between GBDT (0.226) and MCLoss (0.261), level with plain BCE
+(0.259).
 This is the same constraint and
 loss as C-HMCNN, computed through the sparse R formulation; the
 residual gap is within what the training recipe moves
@@ -1219,7 +1241,8 @@ microscopy, and medical imaging.
 five domains (text, FunCat, Gene Ontology, genomic, and cross-domain
 ARFF); the four ARFF cross-domain datasets of
 Table~\ref{tab:others} are enron, diatoms, imclef07a, and imclef07d.
-Same architecture (global MLP+R) used throughout.}
+All bars use the global MLP with reconciliation on frozen or pre-extracted
+features, except WOS, which is the fine-tuned SPECTER2 model.}
 \label{fig:cross}
 \end{figure}
 
@@ -1251,30 +1274,37 @@ The global MLP trades precision for recall relative to GBDT ($-2$ precision
 and $+5$ recall points, respectively): bottom-up max propagation raises parent
 scores, and with them recall, at the cost of precision.  The R-matrix's
 own contribution on FunCat is neutral (Table~\ref{tab:ablation}), so
-this gap is driven by the head rather than by the constraint.  The
-global method wins on F1 by leveraging the trade-off effectively.
+this gap is driven by the head rather than by the constraint.
 
-\subsection{GPU Acceleration}
+\subsection{Training Cost}
 
-Table~\ref{tab:gpu} compares CPU and GPU training for the FunCat table
-runs.  The global MLP benefits more from the device than the smaller
-tabular baseline, and end-to-end fine-tuning of the transformer (WOS)
-is GPU-only: each epoch over the 30,070 training documents costs about
-26 minutes, so each WOS seed takes about 4.4\,h (a 10-epoch budget, with
-the epoch chosen on validation); we report the mean of three seeds.
+Table~\ref{tab:gpu} reports the wall-clock training time of one protocol run
+(the early-stopped fit plus, on the ARFF families, the refit on training +
+validation) on an RTX 3060, averaged over the datasets of each family and
+three seeds.  MCLoss is the most expensive objective, by a factor of about
+2.5 over BCE on FunCat, Gene Ontology, and text.  End-to-end fine-tuning of
+the transformer (WOS) costs about 26 minutes per epoch over the 30,070
+training documents, so each WOS seed takes about 4.4\,h (a 10-epoch budget,
+with the epoch chosen on validation).
 
 \begin{table}[!ht]
 \centering
-\caption{Training time comparison (RTX 3060 vs.\ CPU).}
+\caption{Training time of one run in seconds (RTX 3060; mean over datasets and
+seeds, with the range of per-dataset means in parentheses).  GBDT runs on CPU,
+one run per dataset.}
 \label{tab:gpu}
 \begin{tabular}{lccc}
 \toprule
-\textbf{Method} & \textbf{CPU} & \textbf{GPU} & \textbf{Speedup} \\
+\textbf{Family} & \textbf{BCE} & \textbf{Hinge} & \textbf{MCLoss} \\
 \midrule
-global (FunCat avg) & 15.7s & 5.5s & \textbf{2.9$\times$} \\
-tabular\_mlp (FunCat avg) & 5.0s & 2.8s & 1.8$\times$ \\
-WOS globalE2E (per epoch) & -- & 1,579s & -- \\
-WOS globalE2E (10 ep) & -- & 15,790s & -- \\
+FunCat (10)        & 103 (39--159) & 246 (105--572) & 254 (99--518) \\
+Gene Ontology (9)  & 212 (66--668) & 236 (63--635)  & 524 (201--842) \\
+Cross-domain (4)   & 59 (4--114)   & 77 (4--132)    & 104 (5--198) \\
+Text, frozen (4)   & 87 (28--249)  & 146 (36--453)  & 260 (56--842) \\
+\midrule
+GBDT, FunCat (CPU) & \multicolumn{3}{c}{303} \\
+WOS globalE2E (per epoch) & \multicolumn{3}{c}{1,579} \\
+WOS globalE2E (10 epochs) & \multicolumn{3}{c}{15,790} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1468,7 +1498,7 @@ Surj~\cite{www2022ontology} is the only published model above the
 constraint-based methods on FunCat and GO, by 5.5--29\% AUPRC over C-HMCNN (up
 to 31\% over the stronger baseline).  Its code
 was announced but never released, so we reimplemented it
-(\texttt{surj\_repro/} in the repository) from the paper alone, on top of
+(\texttt{surj\_repro/} at tag \texttt{surj-repro-2026-11} of the repository) from the paper alone, on top of
 the components it says it reuses.
 
 \textbf{What the paper fixes, and what we chose.}  Surj ``adopts the code
@@ -1633,9 +1663,9 @@ on the eight common FunCat datasets against 0.261 for the baseline and
 $p=0.049$, uncorrected) and above C-HMCNN on derisi and spo.  On the
 cross-domain datasets the change is +0.0005 on average (diatoms +0.004,
 enron $-$0.002).  We did not run it on GO, where the screening gain was
-below our 0.003 threshold.  Ontology embeddings therefore add a small,
-consistent gain on FunCat when they complement, rather than replace,
-the free output layer; nothing close to the 5.5--29\% that Surj reports over
+below our 0.003 threshold.  When they complement, rather than replace, the
+free output layer, ontology embeddings therefore change FunCat AUPRC by an
+amount that is within seed noise; nothing close to the 5.5--29\% that Surj reports over
 C-HMCNN (up to 31\% over the stronger baseline).
 
 \subsubsection{Diagnosing and Resolving Sibling Collinearity Collapse: SR-GAE}
@@ -1828,21 +1858,22 @@ after seeing the test results.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig5_per_level_f1.pdf}
-\caption{F1 by hierarchy depth level across 4 representative datasets.
-F1 falls moderately with depth on the text hierarchies (1.3--1.6$\times$
-from the root to the deepest populated level) and by an order of
-magnitude on the FunCat and GO hierarchies; the GO panel is not
-monotonic, and its sparsest levels are effectively unlearnable.}
+\caption{Micro-F1 by hierarchy depth on four representative datasets (BCE
+with reconciliation, mean of three seeds; the root is not evaluated).  F1
+falls moderately with depth on the two-level text hierarchies and much more
+on FunCat and GO, where the trend is not monotonic and the sparsest deep
+levels are effectively unlearnable.}
 \label{fig:perlevel}
 \end{figure}
 
 Figure~\ref{fig:perlevel} shows F1 broken down by hierarchy depth. On
-the text hierarchies the decrease is monotonic and moderate (ArXiv
-0.93 $\rightarrow$ 0.59, WOS 0.86 $\rightarrow$ 0.65).  On FunCat and
-GO the drop is an order of magnitude larger, and it is \emph{not}
-monotonic: the GO hierarchy's highest level---a single node---scores
-near zero while the level beneath it reaches 0.68, and the deepest
-levels hold only a handful of labels each.  Deep, sparsely populated
+the two-level text hierarchies the decrease is moderate (ArXiv
+0.81 $\rightarrow$ 0.58, WOS 0.84 $\rightarrow$ 0.65).  On FunCat and
+GO the drop is much larger and \emph{not} monotonic:
+\texttt{cellcycle\_FUN} goes from 0.42 at the first level to 0.09 at the
+fifth and back to 0.24 at the sixth, and \texttt{cellcycle\_GO} from 0.67 at
+its first evaluated level to zero at the two deepest ones, which hold only a
+handful of labels each.  Deep, sparsely populated
 levels are therefore both the hardest and the noisiest regime, and the
 one where bottom-up reconciliation changes the most predictions.
 
@@ -1850,7 +1881,7 @@ one where bottom-up reconciliation changes the most predictions.
 Figure~\ref{fig:perlevel} suggests that a single global decision threshold
 $t$ is ill-suited to deep classes, whose base rates and predicted
 probabilities are lower than those of their ancestors, while per-node Platt
-calibration (Section~\ref{sec:calib}) fits $2C$ parameters and overfits rare
+calibration (Section~\ref{sec:calib}) fits $2C$ parameters and needs positives for rare
 leaves. An intermediate option is to fit $L$ scalar logit offsets
 $\boldsymbol{\delta} = (\delta_1, \ldots, \delta_L)$---one per populated
 hierarchy level $\ell$, estimated by coordinate search on the validation
@@ -2016,7 +2047,7 @@ $\text{BCE}_{\text{raw}}$ to $\text{BCE}_{\text{rec}}$ across all 27 datasets).
 \textbf{Left:} Static fraction of positive annotations located on internal
 nodes shows no correlation with constraint gain (Spearman $\rho = -0.07$,
 $p = 0.721$). \textbf{Right:} Average score raise per evaluated node induced by
-bottom-up propagation correlates strongly with the AUPRC gain (Spearman
+bottom-up propagation correlates moderately with the AUPRC gain (Spearman
 $\rho = 0.49$, $p = 0.009$).}
 \label{fig:structure}
 \end{figure}
@@ -2030,30 +2061,34 @@ on internal (non-leaf) nodes benefit more, because reconciliation can only
 modify internal node scores. Figure~\ref{fig:structure} (left) refutes this
 static hypothesis: across the 27 datasets, the Spearman rank correlation
 between the fraction of positive labels on internal nodes and $\Delta$ AUPRC is
-$\rho = -0.07$ ($p = 0.721$). In Gene Ontology and FunCat, over 80\% of
-positive annotations reside on internal nodes, yet high base prevalence allows
-the unconstrained MLP to already predict high ancestor probabilities. Instead,
-Figure~\ref{fig:structure} (right) demonstrates that the reconciliation gain is
-governed by the \textbf{average score raise per evaluated node},
+$\rho = -0.07$ ($p = 0.721$). In FunCat and Gene Ontology, about 75\% and
+89\% of positive annotations reside on internal nodes, yet the gain is small;
+a possible explanation, which we did not test, is that frequent ancestors are
+already scored high by the unconstrained MLP. Instead,
+Figure~\ref{fig:structure} (right) shows that the reconciliation gain
+follows the \textbf{average score raise per evaluated node},
 $\frac{1}{N \cdot C} \sum_{b,i} (p_{b,i}^{\text{rec}} - p_{b,i})$, which
 captures how frequently and strongly specific descendant detections correct
-under-confident ancestors ($\rho = 0.49$, $p = 0.009$). This regime occurs when
-fine-grained leaf or mid-level classes have distinctive input features (such as
-morphological contour descriptors in \texttt{diatoms} or specific legal
- descriptors in \texttt{EUR-Lex 57K}) while their broader parent categories are
-heterogeneous and harder to classify directly.
+under-confident ancestors ($\rho = 0.49$, $p = 0.009$). We conjecture that
+this happens when fine-grained classes are easier to recognize from the input
+than their broader, more heterogeneous parents, as may be the case in
+\texttt{diatoms} and \texttt{EUR-Lex 57K}; the experiments here do not test
+this explanation.
 
 \subsection{Ablation: Platt Calibration on FunCat}
 \label{sec:calib}
 
-Applying Platt scaling (per-node logistic regression fitted on
-validation) \textbf{decreased} raw GBDT AUPRC from 0.219 to 0.212 on
-average over the 8 FunCat datasets with published baselines; the reconciled
-GBDT in Table~\ref{tab:funcat} is 0.226.  Platt scaling is monotonic per node, so it cannot change the
-ranking within a class; Micro-AUPRC, however, pools scores across
-classes, and pulling every node toward its prevalence ($<5\%$ for most
-leaf nodes) reorders them.  We recommend raw scores over calibration
-for highly imbalanced HMC.
+We fitted Platt scaling (per-node logistic regression) on the validation
+scores of the GBDT trained without the validation split and applied it to the
+test scores of that same model.  On average over the 8 FunCat datasets with
+published baselines, its raw Micro-AUPRC rises from 0.202 to 0.212.  Platt
+scaling is monotonic per node, so it cannot change the ranking within a
+class; the change comes from putting the per-node scores on a common scale
+before they are pooled.  The calibrated model nevertheless stays below the
+GBDT refit on training + validation (0.219 raw, 0.226 reconciled;
+Table~\ref{tab:funcat}), to which Platt scaling was not applied because no
+held-out scores remain after the refit; we therefore report the refit model
+and do not claim a calibration result for it.
 
 % ═══════════════════════════════════════════════════════════════════════
 \section{Discussion}
@@ -2121,21 +2156,25 @@ recommendations for practitioners designing knowledge-based HMC systems:
 \begin{enumerate}[leftmargin=*,nosep]
   \item \textbf{Default to unconstrained BCE training + inference-time
     reconciliation.} Plain BCE combined with bottom-up max reconciliation
-    matches or exceeds Hinge and MCLoss on reconciled metrics while preserving
-    well-calibrated pre-reconciliation probabilities on internal nodes.
+    is within 0.002 AUPRC of Hinge and MCLoss on reconciled metrics in every
+    family, without the drop in raw internal-node scores observed under MCLoss.
+    On FunCat and Gene Ontology MCLoss with reconciliation remains the best
+    arm by 0.001--0.002, in the direction of the C-HMCNN ablation.
   \item \textbf{Never deploy MCLoss without inference-time reconciliation.}
     Because MCLoss masks positive gradients on ancestors whenever a positive
     descendant scores higher, raw MCLoss outputs suffer severe degradation on
     internal nodes (Table~\ref{tab:decomp_family}); reconciliation is mandatory
     at prediction time.
   \item \textbf{Use edge-indexed sparse propagation (\texttt{BlockDiagonalR})
-    whenever $C > 1{,}000$.} Sparse bottom-up propagation over
+    on large hierarchies.} On a 12~GB GPU the dense float64 operator runs out
+    of memory during training at batch 64 with $C = 4{,}134$
+    (Table~\ref{tab:sparse_mem}). Sparse bottom-up propagation over
     child$\rightarrow$parent edges is mathematically equivalent to the dense
     ancestor closure but eliminates the $O(B \cdot C^2)$ memory wall on large
     ontologies such as GO and EUR-Lex.
   \item \textbf{Treat ontology embeddings and per-level thresholds as
-    optional.} Per-class logistic calibrators ($2C$ parameters) overfit rare
-    leaves (Section~\ref{sec:calib}). Per-depth offsets are cheaper and keep
+    optional.} Per-class logistic calibrators need $2C$ parameters and
+    held-out scores (Section~\ref{sec:calib}). Per-depth offsets are cheaper and keep
     zero violations, but they trade deep-level F1 for global F1. A standard
     graph autoencoder should not be used as a cosine classifier on a tree or
     DAG, since its sibling embeddings are nearly parallel; repairing the
@@ -2156,6 +2195,12 @@ dimensions:
     train$+$validation for the selected epoch count). While refitting increases
     training sample size, we apply the identical protocol across all compared
     objectives (BCE, Hinge, MCLoss, and GAE) and fixed seeds (0, 42, 123).
+    Three choices deserve caution: the stopping epoch is selected on the
+    reconciled validation scores, so raw arms are evaluated at an epoch chosen
+    for the reconciled arm; the EUR-Lex runs reach the epoch budget; and the
+    objective we quote against C-HMCNN differs by family (MCLoss on FunCat and
+    GO, BCE on cross-domain data), so we report both objectives wherever a
+    published baseline is compared.
   \item \textbf{External validity.} Our benchmark suite covers 27 primary
     datasets across four families (scientific/legal text, yeast functional
     genomics in FunCat and GO, microscopy, email, and medical imaging), plus an
@@ -2184,7 +2229,11 @@ dimensions:
     share preprocessing and label structure, the 27 units are not independent;
     the pooled $p$-values should therefore be read as descriptive evidence
     across a broad suite rather than as independent-sample inference, and the
-    per-family means are reported alongside them.
+    per-family means are reported alongside them. The $p$-values in this paper
+    are not corrected for multiple comparisons, and each cell averages only
+    three seeds; the secondary tests with $p$ near $0.03$--$0.05$ would not
+    survive a correction, whereas the main raw-versus-reconciled and
+    blend-versus-baseline tests ($p \le 2 \times 10^{-5}$) would.
 \end{itemize}
 
 % ═══════════════════════════════════════════════════════════════════════
@@ -2259,10 +2308,11 @@ personal relationships that could have appeared to influence the work reported
 in this paper.
 
 \section*{Data and code availability}
-Source code, configuration files, per-seed metrics, and test score archives for
-\texttt{hmc-torch} are publicly available at
-\url{https://github.com/Sette/hmc-torch} and on PyPI at
-\url{https://pypi.org/project/hmc-torch/}; all benchmark datasets follow the
+Source code and experiment scripts for \texttt{hmc-torch} are publicly
+available at \url{https://github.com/Sette/hmc-torch} and on PyPI at
+\url{https://pypi.org/project/hmc-torch/}. The per-seed metric files behind
+every table are available from the corresponding author on request; all
+benchmark datasets follow the
 licenses of their original releases.
 
 \section*{Acknowledgments}
