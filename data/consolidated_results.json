@@ -1,0 +1,172 @@
+{
+  "_note": "Headline numbers of main.tex (2026-11-10), plus the RCV1 structural diagnostic. Validation-only protocol: epoch and threshold chosen on validation, test used once. Sources: hmc-torch output/protocol/, output/protocol_rcv1/, output/hpt/, output/autoencoder/final/, output/surj/.",
+  "text": {
+    "wos": {
+      "micro_f1": 0.8704,
+      "std": 0.0040,
+      "seeds": [
+        0,
+        42,
+        123
+      ],
+      "best_published": "HPT 0.8716",
+      "delta": -0.0012,
+      "hpt_repro": {
+        "micro_f1": 0.8691,
+        "std": 0.0023,
+        "seeds": [
+          0,
+          42,
+          123
+        ],
+        "best_epochs": [
+          8,
+          6,
+          4
+        ],
+        "note": "HPT bert/none/down, hpt_raw selection (raw validation macro-F1 at logit 0, patience 5, cap 30), raw/thr0; in-repo reimplementation (not the released code); rec/val (reconciled, validation threshold) = 0.8712 +- 0.0029; source output/hpt/final/wos/summary.json"
+      },
+      "note": "globalE2E, run_wos_e2e.py --epochs 10, best epochs 5/5/10; mean and sample std (ddof=1) of 3 seeds"
+    },
+    "wos_frozen": {
+      "micro_f1": 0.7462,
+      "std": 0.0001,
+      "note": "frozen SPECTER2, validation-only"
+    },
+    "arxiv": {
+      "micro_f1": 0.7234,
+      "std": 0.0004,
+      "note": "own split, not comparable with published numbers; validation-only"
+    },
+    "aapd": {
+      "micro_f1": 0.8232,
+      "std": 0.0003,
+      "note": "own 64/16/20 re-split; not like-for-like with SGM"
+    },
+    "eurlex": {
+      "micro_f1": 0.7888,
+      "std": 0.0005,
+      "raw_micro_f1": 0.7812,
+      "note": "standard 45k/6k/6k split, 4,271 dataset concepts, 4,519 evaluated nodes; text=title+header+recitals+main_body, truncated to 256 tokens (main_body falls outside the window); source output/protocol_eurlex_fixedtext/eurlex.json"
+    },
+    "rcv1": {
+      "status": "structural diagnostic (LYRL2004 stemmed bag-of-words; outside the 27)",
+      "micro_auprc": {
+        "bce_raw": 0.7634,
+        "bce_rec": 0.7673,
+        "hinge_raw": 0.7656,
+        "hinge_rec": 0.7682,
+        "mc_raw": 0.7133,
+        "mc_rec": 0.7629
+      },
+      "micro_f1": {
+        "bce_raw": 0.6938,
+        "bce_rec": 0.6967,
+        "hinge_raw": 0.6954,
+        "hinge_rec": 0.6973,
+        "mc_raw": 0.6537,
+        "mc_rec": 0.6924
+      },
+      "seeds": [
+        0,
+        42,
+        123
+      ],
+      "source": "output/protocol_rcv1/rcv1.json",
+      "note": "3 seeds; sample std (ddof=1) per cell; GHV=0 by construction; best reconciled Micro-F1 0.6973 < 0.70, kept as diagnostic outside the main text table."
+    }
+  },
+  "depthcal": {
+    "full_pipeline": {
+      "auprc_wins": 27,
+      "auprc_p": 1.49e-8,
+      "f1_wins": 26,
+      "f1_p": 2.5e-6,
+      "of": 27,
+      "source": "output/sr_gae_sota/*.json (base_auprc vs mlcl_auprc; base_f1 vs ours_f1)"
+    },
+    "isolated_within_mlcl": {
+      "auprc_wins": 11,
+      "f1_wins": 18,
+      "of": 27,
+      "source": "output/sr_gae_depth/*.json (sr_gae_mlcl.rec vs sr_gae_mlcl.depth_rec; mean over seeds 0/42/123)"
+    }
+  },
+  "funcat": {
+    "avg_auprc_8_common": {
+      "C-HMCNN": 0.264,
+      "HMCN-F": 0.261,
+      "ours_global_mcloss": 0.261,
+      "ours_global_gae": 0.262,
+      "ours_gbdt": 0.226,
+      "ours_hinge": 0.259
+    },
+    "ours_above_chmcnn_on": [
+      "derisi_FUN",
+      "spo_FUN"
+    ],
+    "friedman": {
+      "methods": 5,
+      "chi2": 28.3,
+      "p": 1.08e-05
+    },
+    "nemenyi_cd": 2.157,
+    "avg_rank": {
+      "C-HMCNN": 1.0,
+      "HMCN-F": 2.625,
+      "MCLoss (ours)": 2.625,
+      "MLP+R": 3.75,
+      "GBDT": 5.0
+    }
+  },
+  "go": {
+    "avg_auprc_8_common": {
+      "C-HMCNN": 0.42,
+      "HMCN-F": 0.422,
+      "ours_mcloss_rec": 0.418,
+      "ours_bce_rec": 0.416,
+      "ours_hinge_rec": 0.417
+    },
+    "note": "sparse R (BlockDiagonalR), O(C+E) memory"
+  },
+  "cross_domain": {
+    "avg_auprc": {
+      "C-HMCNN": 0.849,
+      "HMCN-F": 0.781,
+      "ours_bce_rec": 0.857,
+      "ours_hinge_rec": 0.855
+    },
+    "ours_above_chmcnn_on": [
+      "enron_others",
+      "imclef07a_others",
+      "diatoms_others"
+    ]
+  },
+  "surj": {
+    "status": "reported, not reproducible (code never released)",
+    "reported_avg": {
+      "funcat": 0.312,
+      "go": 0.468
+    },
+    "reimplementation_avg": {
+      "funcat": 0.232,
+      "go": 0.352
+    },
+    "excluded_from": [
+      "bold marks",
+      "Friedman/Nemenyi",
+      "CD diagram"
+    ]
+  },
+  "autoencoders_funcat_val_delta": {
+    "gae_hybrid@64": 0.0007,
+    "gae_hybrid@16": 0.0002,
+    "feat_dae": -0.0003,
+    "feat_dae+aux": -0.0047,
+    "label_ae@0.1": -0.0105,
+    "label_ae@1": -0.0155
+  },
+  "gpu_speedup": "1.8-2.9x (FunCat table runs)",
+  "total_datasets": 27,
+  "total_datasets_supported": 28
+}
