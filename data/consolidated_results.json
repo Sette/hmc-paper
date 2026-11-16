@@ -1,9 +1,9 @@
 {
-  "_note": "Headline numbers of main.tex (2026-11-10), plus the RCV1 structural diagnostic. Validation-only protocol: epoch and threshold chosen on validation, test used once. Sources: hmc-torch output/protocol/, output/protocol_rcv1/, output/hpt/, output/autoencoder/final/, output/surj/.",
+  "_note": "Headline numbers of main.tex (2026-11-16), plus the RCV1 structural diagnostic. Validation-only protocol: epoch and threshold chosen on validation, test used once. Sources: hmc-torch output/protocol/, output/protocol_rcv1/, output/hpt/, output/autoencoder/final/, output/surj/.",
   "text": {
     "wos": {
       "micro_f1": 0.8704,
-      "std": 0.0040,
+      "std": 0.004,
       "seeds": [
         0,
         42,
@@ -30,12 +30,12 @@
     },
     "wos_frozen": {
       "micro_f1": 0.7462,
-      "std": 0.0001,
+      "std": 0.0002,
       "note": "frozen SPECTER2, validation-only"
     },
     "arxiv": {
       "micro_f1": 0.7234,
-      "std": 0.0004,
+      "std": 0.0005,
       "note": "own split, not comparable with published numbers; validation-only"
     },
     "aapd": {
@@ -47,7 +47,7 @@
       "micro_f1": 0.7888,
       "std": 0.0005,
       "raw_micro_f1": 0.7812,
-      "note": "standard 45k/6k/6k split, 4,271 dataset concepts, 4,519 evaluated nodes; text=title+header+recitals+main_body, truncated to 256 tokens (main_body falls outside the window); source output/protocol_eurlex_fixedtext/eurlex.json"
+      "note": "standard 45k/6k/6k split, 4,271 dataset concepts, 4,519 evaluated nodes; text=title+header+recitals+main_body, truncated to 256 tokens (main_body falls outside the window); source output/protocol/eurlex.json"
     },
     "rcv1": {
       "status": "structural diagnostic (LYRL2004 stemmed bag-of-words; outside the 27)",
@@ -77,19 +77,31 @@
     }
   },
   "depthcal": {
-    "full_pipeline": {
-      "auprc_wins": 27,
-      "auprc_p": 1.49e-8,
-      "f1_wins": 26,
-      "f1_p": 2.5e-6,
+    "paired_blend_vs_baseline": {
+      "auprc_mean_delta": 0.0022,
+      "auprc_wins": 25,
+      "auprc_p": 1.9e-05,
       "of": 27,
-      "source": "output/sr_gae_sota/*.json (base_auprc vs mlcl_auprc; base_f1 vs ours_f1)"
+      "random_prototypes_mean_delta": 0.0025,
+      "gamma_zero_runs": 78,
+      "runs": 81,
+      "source": "output/sr_gae_paired/*.json (3 seeds, one trunk per seed)"
     },
-    "isolated_within_mlcl": {
-      "auprc_wins": 11,
-      "f1_wins": 18,
+    "paired_blend_plus_depthcal_selected": {
+      "f1_mean_delta": 0.0028,
+      "f1_wins": 24,
+      "f1_p": 5.5e-06,
       "of": 27,
-      "source": "output/sr_gae_depth/*.json (sr_gae_mlcl.rec vs sr_gae_mlcl.depth_rec; mean over seeds 0/42/123)"
+      "depthcal_applied_runs": 74,
+      "runs": 81
+    },
+    "depthcal_alone_on_blend": {
+      "f1_mean_delta": 0.0013,
+      "f1_wins": 16,
+      "f1_p": 0.028,
+      "deep_f1_lower_on": 21,
+      "of": 27,
+      "source": "output/sr_gae_depth/*.json"
     }
   },
   "funcat": {
@@ -166,7 +178,47 @@
     "label_ae@0.1": -0.0105,
     "label_ae@1": -0.0155
   },
-  "gpu_speedup": "1.8-2.9x (FunCat table runs)",
   "total_datasets": 27,
-  "total_datasets_supported": 28
+  "total_datasets_supported": 28,
+  "train_time_s": {
+    "funcat": {
+      "bce": 103,
+      "hinge": 246,
+      "mc": 254
+    },
+    "go": {
+      "bce": 212,
+      "hinge": 236,
+      "mc": 524
+    },
+    "cross_domain": {
+      "bce": 59,
+      "hinge": 77,
+      "mc": 104
+    },
+    "text_frozen": {
+      "bce": 87,
+      "hinge": 146,
+      "mc": 260
+    },
+    "gbdt_funcat_cpu": 303,
+    "note": "mean train_time_s of one protocol run (early-stopped fit + refit), RTX 3060; source output/protocol/*.json"
+  },
+  "platt_gbdt_8_funcat": {
+    "trainonly_raw": 0.2023,
+    "trainonly_platt": 0.2125,
+    "refit_raw": 0.2191,
+    "refit_rec": 0.2256,
+    "note": "Platt fitted and applied on the train-only model; not applied to the refit model"
+  },
+  "per_level_f1_bce_rec": {
+    "arxiv": [
+      0.814,
+      0.575
+    ],
+    "wos": [
+      0.837,
+      0.645
+    ]
+  }
 }
